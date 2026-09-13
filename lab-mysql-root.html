@@ -869,7 +869,7 @@
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Tentative de connexion directe</strong><span>mysql -u root -h IP</span></div>
+          <div class="playbook-what"><strong>Tentative de connexion directe</strong><span>mysql -u root -h IP --skip-ssl</span></div>
           <div class="playbook-why">Le compte root existe par défaut sur toute installation MySQL. Tester s'il est protégé par mot de passe est la première vérification à faire — pas une attaque, juste une connexion.</div>
         </div>
         <div class="playbook-row">
@@ -905,7 +905,7 @@
           <p class="step-sub">Le compte root existe par défaut. La seule question est : est-il protégé ?</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> mysql -u root -h 192.168.56.20<button class="copy-btn" type="button" data-copy="mysql -u root -h 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+            <pre><span class="prompt">$</span> mysql -u root -h 192.168.56.20 --skip-ssl<button class="copy-btn" type="button" data-copy="mysql -u root -h 192.168.56.20 --skip-ssl" aria-label="Copier la commande" title="Copier">⧉</button>
 <span class="out">Welcome to the MySQL monitor.  Commands end with ; or \g.</span>
 <span class="out">Your MySQL connection id is 12</span>
 <span class="out">Server version: 5.0.51a-3ubuntu5 (Ubuntu)</span>
@@ -915,6 +915,7 @@
           <div class="explain">
             <span class="k">-u root</span><span class="v">on précise le compte utilisateur MySQL. <strong>root</strong> est le nom du compte d'administration par défaut de MySQL — un nom conventionnel, pas un utilisateur système Linux.</span>
             <span class="k">-h IP</span><span class="v">on se connecte à distance (host), depuis Kali vers la cible. Sans <strong>-p</strong>, le client ne demande pas de mot de passe : si le serveur en exige un, la connexion échoue. Ici, elle réussit — donc <strong>aucun mot de passe n'est requis</strong>.</span>
+            <span class="k">--skip-ssl</span><span class="v">force la connexion en clair, sans négociation TLS. Sur les anciennes versions de MySQL (comme la 5.0 de Metasploitable2), le client moderne peut refuser la connexion si le serveur n'utilise pas le même protocole de chiffrement. <strong>--skip-ssl</strong> contourne ce problème et permet la connexion.</span>
             <span class="k">invite mysql&gt;</span><span class="v">Le prompt change : on n'est plus dans un shell Unix, on est dans un <strong>client SQL interactif</strong>. Les commandes sont du SQL, pas des commandes système.</span>
           </div>
         </div>
@@ -984,7 +985,7 @@
       <div class="cheat-group">
         <h4>connexion mysql (depuis Kali)</h4>
         <table class="cheat">
-          <tr><td class="cmd">mysql -u root -h IP</td><td class="desc">tenter une connexion sans mot de passe — si le serveur en exige un, la commande échoue</td></tr>
+          <tr><td class="cmd">mysql -u root -h IP --skip-ssl</td><td class="desc">tenter une connexion sans mot de passe — si le serveur en exige un, la commande échoue</td></tr>
           <tr><td class="cmd">mysql -u root -h IP -p</td><td class="desc">connexion avec demande de mot de passe (le mot de passe n'est pas écrit dans l'historique)</td></tr>
           <tr><td class="cmd">mysql -u root -h IP -e "SELECT user();"</td><td class="desc">exécuter une seule requête sans entrer dans le client interactif</td></tr>
         </table>
@@ -1146,8 +1147,8 @@
 
     { kind:"type", context:"kali@kali", prompt:"$",
       task:"Tente une connexion au compte root SANS mot de passe",
-      accepted:["mysql -u root -h 192.168.56.20"],
-      hint:"Le client MySQL en ligne de commande s'appelle simplement `mysql`. Il faut lui préciser le compte utilisateur (`-u`), l'hôte distant (`-h`), et NE PAS lui demander de mot de passe — c'est justement ce qu'on cherche à vérifier.",
+      accepted:["mysql -u root -h 192.168.56.20 --skip-ssl"],
+      hint:"Le client MySQL en ligne de commande s'appelle simplement `mysql`. Il faut lui préciser le compte utilisateur (`-u`), l'hôte distant (`-h`), NE PAS lui demander de mot de passe, et ajouter `--skip-ssl` car le serveur ancien ne supporte pas le chiffrement TLS moderne — sans cette option, la connexion échoue avec une erreur de protocole.",
       output:[
         {t:"Welcome to the MySQL monitor.  Commands end with ; or \\g.", c:"o"},
         {t:"Your MySQL connection id is 12", c:"o"},
