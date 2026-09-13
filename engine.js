@@ -12,23 +12,24 @@
   const promptEl = document.getElementById("sim-prompt-label");
   const progressEl = document.getElementById("sim-progress");
   const progressFill = document.getElementById("term-progress-fill");
-  const modeLabelEl = document.getElementById("sim-mode-label");
   const hintBox = document.getElementById("sim-hint-box");
   const consigneBox = document.getElementById("term-fs-consigne");
   const consigneTagEl = document.getElementById("consigne-tag");
   const consigneTextEl = document.getElementById("consigne-text");
   const hintBtn = document.getElementById("sim-hint-btn");
   const solutionBtn = document.getElementById("sim-solution-btn");
-  const continueBtn = document.getElementById("sim-continue-btn");
   const connectBtn = document.getElementById("sim-connect-btn");
   const resetBtn = document.getElementById("sim-reset-btn");
-  const analyzePopup = document.getElementById("analyze-popup");
-  const apTag = document.getElementById("ap-tag");
-  const apQuestion = document.getElementById("ap-question");
-  const apContinueBtn = document.getElementById("ap-continue-btn");
   const termFullscreen = document.getElementById("term-fullscreen");
   const openBtn = document.getElementById("term-open-btn");
   const closeBtn = document.getElementById("term-close-btn");
+  // fil d'Ariane de méthode + carnet cumulatif (optionnels : un cours qui ne
+  // fournit pas ces éléments dans son HTML continue de fonctionner sans eux)
+  const phaseTrackEl = document.getElementById("phase-track");
+  const notebookBtn = document.getElementById("notebook-btn");
+  const notebookPanel = document.getElementById("notebook-panel");
+  const notebookList = document.getElementById("notebook-list");
+  const notebookCount = document.getElementById("notebook-count");
 
   // historique de commandes, façon vrai shell (↑ / ↓)
   let cmdHistory = [];
@@ -69,11 +70,82 @@
     progressFill.classList.add("pulse");
   }
 
-  function currentModeLabel(){
+  // ---------- FIL D'ARIANE DE MÉTHODE ----------
+  // squelette fixe, affiché à l'identique sur chaque cours (même quand une
+  // phase donnée n'est pas utilisée) pour que la méthode générale reste
+  // reconnaissable d'un cours à l'autre, même quand la technique change.
+  const PHASES = [
+    {key:"recon", label:"recon"},
+    {key:"recherche", label:"recherche exploit"},
+    {key:"config", label:"config"},
+    {key:"exploitation", label:"exploitation"},
+    {key:"post-exploitation", label:"post-exploitation"}
+  ];
+
+  function currentPhaseKey(){
     if(mode() === "free") return "post-exploitation";
     const s = steps[stepIndex];
-    if(s && typeof s.context === "string" && s.context.indexOf("msf") === 0) return "exploitation";
-    return "reconnaissance";
+    if(s && s.phase) return s.phase;
+    return "recon"; // étape "connect" ou toute étape sans phase déclarée
+  }
+
+  function renderPhaseTrackSkeleton(){
+    if(!phaseTrackEl) return;
+    phaseTrackEl.innerHTML = "";
+    PHASES.forEach(p=>{
+      const pill = document.createElement("span");
+      pill.className = "phase-pill";
+      pill.dataset.phase = p.key;
+      pill.textContent = p.label;
+      phaseTrackEl.appendChild(pill);
+    });
+  }
+
+  function updatePhaseTrack(){
+    if(!phaseTrackEl) return;
+    const current = currentPhaseKey();
+    phaseTrackEl.querySelectorAll(".phase-pill").forEach(pill=>{
+      pill.classList.toggle("active", pill.dataset.phase === current);
+    });
+  }
+
+  // ---------- CARNET DE MISSION (cumulatif entre tous les cours) ----------
+  const NOTEBOOK_KEY = "pentestlab_notebook_v1";
+
+  function loadNotebook(){
+    try{ return JSON.parse(localStorage.getItem(NOTEBOOK_KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function saveNotebook(list){
+    try{ localStorage.setItem(NOTEBOOK_KEY, JSON.stringify(list)); }
+    catch(e){ /* stockage indisponible (navigation privée…) : le cours continue sans carnet persistant */ }
+  }
+  function addToNotebook(note, cmdLabel){
+    if(!note || !notebookList) return;
+    const list = loadNotebook();
+    if(list.some(item => item.note === note)) { renderNotebook(); return; } // déjà noté (déduplication globale)
+    list.push({ cmd: cmdLabel || "", note: note });
+    saveNotebook(list);
+    renderNotebook();
+  }
+  function renderNotebook(){
+    if(!notebookList) return;
+    const list = loadNotebook();
+    if(notebookCount) notebookCount.textContent = list.length;
+    notebookList.innerHTML = "";
+    if(list.length === 0){
+      notebookList.innerHTML = '<p class="notebook-empty">Ton carnet est vide pour l’instant — chaque commande validée avec une explication s’y ajoute, cours après cours.</p>';
+      return;
+    }
+    list.forEach(item=>{
+      const div = document.createElement("div");
+      div.className = "notebook-item";
+      div.innerHTML = `<div class="nb-cmd">${item.cmd}</div><div class="nb-note">${item.note}</div>`;
+      notebookList.appendChild(div);
+    });
+  }
+  if(notebookBtn && notebookPanel){
+    notebookBtn.addEventListener("click", ()=> notebookPanel.classList.toggle("show"));
   }
 
   // flash sobre au passage d'une étape à l'autre
@@ -145,10 +217,8 @@
     hintBox.innerHTML = "";
     const m = mode();
     updateProgress();
-    modeLabelEl.textContent = currentModeLabel();
+    updatePhaseTrack();
 
-    // par défaut : popup d'analyse fermée, terminal net, consigne visible
-    analyzePopup.style.display = "none";
     body.classList.remove("dimmed");
     consigneBox.style.display = "flex";
     hintBtn.style.display = "";
@@ -162,7 +232,6 @@
       consigneTagEl.textContent = "Configuration réseau";
       consigneTextEl.textContent = s.consigne;
       inputline.style.display = "none";
-      continueBtn.style.display = "none";
       connectBtn.style.display = "inline-flex";
       hintBtn.disabled = true;
       solutionBtn.disabled = true;
@@ -175,31 +244,11 @@
       consigneTagEl.textContent = `À faire — étape ${stepIndex+1}/${steps.length}`;
       consigneTextEl.textContent = s.task;
       inputline.style.display = "flex";
-      continueBtn.style.display = "none";
       connectBtn.style.display = "none";
       hintBtn.disabled = false;
       solutionBtn.disabled = false;
       input.disabled = false;
       input.focus();
-      body.scrollTop = body.scrollHeight;
-    } else if(m === "analyze"){
-      const s = steps[stepIndex];
-      contextEl.textContent = "lecture du résultat";
-      promptEl.textContent = "";
-      progressEl.textContent = `étape ${stepIndex+1}/${steps.length}`;
-      // la consigne passe par le pop-up dédié, pas par la barre du haut
-      consigneBox.style.display = "none";
-      inputline.style.display = "none";
-      continueBtn.style.display = "none";
-      connectBtn.style.display = "none";
-      // en mode analyse, indice/solution vivent dans le pop-up : on cache les boutons du bas
-      hintBtn.style.display = "none";
-      solutionBtn.style.display = "none";
-      apTag.textContent = "À analyser";
-      apQuestion.textContent = s.question;
-      analyzePopup.style.display = "flex";
-      body.classList.add("dimmed");
-      input.disabled = true;
       body.scrollTop = body.scrollHeight;
     } else {
       contextEl.textContent = freeContext;
@@ -209,7 +258,6 @@
       consigneTextEl.innerHTML = (typeof freeHintHtml !== "undefined" && freeHintHtml)
         ? freeHintHtml
         : `Session ouverte — explore par toi-même. Essaie <strong style="color:var(--text)">getuid</strong>, <strong style="color:var(--text)">shell</strong>, <strong style="color:var(--text)">whoami</strong>, <strong style="color:var(--text)">id</strong>, <strong style="color:var(--text)">pwd</strong>, <strong style="color:var(--text)">ls</strong> ou <strong style="color:var(--text)">exit</strong>.`;
-      continueBtn.style.display = "none";
       connectBtn.style.display = "none";
       hintBtn.disabled = true;
       solutionBtn.disabled = true;
@@ -229,13 +277,10 @@
   function advanceTypeStep(cmdShown){
     const s = steps[stepIndex];
     printLine(s.prompt, s.context, cmdShown, s.output);
+    if(s.note) addToNotebook(s.note, s.accepted[0]);
     stepIndex++;
-    afterAdvance();
-  }
-
-  function advanceAnalyzeStep(){
-    const s = steps[stepIndex];
-    stepIndex++;
+    // l'annotation/le surlignage (anciens moments "analyze") s'affichent
+    // maintenant comme un simple commentaire dans le flux, juste après la sortie.
     highlightAndAnnotate(s);
     afterAdvance();
   }
@@ -365,26 +410,6 @@
     advanceTypeStep(steps[stepIndex].accepted[0]);
   });
 
-  function triggerAnalyzeContinue(){
-    if(mode() !== "analyze") return;
-    analyzePopup.classList.add("leaving");
-    setTimeout(()=>{
-      analyzePopup.classList.remove("leaving");
-      advanceAnalyzeStep();
-    }, 160);
-  }
-
-  apContinueBtn.addEventListener("click", triggerAnalyzeContinue);
-
-  // en mode analyse, la touche Entrée déclenche un clic sur le bouton "Continuer →"
-  document.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter" && mode() === "analyze"){
-      e.preventDefault();
-      apContinueBtn.click();
-    }
-  });
-
-  continueBtn.addEventListener("click", ()=> advanceAnalyzeStep());
   connectBtn.addEventListener("click", ()=> advanceConnectStep());
 
   resetBtn.addEventListener("click", ()=>{
@@ -400,6 +425,8 @@
     updateUI();
   });
 
+  renderPhaseTrackSkeleton();
+  renderNotebook();
   updateUI();
 })();
 
