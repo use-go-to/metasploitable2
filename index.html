@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pentest Lab — Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e14;
+    --panel:#12161f;
+    --panel-alt:#161b26;
+    --border:#232937;
+    --text:#e7e9ee;
+    --muted:#8b93a5;
+    --accent:#ff8a5c;
+    --accent-soft:#ff8a5c22;
+    --ok:#5fd9a4;
+    --ok-soft:#5fd9a422;
+    --serif:'Fraunces', serif;
+    --sans:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+
+    /* bandes de difficulté */
+    --lvl-1:#5fd9a4; /* introduction  1-2 */
+    --lvl-2:#6db8ff; /* facile        3-4 */
+    --lvl-3:#ff8a5c; /* intermédiaire 5-6 */
+    --lvl-4:#ff5c72; /* avancé        7-8 */
+    --lvl-5:#c65cff; /* expert        9-10 */
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-soft); color:var(--accent);}
+  a{color:var(--accent);}
+
+  .wrap{max-width:960px; margin:0 auto; padding:0 24px;}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:72px 0 40px; border-bottom:1px solid var(--border);}
+  .hero .kicker{
+    font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 20px;
+  }
+  .hero .kicker::before{content:"$ "; color:var(--muted);}
+  .hero h1{
+    font-family:var(--serif); font-weight:600;
+    font-size:clamp(32px,5vw,46px); line-height:1.1;
+    margin:0 0 18px; letter-spacing:-0.01em;
+  }
+  .hero p.lead{
+    font-size:16px; color:var(--muted); max-width:60ch; margin:0 0 28px;
+  }
+
+  /* ---------- PROGRESSION (hero) ---------- */
+  .hero-progress{
+    display:flex; align-items:center; gap:14px; max-width:420px;
+  }
+  .hero-progress-track{
+    flex:1; height:6px; border-radius:3px;
+    background:var(--panel); border:1px solid var(--border); overflow:hidden;
+  }
+  .hero-progress-fill{
+    height:100%; width:0%; border-radius:3px;
+    background:linear-gradient(90deg, var(--ok), var(--accent));
+    transition:width .4s ease;
+  }
+  .hero-progress-label{
+    font-family:var(--mono); font-size:12.5px; color:var(--accent); white-space:nowrap;
+  }
+
+  section{padding:56px 0; border-bottom:1px solid var(--border);}
+  section:last-of-type{border-bottom:none;}
+  h2.section-title{
+    font-family:var(--serif); font-weight:600; font-size:24px; margin:0 0 10px;
+  }
+  .section-intro{color:var(--muted); max-width:65ch; margin:0 0 32px; font-size:14.5px;}
+
+  /* ---------- NOTE MÉTHODO (repliée) ---------- */
+  .methodo{
+    margin-bottom:28px; border:1px solid var(--border); border-radius:8px;
+    background:var(--panel); padding:2px 16px;
+  }
+  .methodo summary{
+    cursor:pointer; font-family:var(--mono); font-size:12.5px; color:var(--muted);
+    padding:12px 0; list-style:none;
+  }
+  .methodo summary::-webkit-details-marker{display:none;}
+  .methodo summary::before{content:"+ "; color:var(--accent);}
+  .methodo[open] summary::before{content:"– ";}
+  .methodo .methodo-body{
+    padding:0 0 16px; font-size:13px; color:var(--muted);
+  }
+  .methodo .methodo-body p{margin:0 0 8px;}
+  .methodo .methodo-body code{font-family:var(--mono); color:var(--text);}
+
+  /* ---------- CATALOGUE ---------- */
+  .controls{
+    display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center;
+    margin-bottom:16px;
+  }
+  .chip{
+    font-family:var(--mono); font-size:12.5px; color:var(--muted);
+    border:1px solid var(--border); border-radius:20px;
+    padding:6px 14px; background:var(--panel); cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  .chip:hover{border-color:var(--muted);}
+  .chip.active{color:var(--accent); border-color:var(--accent);}
+
+  .sort-select{
+    margin-left:auto;
+    font-family:var(--mono); font-size:12.5px; color:var(--text);
+    background:var(--panel); border:1px solid var(--border); border-radius:20px;
+    padding:6px 14px; cursor:pointer;
+  }
+
+  .search-row{margin-bottom:28px;}
+  .search-input{
+    width:100%;
+    font-family:var(--mono); font-size:13px; color:var(--text);
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    padding:10px 14px;
+  }
+  .search-input::placeholder{color:var(--muted);}
+  .search-input:focus{outline:none; border-color:var(--accent);}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(270px,1fr));
+    gap:16px;
+  }
+  .card{
+    position:relative;
+    display:flex; flex-direction:column;
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px; text-decoration:none; color:var(--text);
+    transition:border-color .15s, transform .15s;
+  }
+  .card.is-link:hover{border-color:var(--accent); transform:translateY(-2px);}
+  .card.is-locked{opacity:.55;}
+  .card-top{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+    margin-bottom:14px;
+  }
+  .tags{display:flex; flex-wrap:wrap; gap:6px;}
+  .tag{
+    font-family:var(--mono); font-size:10.5px; color:var(--muted);
+    border:1px solid var(--border); border-radius:4px; padding:2px 7px;
+  }
+  .tag.main{color:var(--text); border-color:var(--border);}
+  .tag.technique{color:var(--accent); border-color:var(--accent-soft);}
+  .badges{display:flex; flex-direction:column; gap:6px; flex-shrink:0; align-items:flex-end;}
+  .score-badge{
+    font-family:var(--mono); font-weight:500; font-size:12px;
+    border-radius:6px; padding:3px 8px; white-space:nowrap;
+  }
+  .score-badge .lbl{color:var(--muted); margin-right:5px; font-size:10.5px;}
+  .card h3{
+    font-family:var(--sans); font-weight:600; font-size:16.5px; margin:0 0 8px;
+  }
+  .card p.desc{
+    color:var(--muted); font-size:13.5px; margin:0 0 10px; flex-grow:1;
+  }
+  .card .prereq{
+    font-family:var(--mono); font-size:11px; color:var(--muted); margin:0 0 10px;
+  }
+  .card .prereq strong{color:var(--muted); font-weight:500;}
+  .card-bottom{
+    display:flex; align-items:center; justify-content:space-between; margin-top:auto; gap:10px;
+  }
+  .card .open{
+    font-family:var(--mono); font-size:12.5px; color:var(--accent);
+  }
+  .card .soon{
+    font-family:var(--mono); font-size:12.5px; color:var(--muted);
+  }
+  .done-toggle{
+    display:flex; align-items:center; gap:6px;
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    cursor:pointer; z-index:2; position:relative;
+  }
+  .done-toggle input{accent-color:var(--ok); cursor:pointer;}
+  .card.is-done{border-color:var(--ok-soft);}
+  .card.is-done .card-top .tag.main{border-color:var(--ok);}
+
+  .empty-state{
+    text-align:center; padding:40px 20px; color:var(--muted);
+    font-family:var(--mono); font-size:13px; border:1px dashed var(--border); border-radius:8px;
+  }
+
+  footer{padding:40px 0 72px;}
+  footer .note{
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+  }
+
+  @media (max-width:640px){
+    .hero{padding:52px 0 36px;}
+    .sort-select{margin-left:0; width:100%;}
+    .controls{width:100%;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="hero">
+      <p class="kicker">pentest lab :: catalogue d'exploits</p>
+      <h1>Hub</h1>
+      <p class="lead">Chaque exploit du lab, classé par catégorie et noté sur un barème objectif — pour savoir quoi découvrir en premier, et suivre une vraie progression.</p>
+      <div class="hero-progress">
+        <div class="hero-progress-track"><div class="hero-progress-fill" id="hero-progress-fill"></div></div>
+        <span class="hero-progress-label" id="hero-progress-label">0/29 terminé</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section id="catalogue">
+      <h2 class="section-title">Catalogue</h2>
+      <p class="section-intro">Chaque exploit porte deux notes : <strong style="color:var(--text)">difficulté</strong> (1–10, ce qu'il faut savoir et enchaîner pour réussir) et <strong style="color:var(--text)">puissance</strong> (1–5, jusqu'où il t'amène objectivement sur la cible). La colonne <strong style="color:var(--text)">technique</strong> distingue les sujets proches (deux injections SQL, deux command injections) pour éviter les doublons déguisés.</p>
+
+      <details class="methodo">
+        <summary>Comment les notes sont calculées — et pourquoi elles ne bougent plus une fois fixées</summary>
+        <div class="methodo-body">
+          <p><strong style="color:var(--text)">Difficulté /10</strong> — 9 paramètres pondérés : connaissance protocole/service, connaissance offensive générale, nombre d'étapes, complexité de chaînage entre failles, disponibilité d'un exploit tout fait, fiabilité de l'exploit, privesc requise après l'accès initial, protections à contourner, part d'analyse manuelle (code/débogage) nécessaire.</p>
+          <p><strong style="color:var(--text)">Puissance /5</strong> — ce que l'accès obtenu permet objectivement : information seule (1) · lecture/écriture limitée (2) · shell utilisateur (3) · contrôle total de la machine (4) · pivot vers d'autres systèmes ou compromission plus large (5).</p>
+          <p><strong style="color:var(--text)">Référentiel</strong> — les 29 scores de la roadmap sont fixés une seule fois, dans <code>courses.js</code>, qui sert de source unique de vérité. Jamais ré-inventer un score pour une technique déjà présente ailleurs dans la liste.</p>
+          <p><strong style="color:var(--text)">Publication</strong> — le statut « publié » n'est plus stocké : le hub teste au chargement si le fichier renseigné dans <code>file</code> existe réellement à côté de lui. Déposer <code>lab-xxx.html</code> suffit à déverrouiller la carte, aucun fichier à modifier.</p>
+        </div>
+      </details>
+
+      <div class="controls" id="controls"></div>
+      <div class="search-row">
+        <input type="text" class="search-input" id="search-input" placeholder="Rechercher un cours (titre, description, technique)…">
+      </div>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <footer>
+      <p class="note">nouveau cours = déposer le fichier <code style="color:var(--text)">lab-xxx.html</code> à côté du hub — <code style="color:var(--text)">file</code> doit déjà être renseigné dans <code style="color:var(--text)">courses.js</code> depuis la création de l'entrée. Le hub détecte tout seul, au chargement, si le fichier existe. Rien d'autre à toucher. Jamais créer une entrée sans passer par la feuille de route.</p>
+    </footer>
+  </div>
+
+<script src="courses.js"></script>
+<script>
+
+  // ---------- BANDES DE DIFFICULTÉ (1-10) ----------
+  function difficultyBand(score){
+    if(score<=2) return {name:"Introduction", color:"var(--lvl-1)"};
+    if(score<=4) return {name:"Facile", color:"var(--lvl-2)"};
+    if(score<=6) return {name:"Intermédiaire", color:"var(--lvl-3)"};
+    if(score<=8) return {name:"Avancé", color:"var(--lvl-4)"};
+    return {name:"Expert", color:"var(--lvl-5)"};
+  }
+
+  // ---------- BANDES DE PUISSANCE (1-5) ----------
+  function powerBand(score){
+    if(score<=1) return {name:"Information", color:"var(--lvl-1)"};
+    if(score<=2) return {name:"Accès limité", color:"var(--lvl-2)"};
+    if(score<=3) return {name:"Shell utilisateur", color:"var(--lvl-3)"};
+    if(score<=4) return {name:"Contrôle total", color:"var(--lvl-4)"};
+    return {name:"Pivot / réseau", color:"var(--lvl-5)"};
+  }
+
+  // ---------- DÉTECTION AUTOMATIQUE DE PUBLICATION ----------
+  // Remplace le champ statique "published" : on teste si le fichier existe
+  // réellement à côté du hub. Aucun fichier JS à modifier pour publier un
+  // cours — déposer lab-xxx.html suffit, à condition que "file" ait déjà
+  // été renseigné sur l'entrée dans courses.js au moment de sa création.
+  async function detectPublished(list){
+    await Promise.all(list.map(async c=>{
+      if(!c.file){ c._published = false; return; }
+      try{
+        // GET plutôt que HEAD : plus fiable sur les serveurs statiques
+        // (GitHub Pages compris). cache:"no-store" évite un faux "publié"
+        // en cache après suppression d'un fichier.
+        const res = await fetch(c.file, { method:"GET", cache:"no-store" });
+        c._published = res.ok;
+      }catch(e){
+        c._published = false;
+      }
+    }));
+  }
+
+  // ---------- PROGRESSION (localStorage) ----------
+  const PROGRESS_KEY = "pentestlab_progress_v1";
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function saveProgress(p){
+    try{ localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); }catch(e){}
+  }
+  let progress = loadProgress();
+
+  function updateHeroProgress(){
+    const total = courses.length;
+    const done = courses.filter(c => progress[c.id]).length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+    document.getElementById("hero-progress-fill").style.width = pct + "%";
+    document.getElementById("hero-progress-label").textContent = `${done}/${total} terminé`;
+  }
+
+  // ---------- ÉTAT ----------
+  let state = { category: "Toutes", sort: "diff-asc", query: "" };
+
+  function categories(){
+    const set = new Set(courses.map(c=>c.categoryMain));
+    return ["Toutes", ...Array.from(set)];
+  }
+
+  function prereqLabel(c){
+    if(c.prereqNote) return c.prereqNote;
+    if(!c.prereq || c.prereq.length===0) return null;
+    return c.prereq.map(id=>{
+      const p = courses.find(x=>x.id===id);
+      return p ? `#${id} ${p.title}` : `#${id}`;
+    }).join(", ");
+  }
+
+  function renderControls(){
+    const controls = document.getElementById("controls");
+    controls.innerHTML = "";
+
+    categories().forEach(cat=>{
+      const chip = document.createElement("button");
+      chip.className = "chip" + (state.category===cat ? " active" : "");
+      chip.textContent = cat;
+      chip.onclick = ()=>{ state.category = cat; renderControls(); renderGrid(); };
+      controls.appendChild(chip);
+    });
+
+    const select = document.createElement("select");
+    select.className = "sort-select";
+    select.innerHTML = `
+      <option value="diff-asc">Difficulté ↑</option>
+      <option value="diff-desc">Difficulté ↓</option>
+      <option value="power-asc">Puissance ↑</option>
+      <option value="power-desc">Puissance ↓</option>
+      <option value="category">Catégorie</option>
+      <option value="alpha">Alphabétique</option>
+    `;
+    select.value = state.sort;
+    select.onchange = (e)=>{ state.sort = e.target.value; renderGrid(); };
+    controls.appendChild(select);
+  }
+
+  function renderGrid(){
+    const grid = document.getElementById("grid");
+    const q = state.query.trim().toLowerCase();
+    let list = courses.filter(c => {
+      const matchCat = state.category==="Toutes" || c.categoryMain===state.category;
+      const matchQuery = !q || (c.title + " " + c.description + " " + c.technique).toLowerCase().includes(q);
+      return matchCat && matchQuery;
+    });
+
+    if(state.sort==="diff-asc") list.sort((a,b)=>a.difficulty-b.difficulty);
+    if(state.sort==="diff-desc") list.sort((a,b)=>b.difficulty-a.difficulty);
+    if(state.sort==="power-asc") list.sort((a,b)=>a.power-b.power);
+    if(state.sort==="power-desc") list.sort((a,b)=>b.power-a.power);
+    if(state.sort==="category") list.sort((a,b)=>a.categoryMain.localeCompare(b.categoryMain) || a.difficulty-b.difficulty);
+    if(state.sort==="alpha") list.sort((a,b)=>a.title.localeCompare(b.title));
+
+    if(list.length===0){
+      grid.innerHTML = `<div class="empty-state">Aucun exploit ne correspond à ce filtre.</div>`;
+      return;
+    }
+
+    grid.innerHTML = list.map(c=>{
+      const dBand = difficultyBand(c.difficulty);
+      const pBand = powerBand(c.power);
+      const isDone = !!progress[c.id];
+      const prereq = prereqLabel(c);
+      const tag = c._published ? "a" : "div";
+      const hrefAttr = c._published ? `href="${c.file}"` : "";
+      return `
+        <${tag} class="card ${c._published ? "is-link" : "is-locked"} ${isDone ? "is-done" : ""}" ${hrefAttr}>
+          <div class="card-top">
+            <div class="tags">
+              <span class="tag main">${c.categoryMain}</span>
+              <span class="tag">${c.categorySub}</span>
+              <span class="tag technique">${c.technique}</span>
+            </div>
+            <div class="badges">
+              <span class="score-badge" style="color:${dBand.color}; border:1px solid ${dBand.color}; background:${dBand.color}18;">
+                <span class="lbl">Diff.</span>${c.difficulty}/10
+              </span>
+              <span class="score-badge" style="color:${pBand.color}; border:1px solid ${pBand.color}; background:${pBand.color}18;">
+                <span class="lbl">Puiss.</span>${c.power}/5
+              </span>
+            </div>
+          </div>
+          <h3>#${c.id} — ${c.title}</h3>
+          <p class="desc">${c.description}</p>
+          ${prereq ? `<p class="prereq"><strong>Prérequis</strong> — ${prereq}</p>` : ""}
+          <div class="card-bottom">
+            ${c._published
+              ? `<label class="done-toggle" data-course-id="${c.id}"><input type="checkbox" ${isDone ? "checked" : ""}> terminé</label>`
+              : `<span class="soon">à venir</span>`}
+            ${c._published ? `<span class="open">Ouvrir le cours →</span>` : ""}
+          </div>
+        </${tag}>
+      `;
+    }).join("");
+
+    // le clic sur la case "terminé" ne doit pas déclencher l'ouverture du cours
+    grid.querySelectorAll(".done-toggle").forEach(label=>{
+      label.addEventListener("click", (e)=> e.stopPropagation());
+      label.querySelector("input").addEventListener("change", (e)=>{
+        const id = Number(label.getAttribute("data-course-id"));
+        progress[id] = e.target.checked;
+        saveProgress(progress);
+        updateHeroProgress();
+        renderGrid();
+      });
+    });
+  }
+
+  document.getElementById("search-input").addEventListener("input", (e)=>{
+    state.query = e.target.value;
+    renderGrid();
+  });
+
+  renderControls();
+  detectPublished(courses).then(()=>{
+    renderGrid();
+    updateHeroProgress();
+  });
+</script>
+
+</body>
+</html>

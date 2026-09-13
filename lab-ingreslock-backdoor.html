@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingreslock — Backdoor triviale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e14;
+    --panel:#12161f;
+    --panel-alt:#161b26;
+    --border:#232937;
+    --text:#e7e9ee;
+    --muted:#8b93a5;
+    --accent:#ff8a5c;
+    --accent-soft:#ff8a5c22;
+    --ok:#5fd9a4;
+    --ok-soft:#5fd9a422;
+    --serif:'Fraunces', serif;
+    --sans:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{background:var(--accent-soft); color:var(--accent);}
+
+  a{color:var(--accent);}
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:96px 0 64px;
+    border-bottom:1px solid var(--border);
+  }
+  .breadcrumb{margin:0 0 18px;}
+  .breadcrumb a{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+    text-decoration:none;
+    border-bottom:1px solid transparent;
+  }
+  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
+  .hero .kicker{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 20px;
+  }
+  .hero .kicker::before{content:"$ "; color:var(--muted);}
+  .hero h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(34px,5vw,52px);
+    line-height:1.1;
+    margin:0 0 20px;
+    letter-spacing:-0.01em;
+  }
+  .hero p.lead{
+    font-size:17px;
+    color:var(--muted);
+    max-width:56ch;
+    margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+  }
+  .meta-item{font-size:13px;}
+  .meta-item .label{
+    display:block;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .meta-item .value{
+    font-family:var(--mono);
+    color:var(--text);
+  }
+  .badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border:1px solid var(--ok);
+    color:var(--ok);
+    border-radius:3px;
+  }
+  .score-badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border-radius:3px;
+  }
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{
+    padding:64px 0;
+    border-bottom:1px solid var(--border);
+  }
+  section:last-of-type{border-bottom:none;}
+  h2.section-title{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 12px;
+  }
+  .section-intro{
+    color:var(--muted);
+    max-width:60ch;
+    margin:0 0 40px;
+    font-size:15px;
+  }
+
+  /* ---------- TIMELINE ---------- */
+  .timeline{
+    position:relative;
+    padding-left:44px;
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:15px;
+    top:6px;
+    bottom:6px;
+    width:1px;
+    background:var(--border);
+  }
+  .step{
+    position:relative;
+    margin-bottom:56px;
+  }
+  .step:last-child{margin-bottom:0;}
+  .step-num{
+    position:absolute;
+    left:-44px;
+    top:0;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+  }
+  .step h3{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:19px;
+    margin:2px 0 6px;
+  }
+  .step .step-sub{
+    color:var(--muted);
+    font-size:14px;
+    margin:0 0 18px;
+  }
+
+  /* ---------- TERMINAL BLOCK ---------- */
+  .term{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin:0 0 18px;
+  }
+  .term-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .term-bar .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--border);
+  }
+  .term pre{
+    margin:0;
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.65;
+    overflow-x:auto;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .term .prompt{color:var(--accent);}
+  .term .out{color:var(--muted);}
+  .term .ok{color:var(--ok);}
+  .term .flag{color:var(--accent);}
+
+  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
+  .copy-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:20px;
+    height:20px;
+    margin-left:8px;
+    padding:0;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    vertical-align:middle;
+    opacity:.55;
+    transition:opacity .15s, border-color .15s, color .15s, background .15s;
+  }
+  .term:hover .copy-btn{opacity:.9;}
+  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
+  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
+
+  /* ---------- EXPLAIN BOX ---------- */
+  .explain{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:10px 12px;
+    background:transparent;
+    border-left:2px solid var(--border);
+    padding:2px 0 2px 18px;
+    margin-top:14px;
+  }
+  .explain .k{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--muted);
+    padding-top:2px;
+    white-space:nowrap;
+  }
+  .explain .v{
+    font-size:14.5px;
+    color:var(--text);
+  }
+  .explain .v strong{color:var(--accent); font-weight:600;}
+  .explain .k.err{color:#ff5c72;}
+  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
+
+  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
+  .playbook{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:40px;
+  }
+  .playbook-row{
+    display:grid;
+    grid-template-columns:28px 1fr 1.3fr;
+    gap:16px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+  }
+  .playbook-row:last-child{border-bottom:none;}
+  .playbook-num{
+    font-family:var(--mono);
+    color:var(--accent);
+    font-size:13px;
+  }
+  .playbook-what strong{
+    display:block;
+    font-size:14px;
+    color:var(--text);
+    margin-bottom:3px;
+  }
+  .playbook-what span{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ok);
+  }
+  .playbook-why{
+    font-size:13px;
+    color:var(--muted);
+  }
+  @media (max-width:640px){
+    .playbook-row{grid-template-columns:1fr; gap:4px;}
+    .playbook-num{display:none;}
+  }
+
+  /* ---------- CHEATSHEET TABLE ---------- */
+  .cheat-group{margin-bottom:32px;}
+  .cheat-group h4{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 14px;
+    font-weight:500;
+  }
+  table.cheat{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  table.cheat td{
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  table.cheat td.cmd{
+    font-family:var(--mono);
+    color:var(--ok);
+    width:42%;
+    padding-right:20px;
+    white-space:nowrap;
+  }
+  table.cheat td.desc{color:var(--muted);}
+  table.cheat tr:last-child td{border-bottom:none;}
+
+  /* ---------- CONCEPT CARDS ---------- */
+  .concepts{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .concept{
+    padding:20px 0;
+    border-top:1px solid var(--border);
+  }
+  .concept:first-child{border-top:none; padding-top:0;}
+  .concept h4{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:18px;
+    margin:0 0 8px;
+  }
+  .concept p{
+    color:var(--muted);
+    margin:0;
+    font-size:14.5px;
+    max-width:62ch;
+  }
+
+  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
+  .practice-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .info-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:13px 18px;
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+  .info-bar .item{color:var(--muted);}
+  .info-bar .item strong{color:var(--accent); font-weight:500;}
+
+  .sim{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .sim-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .sim-progress{color:var(--accent);}
+  .sim-body{
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.7;
+    max-height:420px;
+    overflow-y:auto;
+  }
+  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
+  .sim-line .p{color:var(--accent);}
+  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
+  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
+  .p-kali .p-user{color:var(--ok); font-weight:600;}
+  .p-kali .p-punc{color:var(--muted);}
+  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
+  .p-root{color:#ff5c72; font-weight:600;}
+  .p-path{color:#5fbfff;}
+  .sim-line .o{color:var(--muted); display:block;}
+  .sim-line .o.ok{color:var(--ok);}
+  .sim-line .o.err{color:#ff5c72;}
+  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
+  @keyframes fadeSlideIn{
+    from{opacity:0; transform:translateY(4px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ligne mise en valeur pendant la correction */
+  .sim-line.hl{
+    background:rgba(255,138,92,.12);
+    border-radius:4px;
+    padding:2px 6px;
+    margin:0 -6px 4px;
+    animation:pulseGlow 1.3s ease-in-out 2;
+  }
+  @keyframes pulseGlow{
+    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
+    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
+  }
+
+  /* annotation ajoutée lors d'une correction d'analyse */
+  .sim-annot{
+    margin:2px 0 10px;
+    padding:8px 12px;
+    border-left:2px solid var(--accent);
+    color:var(--accent);
+    font-size:12.5px;
+    background:var(--accent-soft);
+    border-radius:0 6px 6px 0;
+  }
+
+  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
+     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
+  .sim-inputline{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 4px;
+  }
+  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
+  .sim-input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:13px;
+    caret-color:var(--accent);
+    padding:0;
+  }
+  .sim-input::placeholder{color:var(--muted); opacity:.6;}
+  .sim-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 18px 16px;
+    border-top:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .sim-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .sim-btn:active{transform:translateY(0);}
+  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
+  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
+
+  .sim-hint-box{
+    margin:0 18px 12px;
+    padding:10px 14px;
+    border-left:2px solid var(--accent);
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
+  }
+  .sim-hint-box.show{
+    max-height:120px;
+    opacity:1;
+  }
+
+  @media (max-width:640px){
+    .sim-body{max-height:320px;}
+  }
+
+  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
+  .term-launch{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:28px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .term-launch-btn{
+    font-family:var(--mono);
+    font-size:14px;
+    font-weight:600;
+    color:#05100b;
+    background:var(--ok);
+    border:none;
+    border-radius:8px;
+    padding:13px 24px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
+  .term-launch-btn:active{transform:translateY(0);}
+  .term-launch-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#05100b;
+    animation:launchBlink 1.6s ease-in-out infinite;
+  }
+  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
+  .term-launch-sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+  }
+
+  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
+  .term-fullscreen{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:none;
+    flex-direction:column;
+    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
+    opacity:0;
+    transform:scale(.98);
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .term-fullscreen.open{
+    display:flex;
+    opacity:1;
+    transform:scale(1);
+  }
+  .term-fs-header{
+    flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+    padding:14px 22px 16px;
+  }
+  .term-fs-headrow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .term-fs-titlebar{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+  }
+  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .term-fs-dot.r{background:#ff5f57;}
+  .term-fs-dot.y{background:#febc2e;}
+  .term-fs-dot.g{background:#28c840;}
+  .term-fs-context{margin-left:8px; color:var(--text);}
+  .term-fs-close{
+    font-family:var(--mono);
+    font-size:13px;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:6px;
+    width:30px; height:30px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s, transform .15s;
+  }
+  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
+  .term-fs-info{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 22px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
+
+  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
+  .term-fs-consigne{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin-top:14px;
+    padding:10px 12px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    border-radius:6px;
+  }
+  .consigne-tag{
+    flex-shrink:0;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:2px 7px;
+    margin-top:1px;
+  }
+  .consigne-text{
+    font-family:var(--sans);
+    font-size:13.5px;
+    color:var(--text);
+    line-height:1.5;
+  }
+  .term-fs-info .item.mode{
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ok);
+    font-size:10.5px;
+    border:1px solid var(--ok);
+    padding:3px 9px;
+    border-radius:3px;
+    transition:color .2s, border-color .2s;
+  }
+  .term-progress{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .term-progress-track{
+    flex:1;
+    height:6px;
+    border-radius:3px;
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  .term-progress-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--ok), var(--accent));
+    border-radius:3px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 10px rgba(95,217,164,.55);
+  }
+  .term-progress-label{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+
+  .term-fullscreen .sim-body{
+    flex:1;
+    overflow-y:auto;
+    max-height:none;
+    padding:20px 26px;
+    transition:filter .25s ease;
+  }
+  .term-fullscreen .sim-body.dimmed{
+    filter:brightness(.5) saturate(.85);
+    pointer-events:none;
+  }
+  .term-fs-footer{
+    flex-shrink:0;
+    border-top:1px solid var(--border);
+    background:var(--panel);
+  }
+  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
+  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
+
+  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
+  .analyze-popup{
+    margin:16px 22px 0;
+    padding:16px 18px;
+    border-radius:10px;
+    border:1px solid var(--accent);
+    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
+    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
+    display:none;
+    flex-direction:column;
+    gap:12px;
+    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .analyze-popup.leaving{animation:popOut .18s ease both;}
+  @keyframes popIn{
+    from{opacity:0; transform:translateY(14px) scale(.96);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  @keyframes popOut{
+    from{opacity:1; transform:scale(1);}
+    to{opacity:0; transform:scale(.95);}
+  }
+  .ap-tag{
+    align-self:flex-start;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:3px 8px;
+  }
+  .ap-question{
+    font-family:var(--sans);
+    font-size:14.5px;
+    color:var(--text);
+    line-height:1.55;
+    margin:0;
+  }
+  .ap-hint{
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    border-left:2px solid var(--accent);
+    padding-left:0;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  }
+  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
+  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .ap-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .ap-btn.ap-continue{
+    margin-left:auto;
+    border-color:var(--ok);
+    color:var(--ok);
+    font-weight:600;
+    animation:ctaPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes ctaPulse{
+    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
+    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
+  }
+
+  /* animation sobre au passage d'une étape à l'autre */
+  @keyframes successFlash{
+    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
+    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+  }
+  .sim-body.flash-ok{animation:successFlash .65s ease;}
+
+  @keyframes progressPulse{
+    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
+    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
+  }
+  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding:48px 0 80px;
+  }
+  footer .note{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px 18px;
+    background:var(--panel);
+  }
+  footer .note .ok{color:var(--ok);}
+
+  @media (max-width:600px){
+    .hero{padding:64px 0 48px;}
+    .timeline{padding-left:34px;}
+    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
+    .explain{grid-template-columns:1fr;}
+    .explain .k{padding-top:0;}
+    .practice-wrap{grid-template-columns:1fr;}
+    .info-panel{position:static;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="hero">
+      <p class="breadcrumb"><a href="index.html">← Hub</a></p>
+      <p class="kicker">metasploitable2 :: recon → exploit → post-exploit</p>
+      <h1>Ingreslock<br>Backdoor triviale</h1>
+      <p class="lead">Deuxième exploit du lab. Cette fois, pas de module à charger : un service écoute sur un port non standard et n'attend qu'une chose, qu'on s'y connecte. Le travail se fait presque entièrement en amont, en reconnaissance.</p>
+      <div class="meta-row">
+        <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
+        <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
+        <div class="meta-item"><span class="label">Réseau</span><span class="value">Réseau interne VirtualBox (isolé)</span></div>
+        <div class="meta-item"><span class="label">Résultat</span><span class="badge">shell obtenu</span></div>
+        <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">1/10 · Introduction</span></div>
+        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff8a5c; border:1px solid #ff8a5c; background:#ff8a5c18;">3/5 · Shell utilisateur</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section id="chrono">
+      <h2 class="section-title">Chronologie</h2>
+      <p class="section-intro">Cinq étapes, dont quatre de reconnaissance. C'est le cœur du cours : repérer ce qui ne devrait pas être là.</p>
+
+      <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
+      <div class="playbook">
+        <div class="playbook-row">
+          <div class="playbook-num">1</div>
+          <div class="playbook-what"><strong>Mise en réseau</strong><span>ip addr add / ifconfig</span></div>
+          <div class="playbook-why">Placer Kali et la cible sur le même sous-réseau isolé. Étape identique à celle du cours #1 — si elle est déjà faite, les VM sont encore joignables.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">2</div>
+          <div class="playbook-what"><strong>Reconnaissance complète</strong><span>nmap -sV -sC</span></div>
+          <div class="playbook-why">Lister les services ouverts <em>en entier</em>, sans se précipiter sur le premier connu. Un port non standard en fin de liste est souvent plus intéressant qu'un service classique en tête.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">3</div>
+          <div class="playbook-what"><strong>Identification du service</strong><span>1524/tcp · ingreslock</span></div>
+          <div class="playbook-why">Un nom de service inconnu ou exotique sur un port non standard est un signal direct. Il faut vérifier ce qu'il est avant de supposer quoi que ce soit.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">4</div>
+          <div class="playbook-what"><strong>Vérification manuelle</strong><span>nc 192.168.56.20 1524</span></div>
+          <div class="playbook-why">Une simple connexion netcat suffit à révéler si le service renvoie un shell ou une réponse applicative quelconque.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">5</div>
+          <div class="playbook-what"><strong>Post-exploitation immédiate</strong><span>whoami / id</span></div>
+          <div class="playbook-why">Vérifier l'identité obtenue avant toute chose, puis explorer ce à quoi le shell donne accès.</div>
+        </div>
+      </div>
+
+      <div class="timeline">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Vérification réseau</h3>
+          <p class="step-sub">Si le cours #1 est déjà fait, les VM sont encore sur le même segment. Sinon, refaire la mise en réseau avant tout.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> ping -c 1 192.168.56.20<button class="copy-btn" type="button" data-copy="ping -c 1 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">64 bytes from 192.168.56.20: icmp_seq=1 ttl=64 time=0.8 ms</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">pourquoi</span><span class="v">Un <strong>ping</strong> réussi confirme que la couche réseau fonctionne — le scan qui suit ne renverra donc pas un faux négatif dû à un problème de connectivité.</span>
+            <span class="k">rappel</span><span class="v">En cas d'échec, se référer au cours #1 : IP à assigner manuellement sur chaque VM (<strong>192.168.56.10</strong> et <strong>.20</strong>).</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Reconnaissance — nmap complet</h3>
+          <p class="step-sub">Lister tous les ports ouverts, sans filtre ni préjugé. C'est ici que la faille se trouve — pas dans un module.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">21/tcp   open  ftp         vsftpd 2.3.4</span>
+<span class="out">22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1</span>
+<span class="out">23/tcp   open  telnet      Linux telnetd</span>
+<span class="out">25/tcp   open  smtp        Postfix smtpd</span>
+<span class="out">80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)</span>
+<span class="out">…</span>
+<span class="ok">1524/tcp open  ingreslock?</span>
+<span class="out">…</span>
+<span class="out">6667/tcp open  irc         UnrealIRCd</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">1524/tcp</span><span class="v">port <strong>non standard</strong>. Aucun service légitime ne devrait écouter ici — le point d'interrogation dans la sortie nmap signale que la sonde de version n'a pas pu identifier clairement ce qui tourne derrière.</span>
+            <span class="k">triage</span><span class="v">Face à cette liste, le réflexe reste le même : repérer ce qui <strong>sort de l'ordinaire</strong>. Ici, ingreslock est immédiatement suspect — nom exotique, port inattendu, version indéterminée.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Identifier le service — ingreslock</h3>
+          <p class="step-sub">ingreslock est un nom de service obsolète associé à une base de données Ingres. Sur Metasploitable 2, ce port est détourné pour exposer un shell root.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> nmap -sV -p 1524 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 1524 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">PORT     STATE SERVICE    VERSION</span>
+<span class="out">1524/tcp open  ingreslock?</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">ingreslock</span><span class="v">service historiquement associé au SGBD <strong>Ingres</strong> (port 1524/tcp officiellement réservé). Mais aucune base Ingres ne tourne sur cette machine — la simple présence de ce nom est une anomalie.</span>
+            <span class="k">anomalie</span><span class="v">Un service qui écoute en clair sur un port documenté mais dont le nom ne correspond à rien de connu <em>sur cette machine</em> mérite une vérification manuelle immédiate.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Vérification — netcat</h3>
+          <p class="step-sub">Pas de module Metasploit, pas de recherche d'exploit : une simple connexion TCP suffit à savoir à quoi on a affaire.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> nc 192.168.56.20 1524<button class="copy-btn" type="button" data-copy="nc 192.168.56.20 1524" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">root@metasploitable:/# </span><span class="out">whoami</span>
+<span class="ok">root</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">nc</span><span class="v">l'outil <strong>netcat</strong> ouvre une connexion TCP brute. Aucune négociation de protocole, aucun handshake applicatif — juste un tuyau vers le port cible.</span>
+            <span class="k">résultat</span><span class="v">le service renvoie un <strong>prompt shell direct</strong>, sans mot de passe ni session préalable. La connexion elle-même est l'exploit.</span>
+            <span class="k">telnet</span><span class="v">telnet 192.168.56.20 1524 fonctionne aussi — même principe. netcat est simplement plus direct.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <h3>Post-exploitation immédiate</h3>
+          <p class="step-sub">Vérifier l'identité obtenue, puis explorer ce qui est accessible.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>root@metasploitable</div>
+            <pre><span class="prompt">#</span> whoami<button class="copy-btn" type="button" data-copy="whoami" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">root</span>
+<span class="prompt">#</span> id<button class="copy-btn" type="button" data-copy="id" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">uid=0(root) gid=0(root) groups=0(root)</span>
+<span class="prompt">#</span> pwd<button class="copy-btn" type="button" data-copy="pwd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">/root</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">whoami / id</span><span class="v">confirment l'identité effective du shell. Ici le shell est celui d'un service lancé en root — l'accès est donc direct à <strong>uid=0</strong>.</span>
+            <span class="k">méthode</span><span class="v">Toujours vérifier l'identité avant d'agir. Un shell apparemment root peut être bridé par des restrictions supplémentaires (apparmor, chroot, capabilities). Ici, rien de tout ça.</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="cheatsheet">
+      <h2 class="section-title">Commandes à retenir</h2>
+      <p class="section-intro">Le strict nécessaire — ce cours tient en une commande d'exploitation, tout le reste est de la vérification.</p>
+
+      <div class="cheat-group">
+        <h4>reconnaissance</h4>
+        <table class="cheat">
+          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports ouverts + versions + scripts de base</td></tr>
+          <tr><td class="cmd">nmap -sV -p 1524 IP</td><td class="desc">cibler un port précis quand un service est suspect</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>connexion directe</h4>
+        <table class="cheat">
+          <tr><td class="cmd">nc IP PORT</td><td class="desc">ouvrir une connexion TCP brute (netcat)</td></tr>
+          <tr><td class="cmd">telnet IP PORT</td><td class="desc">alternative à netcat — même résultat ici</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>post-exploitation</h4>
+        <table class="cheat">
+          <tr><td class="cmd">whoami</td><td class="desc">identité courante</td></tr>
+          <tr><td class="cmd">id</td><td class="desc">identité + groupes</td></tr>
+          <tr><td class="cmd">pwd</td><td class="desc">répertoire courant</td></tr>
+          <tr><td class="cmd">ls /</td><td class="desc">explorer la racine</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="concepts">
+      <h2 class="section-title">Ce qu'il faut vraiment comprendre</h2>
+      <div class="concepts">
+        <div class="concept">
+          <h4>Une backdoor n'est pas toujours une archive piégée</h4>
+          <p>Le cours #1 montrait une archive modifiée après compromission de la chaîne de distribution. Ici, c'est encore plus simple : le service a été délibérément configuré pour écouter sur un port et renvoyer un shell. Pas de code malveillant caché, pas de déclencheur exotique — juste un service qui n'aurait jamais dû être exposé.</p>
+        </div>
+        <div class="concept">
+          <h4>Reconnaissance : l'anomalie plutôt que la vulnérabilité</h4>
+          <p>Un scanner liste des dizaines de ports. Tous ne sont pas des failles. Certains — comme ingreslock sur ce port — sont des <strong>anomalies de configuration</strong>. Le travail du pentester est de repérer ce qui sort de l'ordinaire : un nom de service qui ne correspond pas à la machine, un port non standard, une version indéterminée. C'est ce tri qui mène à la faille, pas la force brute.</p>
+        </div>
+        <div class="concept">
+          <h4>Shell direct vs shell reverse</h4>
+          <p>Le cours #1 utilisait un reverse shell : la cible rappelait l'attaquant. Ici, c'est un shell <strong>direct</strong> : la cible écoute passivement et n'importe qui s'y connecte obtient un prompt. Pas de gestion de LHOST/LPORT, pas de payload à envoyer. Le service est une porte ouverte.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="anatomie">
+      <h2 class="section-title">Anatomie de la backdoor</h2>
+      <p class="section-intro">Pourquoi un service peut se retrouver à exposer un shell root sans qu'aucun code malveillant n'ait été injecté.</p>
+
+      <div class="concepts">
+        <div class="concept">
+          <h4>Un service lancé en root</h4>
+          <p>Sur Metasploitable 2, le port 1524 est associé à un démon qui a été démarré avec les privilèges du compte root. Ce n'est pas une faille du démon lui-même — c'est son <strong>mode de déploiement</strong> qui est dangereux. Un service censé écouter des connexions ne devrait jamais tourner avec plus de privilèges que nécessaire.</p>
+        </div>
+        <div class="concept">
+          <h4>Le port 1524/tcp</h4>
+          <p>Officiellement réservé à <strong>ingreslock</strong>, un service de verrouillage pour la base de données Ingres. Sur cette machine, aucun SGBD Ingres n'est installé — le port a été réutilisé pour autre chose. C'est cette incohérence entre le nom du service et la réalité de la machine qui doit déclencher l'investigation.</p>
+        </div>
+        <div class="concept">
+          <h4>Ce qu'il n'y a pas à faire</h4>
+          <p>Aucun exploit à chercher, aucun module à charger, aucun payload à configurer. La connexion netcat <em>est</em> l'exploit. C'est volontairement l'un des cours les plus simples du lab — pour montrer qu'une faille critique peut tenir en une ligne et que tout le travail se fait avant, en reconnaissance.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="detection">
+      <h2 class="section-title">Détection &amp; remédiation</h2>
+      <p class="section-intro">Le point de vue du défenseur : comment ce service aurait dû être repéré et ce qui aurait empêché son exposition.</p>
+
+      <div class="cheat-group">
+        <table class="cheat">
+          <tr><td class="cmd">netstat -tulpn / ss -tulpn</td><td class="desc">lister tous les ports en écoute et le processus associé — détecte immédiatement qu'un démon non reconnu écoute sur 1524</td></tr>
+          <tr><td class="cmd">lsof -i :1524</td><td class="desc">identifier quel processus a ouvert le port 1524 et sous quel compte il tourne</td></tr>
+          <tr><td class="cmd">règle IDS (Snort/Suricata)</td><td class="desc">détecter une connexion entrante sur 1524/tcp et la remonter — aucun trafic légitime ne devrait y transiter</td></tr>
+          <tr><td class="cmd">audit des services exposés</td><td class="desc">tout service en écoute sur 0.0.0.0 doit être justifié et documenté — supprimer ou désactiver ce qui n'a pas de raison d'être</td></tr>
+          <tr><td class="cmd">moindre privilège</td><td class="desc">ne jamais lancer un service avec les droits root s'il n'en a pas strictement besoin — même un service légitime compromis donnerait un accès limité</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="practice">
+      <h2 class="section-title">Terminal d'entraînement</h2>
+      <p class="section-intro">Rejoue la chaîne complète. Le cœur de l'exercice : repérer le bon port dans une sortie nmap dense, puis vérifier ce qu'il expose sans supposer quoi que ce soit.</p>
+
+      <div class="term-launch">
+        <button class="term-launch-btn" id="term-open-btn" type="button">
+          <span class="term-launch-dot"></span>
+          Ouvrir le terminal
+        </button>
+        <p class="term-launch-sub">Plein écran · indices logiques, pas de commande donnée · historique ↑ / ↓ comme un vrai shell</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="note">
+        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox, aucune machine réelle ni connexion externe impliquée.
+      </div>
+    </footer>
+  </div>
+
+  <div class="term-fullscreen" id="term-fullscreen">
+    <div class="term-fs-header">
+      <div class="term-fs-headrow">
+        <div class="term-fs-titlebar">
+          <span class="term-fs-dot r"></span><span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
+          <span class="term-fs-context" id="sim-context">kali@kali</span>
+        </div>
+        <button class="term-fs-close" id="term-close-btn" type="button" aria-label="Fermer le terminal">✕</button>
+      </div>
+      <div class="term-fs-info">
+        <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
+        <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
+        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+      </div>
+      <div class="term-progress">
+        <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
+        <span class="term-progress-label" id="sim-progress">étape 1/6</span>
+      </div>
+      <div class="term-fs-consigne" id="term-fs-consigne">
+        <span class="consigne-tag" id="consigne-tag">Consigne</span>
+        <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+    </div>
+
+    <div class="sim-body" id="sim-body">
+      <div class="sim-line sim-inputline" id="sim-inputline">
+        <span class="p" id="sim-prompt-label">$</span>
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="term-fs-footer">
+      <div class="analyze-popup" id="analyze-popup">
+        <span class="ap-tag" id="ap-tag">À analyser</span>
+        <p class="ap-question" id="ap-question">—</p>
+        <div class="ap-actions">
+          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
+        </div>
+      </div>
+      <div class="sim-hint-box" id="sim-hint-box"></div>
+      <div class="sim-controls">
+        <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
+        <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
+        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
+        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
+        <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const steps = [
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Vérifie que la cible répond",
+      accepted:["ping -c 1 192.168.56.20", "ping 192.168.56.20"],
+      hint:"Avant de scanner, confirme que le réseau fonctionne — une commande très simple, envoyée à l'adresse de la cible, avec le protocole de test classique (ICMP). L'option -c 1 limite à un seul paquet.",
+      output:[
+        {t:"PING 192.168.56.20 (192.168.56.20) 56(84) bytes of data.", c:"o"},
+        {t:"64 bytes from 192.168.56.20: icmp_seq=1 ttl=64 time=0.8 ms", c:"o"}
+      ] },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Lance une reconnaissance complète sur la cible",
+      accepted:["nmap -sv -sc 192.168.56.20"],
+      hint:"Même outil que le cours #1 : scan des ports ouverts, détection de version, scripts de base. Une seule commande, options identiques, même cible.",
+      output:[
+        {t:"Nmap scan report for 192.168.56.20", c:"o"},
+        {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o"},
+        {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1", c:"o"},
+        {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
+        {t:"25/tcp   open  smtp        Postfix smtpd", c:"o"},
+        {t:"53/tcp   open  domain      ISC BIND 9.4.2", c:"o"},
+        {t:"80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)", c:"o"},
+        {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
+        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X", c:"o"},
+        {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian", c:"o"},
+        {t:"512/tcp  open  exec        netkit-rsh rexecd", c:"o"},
+        {t:"1099/tcp open  java-rmi    GNU Classpath grmiregistry", c:"o"},
+        {t:"1524/tcp open  ingreslock?", c:"o", id:"hl-ingreslock"},
+        {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
+        {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o"},
+        {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
+        {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
+        {t:"6667/tcp open  irc         UnrealIRCd", c:"o"},
+        {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
+      ] },
+
+    { kind:"analyze",
+      question:"Parmi tous ces ports, un service se démarque immédiatement : ni par sa version, ni par une vulnérabilité connue, mais par ce qu'il est. Lequel, et pourquoi cette anomalie est suspecte ?",
+      hint:"Un nom de service inconnu qui n'a rien à faire sur cette machine. Et un numéro de port qui n'est pas standard.",
+      highlightIds:["hl-ingreslock"],
+      annotation:"→ 1524/tcp « ingreslock? » : aucun SGBD Ingres n'est installé, le nom du service ne correspond à rien de légitime sur cette machine. Ce port non standard mérite une vérification manuelle." },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Connecte-toi directement au port suspect pour voir ce qu'il expose",
+      accepted:["nc 192.168.56.20 1524", "telnet 192.168.56.20 1524"],
+      hint:"Pas de module, pas d'exploit : un simple outil de connexion TCP brute. netcat est l'outil de référence pour ça, suivi de l'adresse IP de la cible et du port suspect.",
+      output:[
+        {t:"(connexion établie — aucun message d'accueil, aucun prompt de login)", c:"o"},
+        {t:"root@metasploitable:/# ", c:"ok"}
+      ] },
+
+    { kind:"analyze",
+      question:"La connexion vient d'aboutir sur un prompt root. Qu'est-ce qui, dans cette réponse, indique qu'il s'agit d'un shell et pas d'un service applicatif normal ?",
+      hint:"Regarde le format de la réponse : un service applicatif enverrait une bannière ou un message protocolaire. Ici, c'est autre chose.",
+      highlightIds:[],
+      annotation:"→ Un prompt shell (root@host:/#) sans aucune authentification préalable. Aucun service légitime ne fait ça : le service renvoie directement un interpréteur de commandes." },
+
+    { kind:"type", context:"root@metasploitable", prompt:"#",
+      task:"Vérifie l'identité obtenue dans ce shell",
+      accepted:["whoami", "id"],
+      hint:"Une commande très courte, tapée dans n'importe quel shell Unix, qui affiche le nom de l'utilisateur courant.",
+      output:[
+        {t:"root", c:"ok"}
+      ] }
+  ];
+
+  let freeContext = "root@metasploitable";
+  const freeCommands = {
+    "root@metasploitable": {
+      "whoami": [{t:"root", c:"ok"}],
+      "id": [{t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}],
+      "pwd": [{t:"/root", c:"o"}],
+      "ls": [{t:"bin  boot  etc  home  root  tmp  usr  var", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
+      "exit": [{t:"(connexion fermée)", c:"o"}]
+    }
+  };
+</script>
+<script src="engine.js"></script>
+
+</body>
+</html>

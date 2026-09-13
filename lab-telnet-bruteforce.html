@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telnet — Bruteforce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e14;
+    --panel:#12161f;
+    --panel-alt:#161b26;
+    --border:#232937;
+    --text:#e7e9ee;
+    --muted:#8b93a5;
+    --accent:#ff8a5c;
+    --accent-soft:#ff8a5c22;
+    --ok:#5fd9a4;
+    --ok-soft:#5fd9a422;
+    --serif:'Fraunces', serif;
+    --sans:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{background:var(--accent-soft); color:var(--accent);}
+
+  a{color:var(--accent);}
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:96px 0 64px;
+    border-bottom:1px solid var(--border);
+  }
+  .breadcrumb{margin:0 0 18px;}
+  .breadcrumb a{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+    text-decoration:none;
+    border-bottom:1px solid transparent;
+  }
+  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
+  .hero .kicker{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 20px;
+  }
+  .hero .kicker::before{content:"$ "; color:var(--muted);}
+  .hero h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(34px,5vw,52px);
+    line-height:1.1;
+    margin:0 0 20px;
+    letter-spacing:-0.01em;
+  }
+  .hero p.lead{
+    font-size:17px;
+    color:var(--muted);
+    max-width:56ch;
+    margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+  }
+  .meta-item{font-size:13px;}
+  .meta-item .label{
+    display:block;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .meta-item .value{
+    font-family:var(--mono);
+    color:var(--text);
+  }
+  .badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border:1px solid var(--ok);
+    color:var(--ok);
+    border-radius:3px;
+  }
+  .score-badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border-radius:3px;
+  }
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{
+    padding:64px 0;
+    border-bottom:1px solid var(--border);
+  }
+  section:last-of-type{border-bottom:none;}
+  h2.section-title{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 12px;
+  }
+  .section-intro{
+    color:var(--muted);
+    max-width:60ch;
+    margin:0 0 40px;
+    font-size:15px;
+  }
+
+  /* ---------- TIMELINE ---------- */
+  .timeline{
+    position:relative;
+    padding-left:44px;
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:15px;
+    top:6px;
+    bottom:6px;
+    width:1px;
+    background:var(--border);
+  }
+  .step{
+    position:relative;
+    margin-bottom:56px;
+  }
+  .step:last-child{margin-bottom:0;}
+  .step-num{
+    position:absolute;
+    left:-44px;
+    top:0;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+  }
+  .step h3{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:19px;
+    margin:2px 0 6px;
+  }
+  .step .step-sub{
+    color:var(--muted);
+    font-size:14px;
+    margin:0 0 18px;
+  }
+
+  /* ---------- TERMINAL BLOCK ---------- */
+  .term{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin:0 0 18px;
+  }
+  .term-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .term-bar .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--border);
+  }
+  .term pre{
+    margin:0;
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.65;
+    overflow-x:auto;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .term .prompt{color:var(--accent);}
+  .term .out{color:var(--muted);}
+  .term .ok{color:var(--ok);}
+  .term .flag{color:var(--accent);}
+
+  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
+  .copy-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:20px;
+    height:20px;
+    margin-left:8px;
+    padding:0;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    vertical-align:middle;
+    opacity:.55;
+    transition:opacity .15s, border-color .15s, color .15s, background .15s;
+  }
+  .term:hover .copy-btn{opacity:.9;}
+  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
+  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
+
+  /* ---------- EXPLAIN BOX ---------- */
+  .explain{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:10px 12px;
+    background:transparent;
+    border-left:2px solid var(--border);
+    padding:2px 0 2px 18px;
+    margin-top:14px;
+  }
+  .explain .k{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--muted);
+    padding-top:2px;
+    white-space:nowrap;
+  }
+  .explain .v{
+    font-size:14.5px;
+    color:var(--text);
+  }
+  .explain .v strong{color:var(--accent); font-weight:600;}
+  .explain .k.err{color:#ff5c72;}
+  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
+
+  /* ---------- PRÉREQUIS MACHINE RÉELLE ---------- */
+  .prereq{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    border-radius:8px;
+    padding:14px 18px;
+    margin:0 0 18px;
+    font-size:13.5px;
+    color:var(--text);
+    line-height:1.7;
+  }
+  .prereq .prereq-tag{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--accent);
+    white-space:nowrap;
+    padding-top:2px;
+  }
+  .prereq code{
+    font-family:var(--mono);
+    font-size:12.5px;
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:1px 6px;
+  }
+
+  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
+  .playbook{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:40px;
+  }
+  .playbook-row{
+    display:grid;
+    grid-template-columns:28px 1fr 1.3fr;
+    gap:16px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+  }
+  .playbook-row:last-child{border-bottom:none;}
+  .playbook-num{
+    font-family:var(--mono);
+    color:var(--accent);
+    font-size:13px;
+  }
+  .playbook-what strong{
+    display:block;
+    font-size:14px;
+    color:var(--text);
+    margin-bottom:3px;
+  }
+  .playbook-what span{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ok);
+  }
+  .playbook-why{
+    font-size:13px;
+    color:var(--muted);
+  }
+  @media (max-width:640px){
+    .playbook-row{grid-template-columns:1fr; gap:4px;}
+    .playbook-num{display:none;}
+  }
+
+  /* ---------- CHEATSHEET TABLE ---------- */
+  .cheat-group{margin-bottom:32px;}
+  .cheat-group h4{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 14px;
+    font-weight:500;
+  }
+  table.cheat{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  table.cheat td{
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  table.cheat td.cmd{
+    font-family:var(--mono);
+    color:var(--ok);
+    width:42%;
+    padding-right:20px;
+    white-space:nowrap;
+  }
+  table.cheat td.desc{color:var(--muted);}
+  table.cheat tr:last-child td{border-bottom:none;}
+
+  /* ---------- CONCEPT CARDS ---------- */
+  .concepts{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .concept{
+    padding:20px 0;
+    border-top:1px solid var(--border);
+  }
+  .concept:first-child{border-top:none; padding-top:0;}
+  .concept h4{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:18px;
+    margin:0 0 8px;
+  }
+  .concept p{
+    color:var(--muted);
+    margin:0;
+    font-size:14.5px;
+    max-width:62ch;
+  }
+
+  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
+  .practice-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .info-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:13px 18px;
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+  .info-bar .item{color:var(--muted);}
+  .info-bar .item strong{color:var(--accent); font-weight:500;}
+
+  .sim{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .sim-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .sim-progress{color:var(--accent);}
+  .sim-body{
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.7;
+    max-height:420px;
+    overflow-y:auto;
+  }
+  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
+  .sim-line .p{color:var(--accent);}
+  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
+  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
+  .p-kali .p-user{color:var(--ok); font-weight:600;}
+  .p-kali .p-punc{color:var(--muted);}
+  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
+  .p-root{color:#ff5c72; font-weight:600;}
+  .p-path{color:#5fbfff;}
+  .sim-line .o{color:var(--muted); display:block;}
+  .sim-line .o.ok{color:var(--ok);}
+  .sim-line .o.err{color:#ff5c72;}
+  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
+  @keyframes fadeSlideIn{
+    from{opacity:0; transform:translateY(4px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ligne mise en valeur pendant la correction */
+  .sim-line.hl{
+    background:rgba(255,138,92,.12);
+    border-radius:4px;
+    padding:2px 6px;
+    margin:0 -6px 4px;
+    animation:pulseGlow 1.3s ease-in-out 2;
+  }
+  @keyframes pulseGlow{
+    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
+    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
+  }
+
+  /* annotation ajoutée lors d'une correction d'analyse */
+  .sim-annot{
+    margin:2px 0 10px;
+    padding:8px 12px;
+    border-left:2px solid var(--accent);
+    color:var(--accent);
+    font-size:12.5px;
+    background:var(--accent-soft);
+    border-radius:0 6px 6px 0;
+  }
+
+  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
+     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
+  .sim-inputline{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 4px;
+  }
+  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
+  .sim-input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:13px;
+    caret-color:var(--accent);
+    padding:0;
+  }
+  .sim-input::placeholder{color:var(--muted); opacity:.6;}
+  .sim-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 18px 16px;
+    border-top:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .sim-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .sim-btn:active{transform:translateY(0);}
+  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
+  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
+
+  .sim-hint-box{
+    margin:0 18px 12px;
+    padding:10px 14px;
+    border-left:2px solid var(--accent);
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
+  }
+  .sim-hint-box.show{
+    max-height:120px;
+    opacity:1;
+  }
+
+  @media (max-width:640px){
+    .sim-body{max-height:320px;}
+  }
+
+  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
+  .term-launch{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:28px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .term-launch-btn{
+    font-family:var(--mono);
+    font-size:14px;
+    font-weight:600;
+    color:#05100b;
+    background:var(--ok);
+    border:none;
+    border-radius:8px;
+    padding:13px 24px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
+  .term-launch-btn:active{transform:translateY(0);}
+  .term-launch-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#05100b;
+    animation:launchBlink 1.6s ease-in-out infinite;
+  }
+  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
+  .term-launch-sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+  }
+
+  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
+  .term-fullscreen{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:none;
+    flex-direction:column;
+    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
+    opacity:0;
+    transform:scale(.98);
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .term-fullscreen.open{
+    display:flex;
+    opacity:1;
+    transform:scale(1);
+  }
+  .term-fs-header{
+    flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+    padding:14px 22px 16px;
+  }
+  .term-fs-headrow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .term-fs-titlebar{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+  }
+  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .term-fs-dot.r{background:#ff5f57;}
+  .term-fs-dot.y{background:#febc2e;}
+  .term-fs-dot.g{background:#28c840;}
+  .term-fs-context{margin-left:8px; color:var(--text);}
+  .term-fs-close{
+    font-family:var(--mono);
+    font-size:13px;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:6px;
+    width:30px; height:30px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s, transform .15s;
+  }
+  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
+  .term-fs-info{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 22px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
+
+  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
+  .term-fs-consigne{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin-top:14px;
+    padding:10px 12px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    border-radius:6px;
+  }
+  .consigne-tag{
+    flex-shrink:0;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:2px 7px;
+    margin-top:1px;
+  }
+  .consigne-text{
+    font-family:var(--sans);
+    font-size:13.5px;
+    color:var(--text);
+    line-height:1.5;
+  }
+  .term-fs-info .item.mode{
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ok);
+    font-size:10.5px;
+    border:1px solid var(--ok);
+    padding:3px 9px;
+    border-radius:3px;
+    transition:color .2s, border-color .2s;
+  }
+  .term-progress{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .term-progress-track{
+    flex:1;
+    height:6px;
+    border-radius:3px;
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  .term-progress-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--ok), var(--accent));
+    border-radius:3px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 10px rgba(95,217,164,.55);
+  }
+  .term-progress-label{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+
+  .term-fullscreen .sim-body{
+    flex:1;
+    overflow-y:auto;
+    max-height:none;
+    padding:20px 26px;
+    transition:filter .25s ease;
+  }
+  .term-fullscreen .sim-body.dimmed{
+    filter:brightness(.5) saturate(.85);
+    pointer-events:none;
+  }
+  .term-fs-footer{
+    flex-shrink:0;
+    border-top:1px solid var(--border);
+    background:var(--panel);
+  }
+  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
+  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
+
+  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
+  .analyze-popup{
+    margin:16px 22px 0;
+    padding:16px 18px;
+    border-radius:10px;
+    border:1px solid var(--accent);
+    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
+    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
+    display:none;
+    flex-direction:column;
+    gap:12px;
+    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .analyze-popup.leaving{animation:popOut .18s ease both;}
+  @keyframes popIn{
+    from{opacity:0; transform:translateY(14px) scale(.96);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  @keyframes popOut{
+    from{opacity:1; transform:scale(1);}
+    to{opacity:0; transform:scale(.95);}
+  }
+  .ap-tag{
+    align-self:flex-start;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:3px 8px;
+  }
+  .ap-question{
+    font-family:var(--sans);
+    font-size:14.5px;
+    color:var(--text);
+    line-height:1.55;
+    margin:0;
+  }
+  .ap-hint{
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    border-left:2px solid var(--accent);
+    padding-left:0;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  }
+  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
+  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .ap-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .ap-btn.ap-continue{
+    margin-left:auto;
+    border-color:var(--ok);
+    color:var(--ok);
+    font-weight:600;
+    animation:ctaPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes ctaPulse{
+    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
+    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
+  }
+
+  /* animation sobre au passage d'une étape à l'autre */
+  @keyframes successFlash{
+    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
+    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+  }
+  .sim-body.flash-ok{animation:successFlash .65s ease;}
+
+  @keyframes progressPulse{
+    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
+    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
+  }
+  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding:48px 0 80px;
+  }
+  footer .note{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px 18px;
+    background:var(--panel);
+  }
+  footer .note .ok{color:var(--ok);}
+
+  @media (max-width:600px){
+    .hero{padding:64px 0 48px;}
+    .timeline{padding-left:34px;}
+    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
+    .explain{grid-template-columns:1fr;}
+    .explain .k{padding-top:0;}
+    .practice-wrap{grid-template-columns:1fr;}
+    .info-panel{position:static;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="hero">
+      <p class="breadcrumb"><a href="index.html">← Hub</a></p>
+      <p class="kicker">metasploitable2 :: recon → exploit → post-exploit</p>
+      <h1>Telnet<br>Bruteforce</h1>
+      <p class="lead">Troisième exploit du lab. Cette fois, aucune faille logicielle : un service en clair, des identifiants faibles, et une absence totale de limitation des tentatives de connexion. L'attaque tient en une commande — ce qui compte, c'est ce que ça dit du service.</p>
+      <div class="meta-row">
+        <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
+        <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
+        <div class="meta-item"><span class="label">Réseau</span><span class="value">Réseau interne VirtualBox (isolé)</span></div>
+        <div class="meta-item"><span class="label">Résultat</span><span class="badge">shell utilisateur (msfadmin)</span></div>
+        <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">1/10 · Introduction</span></div>
+        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff8a5c; border:1px solid #ff8a5c; background:#ff8a5c18;">3/5 · Shell utilisateur</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section id="chrono">
+      <h2 class="section-title">Chronologie</h2>
+      <p class="section-intro">Quatre étapes. La substance du cours n'est pas dans la commande hydra — elle est dans ce qu'elle révèle sur la configuration du service.</p>
+
+      <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
+      <div class="playbook">
+        <div class="playbook-row">
+          <div class="playbook-num">1</div>
+          <div class="playbook-what"><strong>Reconnaissance ciblée</strong><span>nmap -sV -p 23</span></div>
+          <div class="playbook-why">Confirmer que telnet est ouvert, et surtout quelle version du démon répond — avant de supposer quoi que ce soit sur l'authentification.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">2</div>
+          <div class="playbook-what"><strong>Constat</strong><span>aucun verrouillage de compte</span></div>
+          <div class="playbook-why">Le service accepte un nombre illimité de tentatives, sans délai croissant. C'est ce qui rend un dictionnaire utilisable — pas la puissance de l'outil.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">3</div>
+          <div class="playbook-what"><strong>Bruteforce ciblé</strong><span>hydra -l msfadmin -P …</span></div>
+          <div class="playbook-why">Un seul utilisateur connu (repéré lors de la reconnaissance), un dictionnaire de mots de passe courants. On ne teste pas tous les comptes — juste celui qui existe.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">4</div>
+          <div class="playbook-what"><strong>Connexion</strong><span>telnet IP</span></div>
+          <div class="playbook-why">Utiliser les identifiants trouvés pour ouvrir une session interactive, puis vérifier l'identité obtenue.</div>
+        </div>
+      </div>
+
+      <div class="timeline">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Confirmer le service — telnet</h3>
+          <p class="step-sub">Un scan ciblé sur le port 23 suffit. Inutile de relancer une reconnaissance complète si elle a déjà été faite.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> nmap -sV -p 23 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 23 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">PORT   STATE SERVICE VERSION</span>
+<span class="out">23/tcp open  telnet  Linux telnetd</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">-p 23</span><span class="v">cible uniquement le port telnet. Le scan complet a déjà montré qu'il est ouvert — on vérifie simplement qu'il l'est toujours et on identifie la version du démon.</span>
+            <span class="k">telnetd</span><span class="v">le démon telnet sous Linux. Il n'implémente pas nativement de <strong>verrouillage de compte</strong> après échecs répétés — ce n'est pas son rôle.</span>
+            <span class="k">signal</span><span class="v">un service en clair par nature (telnet ne chiffre rien, ni l'authentification ni la session) est déjà en soi un problème de sécurité. Mais ce cours montre une étape en amont : <em>deviner</em> les identifiants.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Ce qui rend le bruteforce possible</h3>
+          <p class="step-sub">Avant de lancer hydra, il faut comprendre ce qui, côté cible, autorise cette attaque.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>analyse</div>
+            <pre><span class="out">— aucun compteur de tentatives</span>
+<span class="out">— aucun délai après un échec</span>
+<span class="out">— aucune journalisation visible pour l'utilisateur</span>
+<span class="out">— protocole en clair : chaque tentative est observable</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">pourquoi</span><span class="v">hydra ne « casse » rien au sens cryptographique : il se contente d'essayer des mots de passe l'un après l'autre. Si le service accepte ces tentatives sans limite, l'attaque aboutit mécaniquement — il suffit que le bon mot de passe soit dans le dictionnaire.</span>
+            <span class="k">msfadmin</span><span class="v">le compte <strong>msfadmin</strong> est un utilisateur standard de Metasploitable 2, présent par défaut. Le dictionnaire n'a pas besoin d'être exhaustif : il suffit que le mot de passe associé soit courant.</span>
+            <span class="k">contre-mesure</span><span class="v">c'est précisément ce qu'un <strong>verrouillage de compte</strong> ou un <strong>délai progressif</strong> après échec (fail2ban) empêche : le nombre de tentatives par unité de temps devient trop faible pour qu'un dictionnaire soit rentable.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Bruteforce avec hydra</h3>
+          <p class="step-sub">Un seul utilisateur connu, un dictionnaire restreint — l'attaque est ciblée, pas aveugle.</p>
+          <div class="prereq">
+            <span class="prereq-tag">⚠ sur une vraie Kali</span>
+            <span>
+              Sur une installation récente, <code>rockyou.txt</code> est livré compressé (<code>rockyou.txt.gz</code>) — hydra ne trouvera pas le fichier tant qu'il n'est pas décompressé. Avant de lancer la commande ci-dessous, vérifie et décompresse le dictionnaire :<br>
+              <code>ls -lh /usr/share/wordlists/</code><br>
+              <code>sudo gunzip /usr/share/wordlists/rockyou.txt.gz</code><br>
+              Si le dossier <code>wordlists</code> ou l'archive sont absents : <code>sudo apt install wordlists</code>.
+            </span>
+          </div>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> hydra -l msfadmin -P /usr/share/wordlists/rockyou.txt telnet://192.168.56.20<button class="copy-btn" type="button" data-copy="hydra -l msfadmin -P /usr/share/wordlists/rockyou.txt telnet://192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">Hydra v9.5 (c) 2023 by van Hauser/THC</span>
+<span class="out">[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344399 login tries (l:1/p:14344399)</span>
+<span class="out">[DATA] attacking telnet://192.168.56.20:23/</span>
+<span class="ok">[23][telnet] host: 192.168.56.20   login: msfadmin   password: msfadmin</span>
+<span class="out">1 of 1 target successfully completed, 1 valid password found</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">-l</span><span class="v">un <strong>seul login</strong> à tester (minuscule L : login unique). On ne cherche pas à découvrir les comptes, on sait déjà que msfadmin existe.</span>
+            <span class="k">-P</span><span class="v"><strong>fichier de mots de passe</strong> (majuscule P : fichier). Chaque ligne est essayée comme mot de passe pour le login donné.</span>
+            <span class="k">telnet://</span><span class="v">précise le protocole cible. hydra gère nativement de nombreux services — le préfixe indique comment il doit se connecter.</span>
+            <span class="k">résultat</span><span class="v">le couple <strong>msfadmin:msfadmin</strong> a été trouvé. Le mot de passe est identique au login : cas extrême de mot de passe faible, mais n'importe quel mot de passe présent dans le dictionnaire aurait fonctionné.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Connexion et vérification</h3>
+          <p class="step-sub">Utiliser les identifiants trouvés, puis confirmer l'identité effective.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> telnet 192.168.56.20<button class="copy-btn" type="button" data-copy="telnet 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">Trying 192.168.56.20...</span>
+<span class="out">Connected to 192.168.56.20.</span>
+<span class="out">metasploitable login: </span><span class="ok">msfadmin</span>
+<span class="out">Password: </span><span class="ok">msfadmin</span>
+<span class="out">Last login: Mon Jan  1 00:00:00 UTC 2024 from 192.168.56.10 on pts/0</span>
+<span class="ok">msfadmin@metasploitable:~$</span> <span class="out">id</span>
+<span class="ok">uid=1000(msfadmin) gid=1000(msfadmin) groups=4(adm),20(dialout),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),107(fuse),115(lpadmin),118(admin),119(sambashare),1000(msfadmin)</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">telnet IP</span><span class="v">ouvre une session interactive. Contrairement à netcat utilisé dans le cours #2, telnet <em>négocie</em> un protocole — c'est ce qui permet d'y saisir un login et un mot de passe.</span>
+            <span class="k">id</span><span class="v">confirme l'identité : <strong>uid=1000(msfadmin)</strong>. Ce n'est pas root — le compte n'a pas les privilèges administrateur complets. La session donne un accès utilisateur, avec ses droits propres.</span>
+            <span class="k">leçon</span><span class="v">la force de l'attaque tenait entièrement à la faiblesse du mot de passe et à l'absence de limitation. Le protocole en clair aggrave tout : le mot de passe a circulé en clair sur le réseau pendant la connexion.</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="cheatsheet">
+      <h2 class="section-title">Commandes à retenir</h2>
+      <p class="section-intro">Le strict nécessaire — une commande d'attaque, le reste est de la reconnaissance et de la vérification.</p>
+
+      <div class="cheat-group">
+        <h4>reconnaissance</h4>
+        <table class="cheat">
+          <tr><td class="cmd">nmap -sV -p 23 IP</td><td class="desc">confirmer telnet ouvert et identifier la version du démon</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>bruteforce</h4>
+        <table class="cheat">
+          <tr><td class="cmd">hydra -l USER -P WORDLIST PROTO://IP</td><td class="desc">tester un login unique contre un dictionnaire de mots de passe</td></tr>
+          <tr><td class="cmd">hydra -l msfadmin -P rockyou.txt telnet://IP</td><td class="desc">exemple concret sur telnet — dictionnaire standard Kali</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>connexion &amp; post-exploitation</h4>
+        <table class="cheat">
+          <tr><td class="cmd">telnet IP</td><td class="desc">ouvrir une session telnet interactive</td></tr>
+          <tr><td class="cmd">whoami</td><td class="desc">identité courante</td></tr>
+          <tr><td class="cmd">id</td><td class="desc">identité + groupes</td></tr>
+          <tr><td class="cmd">pwd</td><td class="desc">répertoire courant</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="concepts">
+      <h2 class="section-title">Ce qu'il faut vraiment comprendre</h2>
+      <div class="concepts">
+        <div class="concept">
+          <h4>Le bruteforce n'est pas une faille, c'est une configuration</h4>
+          <p>hydra ne découvre aucune vulnérabilité dans le code de telnetd. Il exploite une <strong>absence de protection</strong> : le service accepte un nombre illimité de tentatives, sans délai ni verrouillage. Un service qui limite les échecs rendrait cette attaque impraticable.</p>
+        </div>
+        <div class="concept">
+          <h4>Protocole en clair : un double problème</h4>
+          <p>telnet transmet tout sans chiffrement, y compris le login et le mot de passe. Pendant l'attaque hydra, chaque tentative circule en clair sur le réseau — un simple sniffer aurait vu le mot de passe correct passer au moment de la connexion réussie. C'est l'une des raisons pour lesquelles telnet est abandonné au profit de SSH.</p>
+        </div>
+        <div class="concept">
+          <h4>Attaque ciblée vs attaque aveugle</h4>
+          <p>hydra peut tester des milliers de logins. Ici, on connaît déjà un compte (<strong>msfadmin</strong>) — l'attaque est chirurgicale. Le dictionnaire n'a même pas besoin d'être énorme : la plupart des comptes de Metasploitable 2 ont des mots de passe triviaux, identiques au login ou présents dans toute wordlist standard.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="anatomie">
+      <h2 class="section-title">Anatomie du bruteforce</h2>
+      <p class="section-intro">Pourquoi cette attaque fonctionne sur telnet — et pourquoi elle ne fonctionnerait pas sur SSH configuré correctement.</p>
+
+      <div class="concepts">
+        <div class="concept">
+          <h4>Absence de limitation des tentatives</h4>
+          <p>telnetd ne compte pas les échecs, n'impose aucun délai, ne verrouille jamais le compte. Chaque essai est traité comme le premier. C'est la condition sine qua non du bruteforce : un service qui bloque après 5 échecs rend un dictionnaire de 14 millions de mots de passe totalement inutile.</p>
+        </div>
+        <div class="concept">
+          <h4>Identification préalable des comptes valides</h4>
+          <p>Telnet, comme beaucoup de services en clair, ne protège pas l'existence des comptes : un login inexistant et un login existant avec mauvais mot de passe peuvent produire des réponses différentes (délai, message). Ce cours suppose qu'on connaît déjà le compte — mais même sans ça, un simple <em>énumération</em> suffirait.</p>
+        </div>
+        <div class="concept">
+          <h4>Pourquoi le mot de passe est « msfadmin »</h4>
+          <p>Ce n'est pas un cas isolé : Metasploitable 2 est une machine <strong>volontairement vulnérable</strong>. Les comptes par défaut ont des mots de passe triviaux, souvent identiques au login. L'intérêt pédagogique n'est pas la faiblesse du mot de passe elle-même — c'est de montrer qu'un bruteforce n'a même pas besoin de forcer : il suffit de tester les évidences.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="detection">
+      <h2 class="section-title">Détection &amp; remédiation</h2>
+      <p class="section-intro">Le point de vue du défenseur : comment repérer un bruteforce telnet en cours, et comment le rendre impossible.</p>
+
+      <div class="cheat-group">
+        <table class="cheat">
+          <tr><td class="cmd">grep "FAILED LOGIN" /var/log/auth.log</td><td class="desc">détecter une rafale d'échecs d'authentification sur le même compte</td></tr>
+          <tr><td class="cmd">journalctl -u telnetd --since "10 min ago"</td><td class="desc">visualiser les tentatives récentes — une cadence rapide est un signal fort</td></tr>
+          <tr><td class="cmd">fail2ban avec filtre telnet</td><td class="desc">bloquer l'IP source après N échecs — c'est la contre-mesure directe au manque de limitation native</td></tr>
+          <tr><td class="cmd">désactiver telnet, passer à SSH</td><td class="desc">remédiation de fond : SSH chiffre la session ET l'authentification, et permet des mécanismes de limitation côté serveur</td></tr>
+          <tr><td class="cmd">politique de mots de passe</td><td class="desc">interdire les mots de passe triviaux / identiques au login — rend un dictionnaire standard inopérant</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="practice">
+      <h2 class="section-title">Terminal d'entraînement</h2>
+      <p class="section-intro">Rejoue la chaîne : confirmer le service, comprendre pourquoi un dictionnaire fonctionne, lancer hydra, puis se connecter. Le cœur de l'exercice est la commande hydra et l'interprétation de sa sortie.</p>
+
+      <div class="term-launch">
+        <button class="term-launch-btn" id="term-open-btn" type="button">
+          <span class="term-launch-dot"></span>
+          Ouvrir le terminal
+        </button>
+        <p class="term-launch-sub">Plein écran · indices logiques, pas de commande donnée · historique ↑ / ↓ comme un vrai shell</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="note">
+        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox, aucune machine réelle ni connexion externe impliquée.
+      </div>
+    </footer>
+  </div>
+
+  <div class="term-fullscreen" id="term-fullscreen">
+    <div class="term-fs-header">
+      <div class="term-fs-headrow">
+        <div class="term-fs-titlebar">
+          <span class="term-fs-dot r"></span><span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
+          <span class="term-fs-context" id="sim-context">kali@kali</span>
+        </div>
+        <button class="term-fs-close" id="term-close-btn" type="button" aria-label="Fermer le terminal">✕</button>
+      </div>
+      <div class="term-fs-info">
+        <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
+        <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
+        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+      </div>
+      <div class="term-progress">
+        <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
+        <span class="term-progress-label" id="sim-progress">étape 1/6</span>
+      </div>
+      <div class="term-fs-consigne" id="term-fs-consigne">
+        <span class="consigne-tag" id="consigne-tag">Consigne</span>
+        <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+    </div>
+
+    <div class="sim-body" id="sim-body">
+      <div class="sim-line sim-inputline" id="sim-inputline">
+        <span class="p" id="sim-prompt-label">$</span>
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="term-fs-footer">
+      <div class="analyze-popup" id="analyze-popup">
+        <span class="ap-tag" id="ap-tag">À analyser</span>
+        <p class="ap-question" id="ap-question">—</p>
+        <div class="ap-actions">
+          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
+        </div>
+      </div>
+      <div class="sim-hint-box" id="sim-hint-box"></div>
+      <div class="sim-controls">
+        <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
+        <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
+        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
+        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
+        <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const steps = [
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Confirme que le service telnet est ouvert sur la cible",
+      accepted:["nmap -sv -p 23 192.168.56.20"],
+      hint:"Même outil que dans les cours précédents. Inutile de relancer un scan complet : cible uniquement le port telnet, avec détection de version. L'option qui restreint à un port précis est -p, suivie du numéro de port standard de telnet.",
+      output:[
+        {t:"PORT   STATE SERVICE VERSION", c:"o"},
+        {t:"23/tcp open  telnet  Linux telnetd", c:"o", id:"hl-telnet"}
+      ] },
+
+    { kind:"analyze",
+      question:"Le service est confirmé. Avant de lancer quoi que ce soit : qu'est-ce qui, dans la configuration de telnetd sur cette machine, va rendre un dictionnaire de mots de passe efficace ?",
+      hint:"Pense à ce que le démon ne fait pas : combien de tentatives accepte-t-il ? Que se passe-t-il après un échec ? Le protocole lui-même est-il chiffré ?",
+      highlightIds:["hl-telnet"],
+      annotation:"→ telnetd n'a pas de verrouillage de compte ni de délai après échec. Le service accepte un nombre illimité de tentatives — c'est exactement ce qu'un dictionnaire exploite." },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Lance hydra pour trouver le mot de passe du compte msfadmin",
+      accepted:["hydra -l msfadmin -p /usr/share/wordlists/rockyou.txt telnet://192.168.56.20"],
+      hint:"hydra prend un login unique (minuscule L : -l), un fichier de mots de passe (majuscule P : -P) et une cible au format protocole://adresse. Le login connu est msfadmin, le dictionnaire standard de Kali est dans /usr/share/wordlists/, et le protocole cible est telnet.",
+      output:[
+        {t:"Hydra v9.5 (c) 2023 by van Hauser/THC", c:"o"},
+        {t:"[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344399 login tries (l:1/p:14344399)", c:"o"},
+        {t:"[DATA] attacking telnet://192.168.56.20:23/", c:"o"},
+        {t:"[23][telnet] host: 192.168.56.20   login: msfadmin   password: msfadmin", c:"ok", id:"hl-hydra-ok"},
+        {t:"1 of 1 target successfully completed, 1 valid password found", c:"ok"}
+      ] },
+
+    { kind:"analyze",
+      question:"hydra a trouvé le mot de passe. Qu'est-ce qui, dans cette sortie, indique que le dictionnaire a été efficace — et qu'est-ce que ça dit du mot de passe trouvé ?",
+      hint:"Regarde la cadence : hydra a testé un très grand nombre de mots de passe sur un seul login. Et regarde la valeur du mot de passe par rapport au login.",
+      highlightIds:["hl-hydra-ok"],
+      annotation:"→ hydra a pu tester 14 millions de mots de passe sans être bloqué. Le mot de passe trouvé est identique au login — cas extrême de mot de passe faible, mais n'importe quel mot du dictionnaire aurait aussi bien fonctionné." },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Connecte-toi au service telnet avec les identifiants trouvés",
+      accepted:["telnet 192.168.56.20"],
+      hint:"L'outil client qui porte le nom du protocole lui-même. Une fois connecté, saisis msfadmin comme login et msfadmin comme mot de passe.",
+      output:[
+        {t:"Trying 192.168.56.20...", c:"o"},
+        {t:"Connected to 192.168.56.20.", c:"o"},
+        {t:"metasploitable login: msfadmin", c:"ok"},
+        {t:"Password: msfadmin", c:"ok"},
+        {t:"Last login: Mon Jan  1 00:00:00 UTC 2024 from 192.168.56.10 on pts/0", c:"o"},
+        {t:"msfadmin@metasploitable:~$ ", c:"ok", id:"hl-shell-user"}
+      ] },
+
+    { kind:"type", context:"msfadmin@metasploitable", prompt:"$",
+      task:"Vérifie l'identité obtenue dans cette session",
+      accepted:["whoami", "id"],
+      hint:"Une commande très courte, déjà utilisée dans les cours précédents, qui affiche le nom de l'utilisateur courant — ou son identifiant numérique et ses groupes.",
+      output:[
+        {t:"msfadmin", c:"ok"}
+      ] }
+  ];
+
+  let freeContext = "msfadmin@metasploitable";
+  const freeCommands = {
+    "msfadmin@metasploitable": {
+      "whoami": [{t:"msfadmin", c:"ok"}],
+      "id": [{t:"uid=1000(msfadmin) gid=1000(msfadmin) groups=4(adm),20(dialout),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),107(fuse),115(lpadmin),118(admin),119(sambashare),1000(msfadmin)", c:"ok"}],
+      "pwd": [{t:"/home/msfadmin", c:"o"}],
+      "ls": [{t:"bin  boot  etc  home  root  tmp  usr  var", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
+      "exit": [{t:"logout", c:"o"}]
+    }
+  };
+</script>
+<script src="engine.js"></script>
+
+</body>
+</html>
