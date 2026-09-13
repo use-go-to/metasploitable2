@@ -84,8 +84,8 @@ const courses = [
     "prereq": [
       3
     ],
-    "file": "lab-ssh-bruteforce.html",
-    "published": true,
+    "file": null,
+    "published": false,
     "description": "Même logique que le bruteforce Telnet, sur un protocole chiffré cette fois — la différence ne change rien à l'attaque."
   },
   {
@@ -99,8 +99,8 @@ const courses = [
     "prereq": [
       0
     ],
-    "file": "lab-mysql-root.html",
-    "published": true,
+    "file": null,
+    "published": false,
     "description": "Un compte root sans mot de passe sur le SGBD — connexion directe puis énumération des bases accessibles."
   },
   {
@@ -114,8 +114,8 @@ const courses = [
     "prereq": [
       0
     ],
-    "file": "lab-smb-enum4linux.html",
-    "published": true,
+    "file": null,
+    "published": false,
     "description": "Recon pure sur Samba : partages, utilisateurs, versions — sans exploiter, pour préparer les deux cours Samba suivants."
   },
   {
@@ -129,8 +129,8 @@ const courses = [
     "prereq": [
       0
     ],
-    "file": "lab-snmp-snmpwalk.html",
-    "published": true,
+    "file": null,
+    "published": false,
     "description": "Une communauté SNMP par défaut laissée ouverte suffit à extraire une quantité surprenante d'informations système."
   },
   {
@@ -144,8 +144,8 @@ const courses = [
     "prereq": [
       0
     ],
-    "file": "lab-distcc-exec.html",
-    "published": true,
+    "file": null,
+    "published": false,
     "description": "Une configuration par défaut de distcc permet l'exécution de commandes arbitraires sans authentification."
   },
   {
@@ -369,8 +369,8 @@ const courses = [
     "prereq": [
       21
     ],
-    "file": null,
-    "published": false,
+    "file": "lab-tomcat-war.html",
+    "published": true,
     "description": "Identifiants par défaut sur le gestionnaire Tomcat, puis déploiement d'une archive WAR piégée."
   },
   {
