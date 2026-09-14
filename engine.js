@@ -29,7 +29,7 @@
   const resetBtn = $("sim-reset-btn");
   const termFullscreen = $("term-fullscreen");
   const openBtn = $("term-open-btn");
-  const closeBtn = $("term-close-btn");
+  const fsBtnInTerm = $("term-fsbtn");
   const closeDot = $("term-close-dot");
   const phaseTrackEl = $("phase-track");
 
@@ -44,7 +44,24 @@
     return steps[stepIndex].kind;
   }
 
-  // ---------- BOUTON PLEIN ÉCRAN ----------
+  // ---------- PLEIN ÉCRAN NAVIGATEUR (API) ----------
+  function toggleBrowserFullscreen(){
+    const doc = document;
+    const el = doc.documentElement;
+    if(!doc.fullscreenElement && !doc.webkitFullscreenElement){
+      if(el.requestFullscreen){ el.requestFullscreen().catch(()=>{}); }
+      else if(el.webkitRequestFullscreen){ el.webkitRequestFullscreen(); }
+    } else {
+      if(doc.exitFullscreen){ doc.exitFullscreen().catch(()=>{}); }
+      else if(doc.webkitExitFullscreen){ doc.webkitExitFullscreen(); }
+    }
+  }
+
+  function isBrowserFullscreen(){
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  // ---------- BOUTON PLEIN ÉCRAN FLOTTANT (page du cours) ----------
   function injectFsToggle(){
     if(document.getElementById("fs-toggle")) return;
     const btn = document.createElement("button");
@@ -62,20 +79,11 @@
       '</svg>';
     document.body.appendChild(btn);
 
-    btn.addEventListener("click", ()=>{
-      const doc = document;
-      const el = doc.documentElement;
-      if(!doc.fullscreenElement && !doc.webkitFullscreenElement){
-        if(el.requestFullscreen){ el.requestFullscreen().catch(()=>{}); }
-        else if(el.webkitRequestFullscreen){ el.webkitRequestFullscreen(); }
-      } else {
-        if(doc.exitFullscreen){ doc.exitFullscreen().catch(()=>{}); }
-        else if(doc.webkitExitFullscreen){ doc.webkitExitFullscreen(); }
-      }
-    });
+    btn.addEventListener("click", toggleBrowserFullscreen);
 
-    function updateIcon(){
-      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    function updateFsIcons(){
+      const isFs = isBrowserFullscreen();
+
       btn.innerHTML = isFs
         ? '<svg viewBox="0 0 24 24" aria-hidden="true">' +
             '<path d="M9 4v5H4"/>' +
@@ -90,9 +98,28 @@
             '<path d="M20 15v5h-5"/>' +
           '</svg>';
       btn.title = isFs ? "Quitter le plein écran" : "Plein écran";
+
+      const fsBtnInTermEl = document.getElementById("term-fsbtn");
+      if(fsBtnInTermEl){
+        fsBtnInTermEl.innerHTML = isFs
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+              '<path d="M9 4v5H4"/>' +
+              '<path d="M15 4v5h5"/>' +
+              '<path d="M9 20v-5H4"/>' +
+              '<path d="M15 20v-5h5"/>' +
+            '</svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+              '<path d="M4 9V4h5"/>' +
+              '<path d="M20 9V4h-5"/>' +
+              '<path d="M4 15v5h5"/>' +
+              '<path d="M20 15v5h-5"/>' +
+            '</svg>';
+        fsBtnInTermEl.title = isFs ? "Quitter le plein écran" : "Plein écran";
+      }
     }
-    document.addEventListener("fullscreenchange", updateIcon);
-    document.addEventListener("webkitfullscreenchange", updateIcon);
+    document.addEventListener("fullscreenchange", updateFsIcons);
+    document.addEventListener("webkitfullscreenchange", updateFsIcons);
+    updateFsIcons();
   }
 
   // ---------- FOCUS CONDITIONNEL (anti-clavier-mobile) ----------
@@ -132,8 +159,8 @@
     }, 240);
   }
   on(openBtn, "click", openTerminal);
-  on(closeBtn, "click", closeTerminal);
   on(closeDot, "click", closeTerminal);
+  on(fsBtnInTerm, "click", toggleBrowserFullscreen);
   document.addEventListener("keydown", (e)=>{
     if(e.key === "Escape" && termFullscreen && termFullscreen.classList.contains("open")) closeTerminal();
   });
