@@ -712,84 +712,49 @@
   .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
   .term-fs-footer .sim-controls{padding:10px 22px 14px;}
 
-  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
-  .analyze-popup{
-    margin:16px 22px 0;
-    padding:16px 18px;
-    border-radius:10px;
-    border:1px solid var(--accent);
-    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
-    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
-    display:none;
-    flex-direction:column;
-    gap:12px;
-    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  /* ---------- FIL D'ARIANE DE MÉTHODE (toujours visible, jamais bloquant) ---------- */
+  .phase-track{
+    display:flex; flex-wrap:wrap; gap:6px;
+    margin-top:12px;
   }
-  .analyze-popup.leaving{animation:popOut .18s ease both;}
-  @keyframes popIn{
-    from{opacity:0; transform:translateY(14px) scale(.96);}
-    to{opacity:1; transform:translateY(0) scale(1);}
+  .phase-pill{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;
+    color:var(--muted); border:1px solid var(--border); border-radius:20px;
+    padding:4px 10px; transition:color .2s, border-color .2s, background .2s;
   }
-  @keyframes popOut{
-    from{opacity:1; transform:scale(1);}
-    to{opacity:0; transform:scale(.95);}
+  .phase-pill.active{
+    color:var(--accent); border-color:var(--accent); background:var(--accent-soft);
   }
-  .ap-tag{
-    align-self:flex-start;
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:var(--accent);
-    border:1px solid var(--accent);
-    border-radius:3px;
-    padding:3px 8px;
+
+  /* ---------- CARNET DE MISSION (jamais bloquant : pas de dimmed, pas de clic forcé pour continuer) ---------- */
+  .notebook-btn{
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:6px;
+    padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    transition:border-color .15s, color .15s;
   }
-  .ap-question{
-    font-family:var(--sans);
-    font-size:14.5px;
-    color:var(--text);
-    line-height:1.55;
-    margin:0;
+  .notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .notebook-panel{
+    display:none; flex-direction:column; gap:10px;
+    margin:12px 22px 0; padding:14px 16px; max-height:260px; overflow-y:auto;
+    border-radius:10px; border:1px solid var(--border); background:var(--panel-alt);
   }
-  .ap-hint{
-    font-size:13px;
-    color:var(--muted);
-    max-height:0;
-    opacity:0;
-    overflow:hidden;
-    border-left:2px solid var(--accent);
-    padding-left:0;
-    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  .notebook-panel.show{display:flex;}
+  .notebook-empty{font-size:12.5px; color:var(--muted); margin:0;}
+  .notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
+  .notebook-item .nb-cmd{
+    font-family:var(--mono); font-size:12px; color:var(--text); margin-bottom:2px;
   }
-  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
-  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-  .ap-btn{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    transition:border-color .15s, transform .1s;
+  .notebook-item .nb-note{font-size:12.5px; color:var(--muted); line-height:1.5;}
+
+  /* ---------- INDICE (deux niveaux) ---------- */
+  .hint-more{
+    display:inline-block; margin-left:8px;
+    font-family:var(--mono); font-size:11px; color:var(--accent);
+    background:transparent; border:1px solid var(--accent); border-radius:12px;
+    padding:2px 9px; cursor:pointer;
   }
-  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-  .ap-btn.ap-continue{
-    margin-left:auto;
-    border-color:var(--ok);
-    color:var(--ok);
-    font-weight:600;
-    animation:ctaPulse 1.8s ease-in-out infinite;
-  }
-  @keyframes ctaPulse{
-    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
-    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
-  }
+  .hint-more:hover{background:var(--accent-soft);}
 
   /* animation sobre au passage d'une étape à l'autre */
   @keyframes successFlash{
@@ -1088,15 +1053,19 @@
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
         <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
-        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+        <button type="button" class="notebook-btn" id="notebook-btn">📓 Carnet (<span id="notebook-count">0</span>)</button>
       </div>
+      <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/5</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/3</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
         <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+      <div class="notebook-panel" id="notebook-panel">
+        <div id="notebook-list"></div>
       </div>
     </div>
 
@@ -1108,18 +1077,10 @@
     </div>
 
     <div class="term-fs-footer">
-      <div class="analyze-popup" id="analyze-popup">
-        <span class="ap-tag" id="ap-tag">À analyser</span>
-        <p class="ap-question" id="ap-question">—</p>
-        <div class="ap-actions">
-          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
-        </div>
-      </div>
       <div class="sim-hint-box" id="sim-hint-box"></div>
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
         <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
@@ -1129,26 +1090,33 @@
 <script>
   // ---------- SÉQUENCE ----------
   const steps = [
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
       task:"Scanne le port MySQL sur la cible",
       accepted:["nmap -sv -p 3306 192.168.56.20"],
       hint:"Comme pour tout service, on commence par confirmer qu'il est bien là et identifier sa version. Le port standard de MySQL est connu (3306). L'outil de scan classique, avec l'option qui donne les versions.",
+      hint2:"nmap -sV -p 3306 192.168.56.20 — -sV active la détection de version ; -p 3306 restreint le scan à ce seul port, ce qui va beaucoup plus vite qu'un scan complet.",
+      note:"nmap -sV -p 3306 &lt;IP&gt; → <strong>-sV</strong> active la détection de version des services ; <strong>-p 3306</strong> restreint le scan à ce seul port (plus rapide qu'un scan complet).",
       output:[
         {t:"Nmap scan report for 192.168.56.20", c:"o"},
         {t:"PORT     STATE SERVICE VERSION", c:"o"},
         {t:"3306/tcp open  mysql   MySQL 5.0.51a-3ubuntu5", c:"o", id:"hl-mysql"}
       ] },
 
-    { kind:"analyze",
-      question:"Le port 3306 est ouvert. Qu'est-ce que ça t'apprend sur la façon dont MySQL est configuré sur cette machine ?",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
+      task:"Le port 3306 est ouvert. Qu'est-ce que ça t'apprend sur la façon dont MySQL est configuré sur cette machine ?",
+      accepted:["exposé au réseau"],
       hint:"Sur une installation normale, ce port ne devrait pas être joignable depuis l'extérieur. Le fait qu'il soit ouvert et qu'aucune authentification ne soit requise pour l'instant est un signal fort.",
+      hint2:"Un service de base de données accessible depuis une autre machine signifie que l'écoute n'est pas limitée à localhost — et sur cette version, le compte root peut très bien accepter les connexions distantes sans mot de passe.",
       highlightIds:["hl-mysql"],
-      annotation:"→ Port ouvert depuis le réseau, aucune restriction visible. C'est une invitation à tester si un compte existe sans mot de passe." },
+      annotation:"→ Port ouvert depuis le réseau, aucune restriction visible. C'est une invitation à tester si un compte existe sans mot de passe.",
+      note:"MySQL exposé sur le réseau = écoute sur 0.0.0.0, pas seulement localhost. Sur une installation durcie, il resterait en 127.0.0.1." },
 
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"config", context:"kali@kali", prompt:"$",
       task:"Tente une connexion au compte root SANS mot de passe",
       accepted:["mysql -u root -h 192.168.56.20 --skip-ssl"],
       hint:"Le client MySQL en ligne de commande s'appelle simplement `mysql`. Il faut lui préciser le compte utilisateur (`-u`), l'hôte distant (`-h`), NE PAS lui demander de mot de passe, et ajouter `--skip-ssl` car le serveur ancien ne supporte pas le chiffrement TLS moderne — sans cette option, la connexion échoue avec une erreur de protocole.",
+      hint2:"mysql -u root -h 192.168.56.20 --skip-ssl : -u root indique le compte à utiliser, -h spécifie la cible distante, et --skip-ssl force la connexion sans TLS pour les vieux serveurs.",
+      note:"mysql -u root -h &lt;IP&gt; --skip-ssl → <strong>-u root</strong> indique le compte MySQL visé, <strong>-h</strong> précise l'hôte distant, et <strong>--skip-ssl</strong> force une connexion sans TLS, nécessaire avec les anciens serveurs qui ne supportent pas les protocoles modernes.",
       output:[
         {t:"Welcome to the MySQL monitor.  Commands end with ; or \\g.", c:"o"},
         {t:"Your MySQL connection id is 12", c:"o"},
@@ -1156,16 +1124,21 @@
         {t:"Type 'help;' or '\\h' for help. Type '\\c' to clear the buffer.", c:"o"}
       ] },
 
-    { kind:"analyze",
-      question:"La connexion a réussi sans mot de passe. Que peut-on en déduire sur la configuration du serveur, et quelle est la prochaine action logique ?",
+    { kind:"type", phase:"recon", context:"mysql", prompt:">",
+      task:"La connexion a réussi sans mot de passe. Que peut-on en déduire sur la configuration du serveur, et quelle est la prochaine action logique ?",
+      accepted:["lister les bases"],
       hint:"Deux choses sont vraies en même temps : le compte root n'a pas de mot de passe, ET il accepte les connexions depuis cette machine. Maintenant qu'on est dedans, que fait-on en premier ?",
+      hint2:"La première chose à faire quand on arrive dans une base inconnue, c'est de voir ce qui est accessible : les bases disponibles. En SQL, ça se fait avec show databases;.",
       highlightIds:[],
-      annotation:"→ root sans mot de passe + accès distant = on est connecté en tant qu'administrateur de la base. La première chose à faire est de voir ce qui est accessible : lister les bases." },
+      annotation:"→ root sans mot de passe + accès distant = on est connecté en tant qu'administrateur de la base. La première chose à faire est de voir ce qui est accessible : lister les bases.",
+      note:"Une fois connecté à MySQL, la première commande d'énumération est <strong>show databases;</strong> — elle liste toutes les bases accessibles avec le compte courant." },
 
-    { kind:"type", context:"mysql", prompt:">",
+    { kind:"type", phase:"recon", context:"mysql", prompt:">",
       task:"Liste les bases de données accessibles",
       accepted:["show databases;"],
       hint:"On est maintenant dans le client MySQL — les commandes sont du SQL, pas des commandes Unix. Pour lister quelque chose en SQL, on utilise l'instruction `show`, suivie de ce qu'on veut voir. Ici, on veut voir les bases.",
+      hint2:"show databases; — n'oublie pas le point-virgule, obligatoire pour terminer une instruction SQL.",
+      note:"show databases; → liste toutes les bases accessibles avec le compte courant. Le point-virgule final est obligatoire en SQL.",
       output:[
         {t:"+--------------------+", c:"o"},
         {t:"| Database           |", c:"o"},
