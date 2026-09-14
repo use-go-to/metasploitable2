@@ -298,10 +298,18 @@
     <div class="term-fs-header">
       <div class="term-fs-headrow">
         <div class="term-fs-titlebar">
-          <span class="term-fs-dot r"></span><span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
+          <button type="button" class="term-fs-dot r" id="term-close-dot" aria-label="Fermer le terminal" title="Fermer le terminal"></button>
+          <span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
           <span class="term-fs-context" id="sim-context">kali@kali</span>
         </div>
-        <button class="term-fs-close" id="term-close-btn" type="button" aria-label="Fermer le terminal">✕</button>
+        <button class="term-fs-close" id="term-fsbtn" type="button" aria-label="Basculer en plein écran" title="Plein écran">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9V4h5"/>
+            <path d="M20 9V4h-5"/>
+            <path d="M4 15v5h5"/>
+            <path d="M20 15v5h-5"/>
+          </svg>
+        </button>
       </div>
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
@@ -404,18 +412,14 @@
       accepted:["msfconsole"],
       hint:"Le framework interactif, une seule commande depuis Kali.",
       note:"msfconsole → console interactive de Metasploit.",
-      output:[
-        {t:"=[ metasploit v6.4.135-dev ]", c:"o"}
-      ] },
+      output:[{t:"=[ metasploit v6.4.135-dev ]", c:"o"}] },
 
     { kind:"type", phase:"recherche", context:"msf", prompt:">",
       task:"Cherche le module correspondant dans Metasploit.",
       accepted:["search unrealircd"],
       hint:"Recherche par mot-clé dans la console msf.",
       note:"search &lt;mot-clé&gt; → cherche un module dans la base intégrée de Metasploit.",
-      output:[
-        {t:"0  exploit/unix/irc/unreal_ircd_3281_backdoor  2010-06-12  excellent  Yes", c:"o"}
-      ] },
+      output:[{t:"0  exploit/unix/irc/unreal_ircd_3281_backdoor  2010-06-12  excellent  Yes", c:"o"}] },
 
     { kind:"type", phase:"config", context:"msf", prompt:">",
       task:"Charge le module.",
