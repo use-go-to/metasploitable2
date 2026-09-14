@@ -781,53 +781,6 @@ table.cheat tr:last-child td{border-bottom:none;}
   background:var(--accent-soft);
 }
 
-/* ---------- CARNET ---------- */
-.notebook-btn{
-  font-family:var(--mono);
-  font-size:11.5px;
-  color:var(--muted);
-  background:var(--panel-alt);
-  border:1px solid var(--border);
-  border-radius:6px;
-  padding:5px 10px;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  transition:border-color .15s, color .15s;
-  white-space:nowrap;
-}
-@media (min-width:640px){
-  .notebook-btn{font-size:12px; padding:6px 12px; gap:6px;}
-}
-.notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
-.notebook-panel{
-  display:none;
-  flex-direction:column;
-  gap:10px;
-  margin:10px 0 0;
-  padding:12px 14px;
-  max-height:200px;
-  overflow-y:auto;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:var(--panel-alt);
-}
-@media (min-width:640px){
-  .notebook-panel{margin:12px 22px 0; padding:14px 16px; max-height:260px;}
-}
-.notebook-panel.show{display:flex;}
-.notebook-empty{font-size:12px; color:var(--muted); margin:0;}
-.notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
-.notebook-item .nb-cmd{
-  font-family:var(--mono);
-  font-size:11.5px;
-  color:var(--text);
-  margin-bottom:2px;
-  word-break:break-all;
-}
-.notebook-item .nb-note{font-size:12px; color:var(--muted); line-height:1.5;}
-
 /* ---------- BODY / FOOTER DU TERMINAL PLEIN ÉCRAN ---------- */
 .term-fullscreen .sim-body{
   flex:1;
@@ -995,7 +948,7 @@ table.cheat tr:last-child td{border-bottom:none;}
   opacity:1;
 }
 
-/* ---------- FLASH / PULSE ---------- */
+/* ---------- FLASH ---------- */
 @keyframes successFlash{
   0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
   35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
@@ -1045,11 +998,56 @@ footer .note .ok{color:var(--ok);}
   background:var(--muted);
 }
 .sim-body::-webkit-scrollbar,
-.term-fullscreen .sim-body::-webkit-scrollbar,
-.notebook-panel::-webkit-scrollbar{
+.term-fullscreen .sim-body::-webkit-scrollbar{
   width:5px;
 }
 .term pre::-webkit-scrollbar,
 .term-bar::-webkit-scrollbar{
   height:4px;
+}
+
+/* ---------- BOUTON PLEIN ÉCRAN (fixe, toujours visible) ---------- */
+.fs-toggle{
+  position:fixed;
+  top:14px;
+  right:14px;
+  z-index:10000; /* au-dessus même du terminal plein écran (9999) */
+  width:38px;
+  height:38px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--muted);
+  font-size:16px;
+  line-height:1;
+  cursor:pointer;
+  transition:border-color .15s, color .15s, background .15s, transform .1s;
+  box-shadow:0 4px 16px rgba(0,0,0,.35);
+}
+.fs-toggle:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  transform:translateY(-1px);
+}
+.fs-toggle:active{ transform:translateY(0); }
+.fs-toggle svg{
+  width:16px;
+  height:16px;
+  display:block;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+@media (max-width:639px){
+  .fs-toggle{
+    top:10px;
+    right:10px;
+    width:34px;
+    height:34px;
+  }
 }
