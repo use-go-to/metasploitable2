@@ -10,7 +10,7 @@
 
   // ---------- HELPERS DOM TOLÉRANTS ----------
   function $(id){ return document.getElementById(id); }
-  function on(el, ev, fn){ if(el && el.addEventListener) el.addEventListener(ev, fn); }
+  function on(el, ev, fn, opts){ if(el && el.addEventListener) el.addEventListener(ev, fn, opts); }
 
   const body = $("sim-body");
   const input = $("sim-input");
@@ -88,9 +88,6 @@
     const total = steps.length;
     const pct = mode() === "free" ? 100 : Math.round((stepIndex/total)*100);
     progressFill.style.width = pct + "%";
-    progressFill.classList.remove("pulse");
-    void progressFill.offsetWidth;
-    progressFill.classList.add("pulse");
   }
 
   // ---------- FIL D'ARIANE ----------
@@ -163,6 +160,23 @@
       div.innerHTML = `<div class="nb-cmd">${item.cmd}</div><div class="nb-note">${item.note}</div>`;
       notebookList.appendChild(div);
     });
+    // Bouton de purge discret en pied de panneau
+    const footer = document.createElement("div");
+    footer.style.cssText = "margin-top:6px;padding-top:8px;border-top:1px solid var(--border);text-align:right;";
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.textContent = "vider le carnet";
+    clearBtn.style.cssText = "font-family:var(--mono);font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 8px;cursor:pointer;transition:border-color .15s,color .15s;";
+    clearBtn.addEventListener("mouseenter", ()=>{ clearBtn.style.borderColor="var(--accent)"; clearBtn.style.color="var(--accent)"; });
+    clearBtn.addEventListener("mouseleave", ()=>{ clearBtn.style.borderColor="var(--border)"; clearBtn.style.color="var(--muted)"; });
+    clearBtn.addEventListener("click", ()=>{
+      if(confirm("Vider le carnet de toutes les notes cumulées ?")){
+        try{ localStorage.removeItem(NOTEBOOK_KEY); }catch(e){}
+        renderNotebook();
+      }
+    });
+    footer.appendChild(clearBtn);
+    notebookList.appendChild(footer);
   }
   on(notebookBtn, "click", ()=>{ if(notebookPanel) notebookPanel.classList.toggle("show"); });
 
@@ -404,24 +418,54 @@
 
   on(connectBtn, "click", ()=> advanceConnectStep());
 
+  // ---------- RESET (durci) ----------
   on(resetBtn, "click", ()=>{
+    // Retour à l'étape 1, purge de l'historique et de la zone de sortie,
+    // réaffichage de la ligne de saisie (au cas où on était en étape "connect"),
+    // puis recalcul complet de l'UI.
     stepIndex = 0;
-    freeContext = initialFreeContext;
+    if(typeof initialFreeContext !== "undefined") freeContext = initialFreeContext;
     cmdHistory = [];
     historyPos = 0;
     userHasInteracted = false;
-    Array.from(body.children).forEach(child=>{
+
+    // Supprime toutes les lignes sauf la ligne de saisie, puis la remet en place.
+    const children = Array.from(body.children);
+    children.forEach(child=>{
       if(child !== inputline) child.remove();
     });
     body.appendChild(inputline);
+
+    if(inputline) inputline.style.display = "flex";
     input.disabled = false;
     input.value = "";
+
+    if(hintBox){ hintBox.classList.remove("show"); hintBox.innerHTML = ""; }
+
+    updateProgress();
+    updatePhaseTrack();
     updateUI();
+
+    if(input.focus) {
+      try{ input.focus({preventScroll:true}); }catch(e){}
+    }
   });
 
-  renderPhaseTrackSkeleton();
-  renderNotebook();
-  updateUI();
+  // ---------- INITIALISATION (après DOMContentLoaded) ----------
+  // Garantit que les variables du cours (steps, freeContext, freeCommands)
+  // sont bien définies avant le premier rendu, quel que soit l'ordre
+  // des balises <script> dans le fichier HTML.
+  function init(){
+    renderPhaseTrackSkeleton();
+    renderNotebook();
+    updateUI();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
 
 // ---------- BOUTONS "COPIER" DES COMMANDES DU COURS ----------
