@@ -2,794 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Énumération SMB — enum4linux</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#0b0e14;
-    --panel:#12161f;
-    --panel-alt:#161b26;
-    --border:#232937;
-    --text:#e7e9ee;
-    --muted:#8b93a5;
-    --accent:#ff8a5c;
-    --accent-soft:#ff8a5c22;
-    --ok:#5fd9a4;
-    --ok-soft:#5fd9a422;
-    --serif:'Fraunces', serif;
-    --sans:'IBM Plex Sans', sans-serif;
-    --mono:'IBM Plex Mono', monospace;
-  }
-
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:var(--sans);
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-  }
-
-  ::selection{background:var(--accent-soft); color:var(--accent);}
-
-  a{color:var(--accent);}
-
-  .wrap{
-    max-width:760px;
-    margin:0 auto;
-    padding:0 24px;
-  }
-
-  /* ---------- HERO ---------- */
-  .hero{
-    padding:96px 0 64px;
-    border-bottom:1px solid var(--border);
-  }
-  .breadcrumb{margin:0 0 18px;}
-  .breadcrumb a{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--muted);
-    text-decoration:none;
-    border-bottom:1px solid transparent;
-  }
-  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
-  .hero .kicker{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-    margin:0 0 20px;
-  }
-  .hero .kicker::before{content:"$ "; color:var(--muted);}
-  .hero h1{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:clamp(34px,5vw,52px);
-    line-height:1.1;
-    margin:0 0 20px;
-    letter-spacing:-0.01em;
-  }
-  .hero p.lead{
-    font-size:17px;
-    color:var(--muted);
-    max-width:56ch;
-    margin:0 0 32px;
-  }
-  .meta-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:28px;
-  }
-  .meta-item{font-size:13px;}
-  .meta-item .label{
-    display:block;
-    color:var(--muted);
-    margin-bottom:4px;
-  }
-  .meta-item .value{
-    font-family:var(--mono);
-    color:var(--text);
-  }
-  .badge{
-    display:inline-block;
-    font-family:var(--mono);
-    font-size:12px;
-    padding:3px 10px;
-    border:1px solid var(--ok);
-    color:var(--ok);
-    border-radius:3px;
-  }
-  .score-badge{
-    display:inline-block;
-    font-family:var(--mono);
-    font-size:12px;
-    padding:3px 10px;
-    border-radius:3px;
-  }
-
-  /* ---------- SECTION GENERIC ---------- */
-  section{
-    padding:64px 0;
-    border-bottom:1px solid var(--border);
-  }
-  section:last-of-type{border-bottom:none;}
-  h2.section-title{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:28px;
-    margin:0 0 12px;
-  }
-  .section-intro{
-    color:var(--muted);
-    max-width:60ch;
-    margin:0 0 40px;
-    font-size:15px;
-  }
-
-  /* ---------- TIMELINE ---------- */
-  .timeline{
-    position:relative;
-    padding-left:44px;
-  }
-  .timeline::before{
-    content:"";
-    position:absolute;
-    left:15px;
-    top:6px;
-    bottom:6px;
-    width:1px;
-    background:var(--border);
-  }
-  .step{
-    position:relative;
-    margin-bottom:56px;
-  }
-  .step:last-child{margin-bottom:0;}
-  .step-num{
-    position:absolute;
-    left:-44px;
-    top:0;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    background:var(--panel);
-    border:1px solid var(--border);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-  }
-  .step h3{
-    font-family:var(--sans);
-    font-weight:600;
-    font-size:19px;
-    margin:2px 0 6px;
-  }
-  .step .step-sub{
-    color:var(--muted);
-    font-size:14px;
-    margin:0 0 18px;
-  }
-
-  /* ---------- TERMINAL BLOCK ---------- */
-  .term{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-    margin:0 0 18px;
-  }
-  .term-bar{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:9px 14px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .term-bar .dot{
-    width:7px; height:7px; border-radius:50%;
-    background:var(--border);
-  }
-  .term pre{
-    margin:0;
-    padding:16px 18px;
-    font-family:var(--mono);
-    font-size:13px;
-    line-height:1.65;
-    overflow-x:auto;
-    white-space:pre-wrap;
-    word-break:break-word;
-  }
-  .term .prompt{color:var(--accent);}
-  .term .out{color:var(--muted);}
-  .term .ok{color:var(--ok);}
-  .term .flag{color:var(--accent);}
-
-  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
-  .copy-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:20px;
-    height:20px;
-    margin-left:8px;
-    padding:0;
-    border:1px solid transparent;
-    border-radius:4px;
-    background:transparent;
-    color:var(--muted);
-    font-size:12px;
-    line-height:1;
-    cursor:pointer;
-    vertical-align:middle;
-    opacity:.55;
-    transition:opacity .15s, border-color .15s, color .15s, background .15s;
-  }
-  .term:hover .copy-btn{opacity:.9;}
-  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
-  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
-
-  /* ---------- EXPLAIN BOX ---------- */
-  .explain{
-    display:grid;
-    grid-template-columns:auto 1fr;
-    gap:10px 12px;
-    background:transparent;
-    border-left:2px solid var(--border);
-    padding:2px 0 2px 18px;
-    margin-top:14px;
-  }
-  .explain .k{
-    font-family:var(--mono);
-    font-size:11px;
-    color:var(--muted);
-    padding-top:2px;
-    white-space:nowrap;
-  }
-  .explain .v{
-    font-size:14.5px;
-    color:var(--text);
-  }
-  .explain .v strong{color:var(--accent); font-weight:600;}
-  .explain .k.err{color:#ff5c72;}
-  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
-
-  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
-  .playbook{
-    display:flex;
-    flex-direction:column;
-    gap:0;
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-    margin-bottom:40px;
-  }
-  .playbook-row{
-    display:grid;
-    grid-template-columns:28px 1fr 1.3fr;
-    gap:16px;
-    padding:14px 18px;
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
-  }
-  .playbook-row:last-child{border-bottom:none;}
-  .playbook-num{
-    font-family:var(--mono);
-    color:var(--accent);
-    font-size:13px;
-  }
-  .playbook-what strong{
-    display:block;
-    font-size:14px;
-    color:var(--text);
-    margin-bottom:3px;
-  }
-  .playbook-what span{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--ok);
-  }
-  .playbook-why{
-    font-size:13px;
-    color:var(--muted);
-  }
-  @media (max-width:640px){
-    .playbook-row{grid-template-columns:1fr; gap:4px;}
-    .playbook-num{display:none;}
-  }
-
-  /* ---------- CHEATSHEET TABLE ---------- */
-  .cheat-group{margin-bottom:32px;}
-  .cheat-group h4{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-    margin:0 0 14px;
-    font-weight:500;
-  }
-  table.cheat{
-    width:100%;
-    border-collapse:collapse;
-    font-size:14px;
-  }
-  table.cheat td{
-    padding:10px 0;
-    border-bottom:1px solid var(--border);
-    vertical-align:top;
-  }
-  table.cheat td.cmd{
-    font-family:var(--mono);
-    color:var(--ok);
-    width:42%;
-    padding-right:20px;
-    white-space:nowrap;
-  }
-  table.cheat td.desc{color:var(--muted);}
-  table.cheat tr:last-child td{border-bottom:none;}
-
-  /* ---------- CONCEPT CARDS ---------- */
-  .concepts{
-    display:flex;
-    flex-direction:column;
-    gap:22px;
-  }
-  .concept{
-    padding:20px 0;
-    border-top:1px solid var(--border);
-  }
-  .concept:first-child{border-top:none; padding-top:0;}
-  .concept h4{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:18px;
-    margin:0 0 8px;
-  }
-  .concept p{
-    color:var(--muted);
-    margin:0;
-    font-size:14.5px;
-    max-width:62ch;
-  }
-
-  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
-  .practice-wrap{
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-  }
-  .info-bar{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px 28px;
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:13px 18px;
-    font-family:var(--mono);
-    font-size:12.5px;
-  }
-  .info-bar .item{color:var(--muted);}
-  .info-bar .item strong{color:var(--accent); font-weight:500;}
-
-  .sim{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-  }
-  .sim-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-    padding:9px 14px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .sim-progress{color:var(--accent);}
-  .sim-body{
-    padding:16px 18px;
-    font-family:var(--mono);
-    font-size:13px;
-    line-height:1.7;
-    max-height:420px;
-    overflow-y:auto;
-  }
-  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
-  .sim-line .p{color:var(--accent);}
-  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
-  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
-  .p-kali .p-user{color:var(--ok); font-weight:600;}
-  .p-kali .p-punc{color:var(--muted);}
-  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
-  .p-root{color:#ff5c72; font-weight:600;}
-  .p-path{color:#5fbfff;}
-  .sim-line .o{color:var(--muted); display:block;}
-  .sim-line .o.ok{color:var(--ok);}
-  .sim-line .o.err{color:#ff5c72;}
-  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
-  @keyframes fadeSlideIn{
-    from{opacity:0; transform:translateY(4px);}
-    to{opacity:1; transform:translateY(0);}
-  }
-
-  /* ligne mise en valeur pendant la correction */
-  .sim-line.hl{
-    background:rgba(255,138,92,.12);
-    border-radius:4px;
-    padding:2px 6px;
-    margin:0 -6px 4px;
-    animation:pulseGlow 1.3s ease-in-out 2;
-  }
-  @keyframes pulseGlow{
-    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
-    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
-  }
-
-  /* annotation ajoutée lors d'une correction d'analyse */
-  .sim-annot{
-    margin:2px 0 10px;
-    padding:8px 12px;
-    border-left:2px solid var(--accent);
-    color:var(--accent);
-    font-size:12.5px;
-    background:var(--accent-soft);
-    border-radius:0 6px 6px 0;
-  }
-
-  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
-     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
-  .sim-inputline{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin:0 0 4px;
-  }
-  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
-  .sim-input{
-    flex:1;
-    background:transparent;
-    border:none;
-    outline:none;
-    color:var(--text);
-    font-family:var(--mono);
-    font-size:13px;
-    caret-color:var(--accent);
-    padding:0;
-  }
-  .sim-input::placeholder{color:var(--muted); opacity:.6;}
-  .sim-controls{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 18px 16px;
-    border-top:1px solid var(--border);
-    flex-wrap:wrap;
-  }
-  .sim-btn{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    transition:border-color .15s, transform .1s;
-  }
-  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-  .sim-btn:active{transform:translateY(0);}
-  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
-  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
-
-  .sim-hint-box{
-    margin:0 18px 12px;
-    padding:10px 14px;
-    border-left:2px solid var(--accent);
-    font-size:13px;
-    color:var(--muted);
-    max-height:0;
-    opacity:0;
-    overflow:hidden;
-    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
-  }
-  .sim-hint-box.show{
-    max-height:120px;
-    opacity:1;
-  }
-
-  @media (max-width:640px){
-    .sim-body{max-height:320px;}
-  }
-
-  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
-  .term-launch{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:28px;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:12px;
-  }
-  .term-launch-btn{
-    font-family:var(--mono);
-    font-size:14px;
-    font-weight:600;
-    color:#05100b;
-    background:var(--ok);
-    border:none;
-    border-radius:8px;
-    padding:13px 24px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
-  .term-launch-btn:active{transform:translateY(0);}
-  .term-launch-dot{
-    width:8px; height:8px; border-radius:50%;
-    background:#05100b;
-    animation:launchBlink 1.6s ease-in-out infinite;
-  }
-  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
-  .term-launch-sub{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-    margin:0;
-  }
-
-  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
-  .term-fullscreen{
-    position:fixed;
-    inset:0;
-    z-index:9999;
-    display:none;
-    flex-direction:column;
-    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
-    opacity:0;
-    transform:scale(.98);
-    transition:opacity .22s ease, transform .22s ease;
-  }
-  .term-fullscreen.open{
-    display:flex;
-    opacity:1;
-    transform:scale(1);
-  }
-  .term-fs-header{
-    flex-shrink:0;
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
-    padding:14px 22px 16px;
-  }
-  .term-fs-headrow{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .term-fs-titlebar{
-    display:flex;
-    align-items:center;
-    gap:7px;
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--muted);
-  }
-  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
-  .term-fs-dot.r{background:#ff5f57;}
-  .term-fs-dot.y{background:#febc2e;}
-  .term-fs-dot.g{background:#28c840;}
-  .term-fs-context{margin-left:8px; color:var(--text);}
-  .term-fs-close{
-    font-family:var(--mono);
-    font-size:13px;
-    background:transparent;
-    border:1px solid var(--border);
-    color:var(--muted);
-    border-radius:6px;
-    width:30px; height:30px;
-    cursor:pointer;
-    transition:border-color .15s, color .15s, transform .15s;
-  }
-  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
-  .term-fs-info{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:8px 22px;
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--muted);
-    margin-bottom:14px;
-  }
-  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
-
-  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
-  .term-fs-consigne{
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    margin-top:14px;
-    padding:10px 12px;
-    background:var(--accent-soft);
-    border:1px solid var(--accent);
-    border-radius:6px;
-  }
-  .consigne-tag{
-    flex-shrink:0;
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:var(--accent);
-    border:1px solid var(--accent);
-    border-radius:3px;
-    padding:2px 7px;
-    margin-top:1px;
-  }
-  .consigne-text{
-    font-family:var(--sans);
-    font-size:13.5px;
-    color:var(--text);
-    line-height:1.5;
-  }
-  .term-fs-info .item.mode{
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    color:var(--ok);
-    font-size:10.5px;
-    border:1px solid var(--ok);
-    padding:3px 9px;
-    border-radius:3px;
-    transition:color .2s, border-color .2s;
-  }
-  .term-progress{
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  .term-progress-track{
-    flex:1;
-    height:6px;
-    border-radius:3px;
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    overflow:hidden;
-  }
-  .term-progress-fill{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg, var(--ok), var(--accent));
-    border-radius:3px;
-    transition:width .5s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 0 10px rgba(95,217,164,.55);
-  }
-  .term-progress-label{
-    font-family:var(--mono);
-    font-size:11.5px;
-    color:var(--accent);
-    white-space:nowrap;
-  }
-
-  .term-fullscreen .sim-body{
-    flex:1;
-    overflow-y:auto;
-    max-height:none;
-    padding:20px 26px;
-  }
-  .term-fs-footer{
-    flex-shrink:0;
-    border-top:1px solid var(--border);
-    background:var(--panel);
-  }
-  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
-  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
-
-  /* ---------- FIL D'ARIANE DE MÉTHODE (toujours visible, jamais bloquant) ---------- */
-  .phase-track{
-    display:flex; flex-wrap:wrap; gap:6px;
-    margin-top:12px;
-  }
-  .phase-pill{
-    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;
-    color:var(--muted); border:1px solid var(--border); border-radius:20px;
-    padding:4px 10px; transition:color .2s, border-color .2s, background .2s;
-  }
-  .phase-pill.active{
-    color:var(--accent); border-color:var(--accent); background:var(--accent-soft);
-  }
-
-  /* ---------- CARNET DE MISSION (jamais bloquant : pas de dimmed, pas de clic forcé pour continuer) ---------- */
-  .notebook-btn{
-    font-family:var(--mono); font-size:12px; color:var(--muted);
-    background:var(--panel-alt); border:1px solid var(--border); border-radius:6px;
-    padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
-    transition:border-color .15s, color .15s;
-  }
-  .notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
-  .notebook-panel{
-    display:none; flex-direction:column; gap:10px;
-    margin:12px 22px 0; padding:14px 16px; max-height:260px; overflow-y:auto;
-    border-radius:10px; border:1px solid var(--border); background:var(--panel-alt);
-  }
-  .notebook-panel.show{display:flex;}
-  .notebook-empty{font-size:12.5px; color:var(--muted); margin:0;}
-  .notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
-  .notebook-item .nb-cmd{
-    font-family:var(--mono); font-size:12px; color:var(--text); margin-bottom:2px;
-  }
-  .notebook-item .nb-note{font-size:12.5px; color:var(--muted); line-height:1.5;}
-
-  /* ---------- INDICE (deux niveaux) ---------- */
-  .hint-more{
-    display:inline-block; margin-left:8px;
-    font-family:var(--mono); font-size:11px; color:var(--accent);
-    background:transparent; border:1px solid var(--accent); border-radius:12px;
-    padding:2px 9px; cursor:pointer;
-  }
-  .hint-more:hover{background:var(--accent-soft);}
-
-  /* animation sobre au passage d'une étape à l'autre */
-  @keyframes successFlash{
-    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
-    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-  }
-  .sim-body.flash-ok{animation:successFlash .65s ease;}
-
-  @keyframes progressPulse{
-    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
-    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
-  }
-  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
-
-  /* ---------- FOOTER ---------- */
-  footer{
-    padding:48px 0 80px;
-  }
-  footer .note{
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--muted);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:16px 18px;
-    background:var(--panel);
-  }
-  footer .note .ok{color:var(--ok);}
-
-  @media (max-width:600px){
-    .hero{padding:64px 0 48px;}
-    .timeline{padding-left:34px;}
-    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
-    .explain{grid-template-columns:1fr;}
-    .explain .k{padding-top:0;}
-    .practice-wrap{grid-template-columns:1fr;}
-    .info-panel{position:static;}
-  }
-</style>
+<link rel="stylesheet" href="lab.css">
 </head>
 <body>
 
@@ -798,7 +15,7 @@
       <p class="breadcrumb"><a href="index.html">← Hub</a></p>
       <p class="kicker">metasploitable2 :: reconnaissance → énumération</p>
       <h1>Énumération SMB<br>enum4linux</h1>
-      <p class="lead">SMB expose bien plus que des fichiers : partages, comptes locaux, version de Samba. Ici, on extrait tout ça sans jamais s'authentifier — la préparation des deux cours Samba à venir.</p>
+      <p class="lead">SMB expose bien plus que des fichiers : partages, comptes locaux, version de Samba. Ici, on extrait tout ça sans jamais s'authentifier.</p>
       <div class="meta-row">
         <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
         <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
@@ -813,24 +30,24 @@
   <div class="wrap">
     <section id="chrono">
       <h2 class="section-title">Chronologie</h2>
-      <p class="section-intro">Cinq étapes courtes, sans exploitation : on confirme SMB, puis on interroge le service en profondeur depuis Kali.</p>
+      <p class="section-intro">Trois étapes courtes, sans exploitation : on confirme SMB, on choisit le port, on interroge.</p>
 
       <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
-          <div class="playbook-what"><strong>Confirmer SMB</strong><span>nmap -sV -p 139,445</span></div>
-          <div class="playbook-why">Vérifier que les ports SMB sont bien ouverts et identifier la version de Samba — le point de départ de toute énumération SMB.</div>
+          <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
+          <div class="playbook-why">Repérer les ports SMB (139, 445) et la version de Samba.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
-          <div class="playbook-what"><strong>Énumération complète</strong><span>enum4linux -a</span></div>
-          <div class="playbook-why">Un seul outil qui interroge SMB sous tous les angles : partages, utilisateurs, groupes, version — sans mot de passe.</div>
+          <div class="playbook-what"><strong>Choix du port</strong><span>139 ou 445</span></div>
+          <div class="playbook-why">SMB expose partages, utilisateurs, groupes sans authentification.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Lecture des résultats</strong><span>partages + users</span></div>
-          <div class="playbook-why">Repérer ce qui est accessible sans authentification, et les comptes locaux qui pourront servir de cibles plus tard.</div>
+          <div class="playbook-what"><strong>Énumération</strong><span>enum4linux -a IP</span></div>
+          <div class="playbook-why">Un seul outil pour tout interroger.</div>
         </div>
       </div>
 
@@ -838,127 +55,76 @@
 
         <div class="step">
           <div class="step-num">1</div>
-          <h3>Confirmer la présence de SMB</h3>
-          <p class="step-sub">Avant d'utiliser un outil dédié, on vérifie les ports et la version avec un scan ciblé.</p>
+          <h3>Reconnaissance complète — nmap</h3>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> nmap -sV -p 139,445 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 139,445 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">Starting Nmap 7.94 ( https://nmap.org )</span>
-<span class="out">Nmap scan report for 192.168.56.20</span>
-<span class="out">Host is up (0.00042s latency).</span>
-<span class="out"></span>
-<span class="out">PORT    STATE SERVICE     VERSION</span>
-<span class="out">139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)</span>
-<span class="out">445/tcp open  netbios-ssn Samba smbd 3.0.20-Debian (workgroup: WORKGROUP)</span>
-<span class="out"></span>
-<span class="out">Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .</span>
-<span class="out">Nmap done: 1 IP address (1 host up) scanned in 6.51 seconds</span></pre>
+            <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">PORT     STATE SERVICE     VERSION</span>
+<span class="out">21/tcp   open  ftp         vsftpd 2.3.4</span>
+<span class="out">22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1</span>
+<span class="out">23/tcp   open  telnet      Linux telnetd</span>
+<span class="out">80/tcp   open  http        Apache httpd 2.2.8</span>
+<span class="out">111/tcp  open  rpcbind     2 (RPC #100000)</span>
+<span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)</span>
+<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian (workgroup: WORKGROUP)</span>
+<span class="out">1524/tcp open  ingreslock?</span>
+<span class="out">2049/tcp open  nfs         2-4 (RPC #100003)</span>
+<span class="out">3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5</span>
+<span class="out">5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7</span>
+<span class="out">5900/tcp open  vnc         VNC (protocol 3.3)</span>
+<span class="out">6667/tcp open  irc         UnrealIRCd</span>
+<span class="out">8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-p 139,445</span><span class="v">restreint le scan aux <strong>ports SMB</strong> : 139 (NetBIOS over TCP) et 445 (SMB direct).</span>
-            <span class="k">3.0.20-Debian</span><span class="v">version précise de <strong>Samba</strong> — c'est elle qui déterminera les vulnérabilités connues à étudier plus tard.</span>
+            <span class="k">139 / 445</span><span class="v">SMB : NetBIOS over TCP (139) et SMB direct (445).</span>
+            <span class="k">Samba 3.0.20</span><span class="v">version ancienne, sur un système d'exploitation Linux.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">2</div>
-          <h3>Analyser l'intérêt d'aller plus loin</h3>
-          <p class="step-sub">Le scan du cours #0 donnait déjà ces ports ouverts. Ici, on décide d'approfondir ce protocole spécifiquement.</p>
+          <h3>Choix du port à cibler</h3>
+          <p class="step-sub">SMB est riche en métadonnées : partages, utilisateurs, groupes.</p>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>rappel de la sortie nmap</div>
+            <pre><span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X</span>
+<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span></pre>
+          </div>
           <div class="explain">
-            <span class="k">cours #0</span><span class="v">un scan <strong>nmap -sV -sC</strong> générique liste tous les services. Il ne dit pas <em>quels partages</em> sont accessibles, <em>quels comptes</em> existent, ni comment les interroger sans mot de passe.</span>
-            <span class="k">SMB</span><span class="v">est un protocole <strong>riche en métadonnées</strong> : même sans authentification, il expose souvent des informations sur les utilisateurs, les groupes et les partages.</span>
-            <span class="k">outil</span><span class="v"><strong>enum4linux</strong> automatise cette énumération en interrogeant SMB sous plusieurs angles.</span>
+            <span class="k">indice</span><span class="v">Le protocole SMB accepte souvent des <strong>sessions anonymes</strong> (null session).</span>
+            <span class="k">à retenir</span><span class="v">Un simple nmap -sV ne liste que ports et versions. Pour obtenir partages, utilisateurs, groupes, il faut un outil d'énumération dédié.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
           <h3>Énumération SMB complète</h3>
-          <p class="step-sub">Un seul outil pour interroger SMB en profondeur, sans jamais fournir de mot de passe.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
             <pre><span class="prompt">$</span> enum4linux -a 192.168.56.20<button class="copy-btn" type="button" data-copy="enum4linux -a 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">Starting enum4linux v0.8.9 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Tue Jun 18 10:42:01 2024</span>
-<span class="out"></span>
-<span class="ok"> ========================== </span>
-<span class="ok">|    Target Information    |</span>
-<span class="ok"> ========================== </span>
-<span class="out">Target ........... 192.168.56.20</span>
-<span class="out">RID Range ........ 500-550,1000-1050</span>
-<span class="out">Username ......... ''</span>
-<span class="out">Password ......... ''</span>
-<span class="out">Known Usernames .. administrator, guest, krbtgt, domain admins, root, bin, none</span>
-<span class="out"></span>
-<span class="ok"> ==================================================== </span>
-<span class="ok">|    Enumerating Workgroup/Domain on 192.168.56.20   |</span>
-<span class="ok"> ==================================================== </span>
-<span class="out">[+] Got domain/workgroup name: WORKGROUP</span>
-<span class="out"></span>
-<span class="ok"> ============================================ </span>
-<span class="ok">|    Session Check on 192.168.56.20          |</span>
-<span class="ok"> ============================================ </span>
-<span class="out">[+] Server 192.168.56.20 allows sessions using username '', password ''</span>
-<span class="out"></span>
-<span class="ok"> ================================================= </span>
-<span class="ok">|    Share Enumeration on 192.168.56.20           |</span>
-<span class="ok"> ================================================= </span>
-<span class="out">	Sharename       Type      Comment</span>
-<span class="out">	---------       ----      -------</span>
+<span class="out"> ============================</span>
+<span class="out">|    Share Enumeration       |</span>
+<span class="out"> ============================</span>
 <span class="out">	print$          Disk      Printer Drivers</span>
 <span class="out">	tmp             Disk      oh noes!</span>
-<span class="out">	opt             Disk      </span>
+<span class="out">	opt             Disk</span>
 <span class="out">	IPC$            IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))</span>
-<span class="out">	ADMIN$          IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))</span>
 <span class="out"></span>
-<span class="ok"> ============================================= </span>
-<span class="ok">|    Users on 192.168.56.20                   |</span>
-<span class="ok"> ============================================= </span>
-<span class="out">index: 0x1 RID: 0x3e8 acb: 0x00000010 Account: root	Name: root	Desc: (null)</span>
-<span class="out">index: 0x2 RID: 0x3e9 acb: 0x00000010 Account: msfadmin	Name: msfadmin	Desc: (null)</span>
-<span class="out">index: 0x3 RID: 0x3ea acb: 0x00000010 Account: service	Name: service	Desc: (null)</span>
-<span class="out">index: 0x4 RID: 0x3eb acb: 0x00000010 Account: user	Name: user	Desc: (null)</span>
-<span class="out">index: 0x5 RID: 0x3ec acb: 0x00000010 Account: postgres	Name: postgres	Desc: (null)</span>
+<span class="out"> ============================</span>
+<span class="out">|    Users on 192.168.56.20  |</span>
+<span class="out"> ============================</span>
+<span class="out">index: 0x1 Account: root</span>
+<span class="out">index: 0x2 Account: msfadmin</span>
+<span class="out">index: 0x3 Account: service</span>
+<span class="out">index: 0x4 Account: user</span>
+<span class="out">index: 0x5 Account: postgres</span>
 <span class="out"></span>
-<span class="ok"> ============================================== </span>
-<span class="ok">|    Groups on 192.168.56.20                   |</span>
-<span class="ok"> ============================================== </span>
-<span class="out">[+] Getting builtin groups:</span>
-<span class="out">[+]  Getting local groups:</span>
-<span class="out">[+]  Getting local group memberships:</span>
-<span class="out">[+]  Getting domain groups:</span>
-<span class="out"></span>
-<span class="ok"> ============================================= </span>
-<span class="ok">|    Samba Version on 192.168.56.20           |</span>
-<span class="ok"> ============================================= </span>
-<span class="out">[+] Samba version: 3.0.20-Debian</span>
-<span class="out"></span>
-<span class="out">enum4linux complete on Tue Jun 18 10:43:12 2024</span></pre>
+<span class="ok">[+] Samba version: 3.0.20-Debian</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-a</span><span class="v">mode <strong>“tout”</strong> : enum4linux interroge SMB pour les partages, les utilisateurs, les groupes, la version — le tout sans jamais demander de mot de passe.</span>
-            <span class="k">tmp / opt</span><span class="v">deux partages <strong>accessibles en lecture et écriture</strong> sans authentification. Le commentaire “oh noes!” sur <code>tmp</code> est un indice volontaire du lab.</span>
-            <span class="k">root, msfadmin…</span><span class="v">la liste des <strong>comptes locaux</strong> remonte toute seule : ces noms serviront de cibles pour un futur bruteforce ou une exploitation ciblée.</span>
-            <span class="k">3.0.20-Debian</span><span class="v">la version exacte de Samba est confirmée — elle permettra de rechercher des CVE connues (comme celles des deux prochains cours).</span>
-          </div>
-        </div>
-
-        <div class="step">
-          <div class="step-num">4</div>
-          <h3>Analyser ce que ces informations permettent</h3>
-          <p class="step-sub">Aucune exploitation ici — juste de la préparation méthodique pour la suite.</p>
-          <div class="explain">
-            <span class="k">partages</span><span class="v">les partages <strong>tmp</strong> et <strong>opt</strong> sont accessibles anonymement. Le prochain cours Samba (<em>symlink traversal</em>) montrera comment les utiliser pour lire hors du dossier partagé.</span>
-            <span class="k">utilisateurs</span><span class="v">les comptes <strong>root</strong>, <strong>msfadmin</strong>, etc. sont des cibles directes pour un bruteforce SSH/Telnet — ou pour des attaques ciblées sur les services qui les utilisent.</span>
-            <span class="k">version</span><span class="v">Samba <strong>3.0.20</strong> est associée à la CVE-2007-2447 (<em>usermap_script</em>), qui sera traitée dans le cours #11.</span>
-          </div>
-        </div>
-
-        <div class="step">
-          <div class="step-num">5</div>
-          <h3>Fin de l'énumération — mode libre</h3>
-          <p class="step-sub">L'exploration continue depuis Kali : les commandes d'énumération sont rejouables à volonté.</p>
-          <div class="explain">
-            <span class="k">freeContext</span><span class="v">reste <strong>kali@kali</strong> — aucun accès n'a été obtenu, le prompt ne change pas.</span>
+            <span class="k">-a</span><span class="v">mode « tout » : partages, utilisateurs, groupes, version — sans mot de passe.</span>
+            <span class="k">tmp / opt</span><span class="v">deux partages accessibles anonymement.</span>
+            <span class="k">root, msfadmin…</span><span class="v">liste des comptes locaux remontée automatiquement.</span>
           </div>
         </div>
 
@@ -967,21 +133,20 @@
 
     <section id="cheatsheet">
       <h2 class="section-title">Commandes à retenir</h2>
-      <p class="section-intro">Le strict nécessaire pour interroger SMB sans s'authentifier.</p>
 
       <div class="cheat-group">
         <h4>reconnaissance</h4>
         <table class="cheat">
-          <tr><td class="cmd">nmap -sV -p 139,445 IP</td><td class="desc">confirmer les ports SMB et la version de Samba</td></tr>
-          <tr><td class="cmd">enum4linux -a IP</td><td class="desc">énumération complète : partages, utilisateurs, groupes, version</td></tr>
+          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports + versions + scripts</td></tr>
+          <tr><td class="cmd">enum4linux -a IP</td><td class="desc">énumération complète SMB</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
-        <h4>énumération SMB</h4>
+        <h4>énumération alternative</h4>
         <table class="cheat">
-          <tr><td class="cmd">smbclient -L //IP/</td><td class="desc">liste les partages disponibles, sans authentification</td></tr>
-          <tr><td class="cmd">rpcclient -U "" -N IP</td><td class="desc">énumération anonyme des utilisateurs via RPC</td></tr>
+          <tr><td class="cmd">smbclient -L //IP/</td><td class="desc">partages disponibles</td></tr>
+          <tr><td class="cmd">rpcclient -U "" -N IP</td><td class="desc">utilisateurs via RPC anonyme</td></tr>
         </table>
       </div>
     </section>
@@ -991,69 +156,47 @@
       <div class="concepts">
         <div class="concept">
           <h4>SMB, un protocole bavard</h4>
-          <p>Contrairement à un service qui exige une authentification pour répondre, SMB accepte souvent des <strong>sessions anonymes</strong> (null session). Cela permet d'énumérer les partages, les utilisateurs et la version du serveur sans jamais fournir de mot de passe.</p>
+          <p>SMB accepte souvent des sessions anonymes (null session). Cela permet d'énumérer partages, utilisateurs et version du serveur sans fournir de mot de passe.</p>
         </div>
         <div class="concept">
           <h4>Énumération ≠ exploitation</h4>
-          <p>Ici, on ne fait que <strong>poser des questions</strong> au service. Aucun code n'est exécuté sur la cible, aucun accès n'est obtenu. La puissance reste au niveau “information” — mais cette information est la clé des deux cours Samba suivants.</p>
+          <p>Ici, on ne fait que poser des questions au service. Aucun code n'est exécuté sur la cible, aucun accès obtenu.</p>
         </div>
         <div class="concept">
           <h4>Pourquoi les comptes locaux sont précieux</h4>
-          <p>Savoir que les comptes <code>root</code>, <code>msfadmin</code>, <code>service</code> existent permet de cibler un bruteforce (cours #3, #5) ou d'exploiter des services qui s'appuient sur ces noms d'utilisateur (comme <em>usermap_script</em>).</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="anatomie">
-      <h2 class="section-title">Anatomie d'une énumération SMB</h2>
-      <p class="section-intro">Recon large (cours #0) ou recon protocolaire approfondie : ce ne sont pas les mêmes questions, ni les mêmes outils.</p>
-
-      <div class="concepts">
-        <div class="concept">
-          <h4>Recon large vs recon protocolaire</h4>
-          <p>Le cours #0 donne une <strong>carte des services</strong> : quels ports sont ouverts, avec quelles versions. C'est indispensable mais reste superficiel. L'énumération SMB va plus loin sur <strong>un seul protocole</strong> : quels partages sont accessibles, quels comptes existent, quelles informations système fuient. Un simple <code>nmap -sV</code> ne peut pas répondre à ces questions, car il n'interroge pas les fonctions spécifiques de SMB.</p>
-        </div>
-        <div class="concept">
-          <h4>Ce que enum4linux interroge</h4>
-          <p>L'outil combine plusieurs techniques : requêtes NetBIOS, RPC, et SMB direct. Il tente une <strong>session nulle</strong> (username et password vides), puis extrait tout ce que le serveur veut bien lui donner : partages, utilisateurs, groupes, version. C'est une automatisation de ce qu'un attaquant ferait manuellement avec <code>smbclient</code> et <code>rpcclient</code>.</p>
-        </div>
-        <div class="concept">
-          <h4>Pourquoi c'est déjà une surface d'attaque</h4>
-          <p>Même sans exploitation immédiate, les informations collectées <strong>orientent toutes les attaques suivantes</strong> : un partage en écriture anonyme peut devenir un dépôt de payload, une liste d'utilisateurs peut alimenter un bruteforce, une version précise indique les CVE à essayer. L'énumération, c'est la phase de préparation qui rend les exploits suivants beaucoup plus efficaces.</p>
+          <p>Savoir que les comptes root, msfadmin, service existent permet de cibler un bruteforce ou d'exploiter des services qui s'appuient sur ces noms.</p>
         </div>
       </div>
     </section>
 
     <section id="detection">
       <h2 class="section-title">Détection &amp; remédiation</h2>
-      <p class="section-intro">Le point de vue du défenseur : limiter ce qu'un attaquant peut apprendre sans s'authentifier.</p>
 
       <div class="cheat-group">
         <table class="cheat">
-          <tr><td class="cmd">restrict anonymous = 2</td><td class="desc">dans smb.conf, interdit toute session nulle et limite l'énumération anonyme des partages et utilisateurs</td></tr>
-          <tr><td class="cmd">map to guest = never</td><td class="desc">empêche l'utilisation du compte invité pour les accès non authentifiés</td></tr>
-          <tr><td class="cmd">smbclient -L //localhost/ -N</td><td class="desc">tester soi-même ce qui est visible sans authentification — un bon réflexe d'audit</td></tr>
-          <tr><td class="cmd">surveillance des logs Samba</td><td class="desc">détecter les requêtes répétées d'énumération (beaucoup de requêtes RPC anonymes en peu de temps)</td></tr>
+          <tr><td class="cmd">restrict anonymous = 2</td><td class="desc">dans smb.conf, interdit les sessions nulles</td></tr>
+          <tr><td class="cmd">map to guest = never</td><td class="desc">désactive le compte invité</td></tr>
+          <tr><td class="cmd">surveillance logs Samba</td><td class="desc">détecter les rafales de requêtes RPC anonymes</td></tr>
         </table>
       </div>
     </section>
 
     <section id="practice">
       <h2 class="section-title">Terminal d'entraînement</h2>
-      <p class="section-intro">Rejoue l'énumération depuis Kali — toutes les commandes se font sans jamais obtenir de shell sur la cible.</p>
+      <p class="section-intro">Rejoue l'énumération depuis Kali — aucune exploitation.</p>
 
       <div class="term-launch">
         <button class="term-launch-btn" id="term-open-btn" type="button">
           <span class="term-launch-dot"></span>
           Ouvrir le terminal
         </button>
-        <p class="term-launch-sub">Plein écran · indices logiques, pas de commande donnée · historique ↑ / ↓ comme un vrai shell</p>
+        <p class="term-launch-sub">Plein écran · indices logiques · historique ↑ / ↓</p>
       </div>
     </section>
 
     <footer>
       <div class="note">
-        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox, aucune machine réelle ni connexion externe impliquée.
+        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox.
       </div>
     </footer>
   </div>
@@ -1062,34 +205,38 @@
     <div class="term-fs-header">
       <div class="term-fs-headrow">
         <div class="term-fs-titlebar">
-          <span class="term-fs-dot r"></span><span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
+          <button type="button" class="term-fs-dot r" id="term-close-dot" aria-label="Fermer le terminal" title="Fermer le terminal"></button>
+          <span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
           <span class="term-fs-context" id="sim-context">kali@kali</span>
         </div>
-        <button class="term-fs-close" id="term-close-btn" type="button" aria-label="Fermer le terminal">✕</button>
+        <button class="term-fs-close" id="term-fsbtn" type="button" aria-label="Basculer en plein écran" title="Plein écran">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9V4h5"/>
+            <path d="M20 9V4h-5"/>
+            <path d="M4 15v5h5"/>
+            <path d="M20 15v5h-5"/>
+          </svg>
+        </button>
       </div>
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
         <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
-        <button type="button" class="notebook-btn" id="notebook-btn">📓 Carnet (<span id="notebook-count">0</span>)</button>
       </div>
       <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/5</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/3</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
         <span class="consigne-text" id="consigne-text">—</span>
-      </div>
-      <div class="notebook-panel" id="notebook-panel">
-        <div id="notebook-list"></div>
       </div>
     </div>
 
     <div class="sim-body" id="sim-body">
       <div class="sim-line sim-inputline" id="sim-inputline">
         <span class="p" id="sim-prompt-label">$</span>
-        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text">
       </div>
     </div>
 
@@ -1098,7 +245,6 @@
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
     </div>
@@ -1107,123 +253,69 @@
 <script>
   const steps = [
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Confirme les ports SMB ouverts et la version de Samba",
-      accepted:["nmap -sv -p 139,445 192.168.56.20"],
-      hint:"Tu veux scanner uniquement les deux ports du protocole SMB, et obtenir la version exacte du service. L'outil de référence pour ça : nmap, avec l'option de détection de version, et la liste des ports ciblés.",
-      note:"nmap -sV -p 139,445 &lt;cible&gt; → <strong>-sV</strong> active la détection de version de service, <strong>-p 139,445</strong> restreint le scan aux deux ports SMB (NetBIOS sur 139, SMB direct sur 445).",
+      task:"Lance une reconnaissance complète sur la cible.",
+      accepted:["nmap -sv -sc 192.168.56.20"],
+      hint:"-sV + -sC.",
+      hint2:"nmap -sV -sC 192.168.56.20",
+      note:"nmap -sV -sC &lt;cible&gt; → versions + scripts NSE.",
       output:[
-        {t:"Starting Nmap 7.94 ( https://nmap.org )", c:"o"},
-        {t:"Nmap scan report for 192.168.56.20", c:"o"},
-        {t:"Host is up (0.00042s latency).", c:"o"},
-        {t:"", c:"o"},
-        {t:"PORT    STATE SERVICE     VERSION", c:"o"},
-        {t:"139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)", c:"o", id:"hl-smb-ports"},
-        {t:"445/tcp open  netbios-ssn Samba smbd 3.0.20-Debian (workgroup: WORKGROUP)", c:"o", id:"hl-smb-ports"},
-        {t:"", c:"o"},
-        {t:"Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .", c:"o"},
-        {t:"Nmap done: 1 IP address (1 host up) scanned in 6.51 seconds", c:"o"}
+        {t:"PORT     STATE SERVICE     VERSION", c:"o"},
+        {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o"},
+        {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1", c:"o"},
+        {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
+        {t:"80/tcp   open  http        Apache httpd 2.2.8", c:"o"},
+        {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
+        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)", c:"o", id:"hl-smb1"},
+        {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian (workgroup: WORKGROUP)", c:"o", id:"hl-smb2"},
+        {t:"1524/tcp open  ingreslock?", c:"o"},
+        {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
+        {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o"},
+        {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
+        {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
+        {t:"6667/tcp open  irc         UnrealIRCd", c:"o"},
+        {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
       ] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Le scan générique du cours #0 avait déjà montré ces ports. Tape la question clé : que peut-on obtenir de plus avec SMB ?",
-      accepted:["quels partages sont accessibles", "quels partages et quels comptes"],
+      task:"Un protocole de partage expose beaucoup d'informations. Tape un de ses ports.",
+      accepted:["139","445","139,445"],
       wrongAnswers:{
-        "quel est le mot de passe root":"Le bruteforce viendra plus tard — ici on cherche juste ce que SMB expose sans authentification.",
-        "est-ce que le port 445 est ouvert":"On le sait déjà depuis le scan : ce n'est pas la question."
+        "22":"SSH est un autre cours.",
+        "80":"Apache n'est pas la cible ici.",
+        "3306":"MySQL, autre cours."
       },
-      hint:"Compare ce que tu vois ici (ports, version précise) avec ce qu'un scan large montre. Ensuite, demande-toi ce que SMB peut révéler de plus qu'un simple numéro de version.",
-      hint2:"SMB expose des partages (des dossiers accessibles) et des comptes locaux (les utilisateurs de la machine) — deux choses introuvables avec un simple nmap -sV.",
-      highlightIds:["hl-smb-ports"],
-      annotation:"→ On a la version exacte de Samba, mais surtout l'envie d'aller plus loin : SMB expose des partages et des comptes, introuvables avec un simple nmap -sV.",
-      note:"Un scan nmap -sV ne liste que les services et versions ; pour obtenir partages, utilisateurs et groupes, il faut un outil d'énumération SMB dédié.",
+      hint:"Deux ports SMB : NetBIOS over TCP (139) et SMB direct (445).",
+      hint2:"139 ou 445 — Samba expose partages, utilisateurs, groupes sans authentification.",
+      highlightIds:["hl-smb1","hl-smb2"],
+      note:"SMB (139, 445) accepte souvent des sessions anonymes — partages, utilisateurs et version de Samba remontent sans mot de passe.",
       output:[] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Énumère SMB en profondeur : partages, utilisateurs, version",
+      task:"Énumère SMB en profondeur : partages, utilisateurs, version.",
       accepted:["enum4linux -a 192.168.56.20"],
-      hint:"Un outil dédié à l'énumération SMB existe dans Kali : il interroge le service sous plusieurs angles (partages, utilisateurs, groupes) sans authentification. Cherche son nom, et utilise l'option qui active toutes les vérifications d'un coup.",
-      note:"enum4linux -a &lt;cible&gt; → <strong>-a</strong> active toutes les vérifications d'un coup : partages, utilisateurs, groupes, version Samba, sans jamais demander de mot de passe.",
+      hint:"Un outil dédié existe dans Kali. Option -a = tout d'un coup.",
+      hint2:"enum4linux -a 192.168.56.20",
+      note:"enum4linux -a &lt;cible&gt; → toutes les vérifications en une passe : partages, utilisateurs, groupes, version Samba, sans mot de passe.",
       output:[
-        {t:"Starting enum4linux v0.8.9 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Tue Jun 18 10:42:01 2024", c:"o"},
-        {t:"", c:"o"},
-        {t:" ========================== ", c:"ok"},
-        {t:"|    Target Information    |", c:"ok"},
-        {t:" ========================== ", c:"ok"},
-        {t:"Target ........... 192.168.56.20", c:"o"},
-        {t:"RID Range ........ 500-550,1000-1050", c:"o"},
-        {t:"Username ......... ''", c:"o"},
-        {t:"Password ......... ''", c:"o"},
-        {t:"Known Usernames .. administrator, guest, krbtgt, domain admins, root, bin, none", c:"o"},
-        {t:"", c:"o"},
-        {t:" ==================================================== ", c:"ok"},
-        {t:"|    Enumerating Workgroup/Domain on 192.168.56.20   |", c:"ok"},
-        {t:" ==================================================== ", c:"ok"},
-        {t:"[+] Got domain/workgroup name: WORKGROUP", c:"o"},
-        {t:"", c:"o"},
-        {t:" ============================================ ", c:"ok"},
-        {t:"|    Session Check on 192.168.56.20          |", c:"ok"},
-        {t:" ============================================ ", c:"ok"},
-        {t:"[+] Server 192.168.56.20 allows sessions using username '', password ''", c:"o"},
-        {t:"", c:"o"},
-        {t:" ================================================= ", c:"ok"},
-        {t:"|    Share Enumeration on 192.168.56.20           |", c:"ok"},
-        {t:" ================================================= ", c:"ok"},
-        {t:"	Sharename       Type      Comment", c:"o"},
-        {t:"	---------       ----      -------", c:"o"},
+        {t:" ============================", c:"ok"},
+        {t:"|    Share Enumeration       |", c:"ok"},
+        {t:" ============================", c:"ok"},
         {t:"	print$          Disk      Printer Drivers", c:"o"},
-        {t:"	tmp             Disk      oh noes!", c:"o", id:"hl-enum4linux"},
-        {t:"	opt             Disk      ", c:"o", id:"hl-enum4linux"},
-        {t:"	IPC$            IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))", c:"o"},
-        {t:"	ADMIN$          IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))", c:"o"},
+        {t:"	tmp             Disk      oh noes!", c:"o", id:"hl-tmp"},
+        {t:"	opt             Disk", c:"o", id:"hl-opt"},
+        {t:"	IPC$            IPC       IPC Service (metasploitable server)", c:"o"},
         {t:"", c:"o"},
-        {t:" ============================================= ", c:"ok"},
-        {t:"|    Users on 192.168.56.20                   |", c:"ok"},
-        {t:" ============================================= ", c:"ok"},
-        {t:"index: 0x1 RID: 0x3e8 acb: 0x00000010 Account: root	Name: root	Desc: (null)", c:"o", id:"hl-enum4linux"},
-        {t:"index: 0x2 RID: 0x3e9 acb: 0x00000010 Account: msfadmin	Name: msfadmin	Desc: (null)", c:"o", id:"hl-enum4linux"},
-        {t:"index: 0x3 RID: 0x3ea acb: 0x00000010 Account: service	Name: service	Desc: (null)", c:"o"},
-        {t:"index: 0x4 RID: 0x3eb acb: 0x00000010 Account: user	Name: user	Desc: (null)", c:"o"},
-        {t:"index: 0x5 RID: 0x3ec acb: 0x00000010 Account: postgres	Name: postgres	Desc: (null)", c:"o"},
+        {t:" ============================", c:"ok"},
+        {t:"|    Users on 192.168.56.20  |", c:"ok"},
+        {t:" ============================", c:"ok"},
+        {t:"index: 0x1 Account: root", c:"o"},
+        {t:"index: 0x2 Account: msfadmin", c:"o"},
+        {t:"index: 0x3 Account: service", c:"o"},
+        {t:"index: 0x4 Account: user", c:"o"},
+        {t:"index: 0x5 Account: postgres", c:"o"},
         {t:"", c:"o"},
-        {t:" ============================================== ", c:"ok"},
-        {t:"|    Groups on 192.168.56.20                   |", c:"ok"},
-        {t:" ============================================== ", c:"ok"},
-        {t:"[+] Getting builtin groups:", c:"o"},
-        {t:"[+]  Getting local groups:", c:"o"},
-        {t:"[+]  Getting local group memberships:", c:"o"},
-        {t:"[+]  Getting domain groups:", c:"o"},
-        {t:"", c:"o"},
-        {t:" ============================================= ", c:"ok"},
-        {t:"|    Samba Version on 192.168.56.20           |", c:"ok"},
-        {t:" ============================================= ", c:"ok"},
-        {t:"[+] Samba version: 3.0.20-Debian", c:"o"},
-        {t:"", c:"o"},
-        {t:"enum4linux complete on Tue Jun 18 10:43:12 2024", c:"o"}
-      ] },
-
-    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"On a maintenant des partages et des comptes. Tape le nom d'un partage accessible anonymement.",
-      accepted:["tmp", "opt"],
-      wrongAnswers:{
-        "print$":"Ce partage est là pour les pilotes d'imprimante — pas le plus intéressant ici.",
-        "ipc$":"Partage technique, utile pour les échanges entre processus Windows, pas pour un accès direct."
-      },
-      hint:"Deux choses : les partages tmp et opt sont accessibles anonymement — que peut-on en faire ? Les comptes root, msfadmin, etc. — à quoi peuvent-ils servir ?",
-      hint2:"Les partages tmp et opt apparaissent dans la section Share Enumeration. Les comptes listés (root, msfadmin, service...) serviront de cibles pour un bruteforce ou un exploit ciblé.",
-      highlightIds:["hl-enum4linux"],
-      annotation:"→ Aucune action ici, juste de la préparation : tmp et opt seront utilisés pour le symlink traversal, et les comptes listés serviront de cibles dans les cours suivants.",
-      note:"Les partages tmp et opt sont accessibles sans authentification ; les comptes root, msfadmin, service, user et postgres remontent dans l'énumération — autant de cibles potentielles pour la suite.",
-      output:[] },
-
-    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"C'est tout pour l'énumération — aucune exploitation n'a eu lieu. Le terminal passe en mode libre, toujours sur Kali. Tape exit pour voir.",
-      accepted:["exit"],
-      hint:"",
-      hint2:"",
-      highlightIds:[],
-      annotation:"",
-      note:"",
-      output:[] }
+        {t:"[+] Samba version: 3.0.20-Debian", c:"ok"}
+      ] }
   ];
 
   let freeContext = "kali@kali";
@@ -1232,45 +324,28 @@
       "enum4linux -a 192.168.56.20": [
         {t:"Sharename       Type      Comment", c:"o"},
         {t:"---------       ----      -------", c:"o"},
-        {t:"print$          Disk      Printer Drivers", c:"o"},
         {t:"tmp             Disk      oh noes!", c:"o"},
-        {t:"opt             Disk      ", c:"o"},
-        {t:"IPC$            IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))", c:"o"},
-        {t:"ADMIN$          IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))", c:"o"},
+        {t:"opt             Disk", c:"o"},
         {t:"", c:"o"},
-        {t:"Users on 192.168.56.20:", c:"o"},
-        {t:"index: 0x1 RID: 0x3e8 acb: 0x00000010 Account: root	Name: root", c:"o"},
-        {t:"index: 0x2 RID: 0x3e9 acb: 0x00000010 Account: msfadmin	Name: msfadmin", c:"o"},
-        {t:"index: 0x3 RID: 0x3ea acb: 0x00000010 Account: service	Name: service", c:"o"},
-        {t:"index: 0x4 RID: 0x3eb acb: 0x00000010 Account: user	Name: user", c:"o"},
-        {t:"index: 0x5 RID: 0x3ec acb: 0x00000010 Account: postgres	Name: postgres", c:"o"},
-        {t:"", c:"o"},
+        {t:"Users: root, msfadmin, service, user, postgres", c:"o"},
         {t:"Samba version: 3.0.20-Debian", c:"o"}
       ],
       "smbclient -L //192.168.56.20/": [
         {t:"Sharename       Type      Comment", c:"o"},
         {t:"---------       ----      -------", c:"o"},
-        {t:"print$          Disk      Printer Drivers", c:"o"},
         {t:"tmp             Disk      oh noes!", c:"o"},
-        {t:"opt             Disk      ", c:"o"},
-        {t:"IPC$            IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))", c:"o"},
-        {t:"ADMIN$          IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))", c:"o"}
+        {t:"opt             Disk", c:"o"}
       ],
       "rpcclient -U \"\" -N 192.168.56.20": [
         {t:"rpcclient $>", c:"o"},
-        {t:"Enter password:", c:"o"},
-        {t:"rpcclient $> enumdomusers", c:"o"},
         {t:"user:[root] rid:[0x3e8]", c:"o"},
-        {t:"user:[msfadmin] rid:[0x3e9]", c:"o"},
-        {t:"user:[service] rid:[0x3ea]", c:"o"},
-        {t:"user:[user] rid:[0x3eb]", c:"o"},
-        {t:"user:[postgres] rid:[0x3ec]", c:"o"}
+        {t:"user:[msfadmin] rid:[0x3e9]", c:"o"}
       ],
       "exit": [{t:"Rien à quitter : tu es toujours sur ta machine Kali.", c:"o"}]
     }
   };
 
-  let freeHintHtml = "Session ouverte — explore par toi-même. Essaie <strong style=\"color:var(--text)\">enum4linux -a <IP></strong>, <strong style=\"color:var(--text)\">smbclient -L //<IP>/</strong>, <strong style=\"color:var(--text)\">rpcclient -U \"\" -N <IP></strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
+  let freeHintHtml = "Recon uniquement. Tape <strong style=\"color:var(--text)\">enum4linux -a &lt;IP&gt;</strong>, <strong style=\"color:var(--text)\">smbclient -L //&lt;IP&gt;/</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
 </script>
 <script src="engine.js"></script>
 
