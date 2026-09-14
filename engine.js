@@ -94,39 +94,6 @@
     document.addEventListener("webkitfullscreenchange", updateIcon);
   }
 
-  // ---------- GESTION DU CLAVIER MOBILE (visualViewport) ----------
-  // Sur iOS/Android, quand le clavier s'ouvre, la hauteur visible réelle se réduit
-  // (window.visualViewport.height), alors que 100dvh reste inchangé. On adapte la
-  // hauteur du terminal en conséquence et on scrolle vers la ligne de saisie
-  // pour qu'elle reste visible au-dessus du clavier.
-  function setupKeyboardHandling(){
-    if(!window.visualViewport) return;
-    const vv = window.visualViewport;
-
-    function adjust(){
-      // Hauteur réelle visible de la fenêtre (clavier déduit)
-      const visibleH = vv.height;
-      // On applique cette hauteur au terminal plein écran
-      if(termFullscreen && termFullscreen.classList.contains("open")){
-        termFullscreen.style.height = visibleH + "px";
-        termFullscreen.style.top = vv.offsetTop + "px";
-      }
-      // Et on force le scroll de la zone body pour montrer la ligne de saisie
-      requestAnimationFrame(()=>{
-        if(body) body.scrollTop = body.scrollHeight;
-        if(input && input.scrollIntoView){
-          try{ input.scrollIntoView({block:"end", behavior:"instant"}); }catch(e){}
-        }
-      });
-    }
-
-    vv.addEventListener("resize", adjust);
-    vv.addEventListener("scroll", adjust);
-
-    // Reset quand on ferme le terminal
-    document.addEventListener("fullscreenchange", adjust);
-  }
-
   // ---------- FOCUS CONDITIONNEL (anti-clavier-mobile) ----------
   function isMobileViewport(){
     return window.matchMedia("(max-width: 639px)").matches;
@@ -148,9 +115,6 @@
   function openTerminal(){
     if(!termFullscreen) return;
     termFullscreen.style.display = "flex";
-    // Réinitialise la hauteur/position (au cas où visualViewport a laissé une valeur)
-    termFullscreen.style.height = "";
-    termFullscreen.style.top = "";
     requestAnimationFrame(()=> termFullscreen.classList.add("open"));
     document.documentElement.style.overflow = "hidden";
     if(!isMobileViewport()){
@@ -161,10 +125,6 @@
     if(!termFullscreen) return;
     termFullscreen.classList.remove("open");
     document.documentElement.style.overflow = "";
-    // Réinitialise la hauteur au cas où elle a été modifiée par le clavier
-    termFullscreen.style.height = "";
-    termFullscreen.style.top = "";
-    // Ferme le clavier mobile au passage
     blurInputOnMobile();
     setTimeout(()=>{
       if(!termFullscreen.classList.contains("open")) termFullscreen.style.display = "none";
@@ -272,7 +232,7 @@
     if(body) body.scrollTop = body.scrollHeight;
   }
 
-  // Scroll vers la ligne de saisie (après une commande) + fermeture clavier mobile
+  // Scroll vers la ligne de saisie après une commande
   function scrollToInput(){
     if(!body) return;
     requestAnimationFrame(()=>{
@@ -425,8 +385,8 @@
       const s = steps[stepIndex];
       const norm = normalize(raw);
       if(s.accepted.includes(norm)){
-        // Sur mobile : on ferme le clavier AVANT d'avancer, pour que l'utilisateur
-        // voie immédiatement le résultat et la consigne suivante.
+        // Succès : on ferme le clavier mobile pour que l'utilisateur voie le résultat
+        // et la consigne suivante. On avance ensuite normalement.
         blurInputOnMobile();
         advanceTypeStep(raw);
       } else if(s.wrongAnswers && s.wrongAnswers[norm]){
@@ -437,7 +397,8 @@
         scrollToInput();
       }
     } else if(m === "free"){
-      blurInputOnMobile();
+      // En mode libre : on ne ferme PAS le clavier (l'utilisateur explore),
+      // on se contente d'afficher la réponse et de scroller.
       handleFree(raw);
       scrollToInput();
     }
@@ -505,7 +466,6 @@
   // ---------- INITIALISATION ----------
   function init(){
     injectFsToggle();
-    setupKeyboardHandling();
     renderPhaseTrackSkeleton();
     updateUI();
   }
@@ -546,4 +506,4 @@ function fallbackCopy(text){
   ta.focus(); ta.select();
   try{ document.execCommand("copy"); }catch(err){}
   document.body.removeChild(ta);
-}
+      }
