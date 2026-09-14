@@ -698,11 +698,6 @@
     overflow-y:auto;
     max-height:none;
     padding:20px 26px;
-    transition:filter .25s ease;
-  }
-  .term-fullscreen .sim-body.dimmed{
-    filter:brightness(.5) saturate(.85);
-    pointer-events:none;
   }
   .term-fs-footer{
     flex-shrink:0;
@@ -712,84 +707,49 @@
   .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
   .term-fs-footer .sim-controls{padding:10px 22px 14px;}
 
-  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
-  .analyze-popup{
-    margin:16px 22px 0;
-    padding:16px 18px;
-    border-radius:10px;
-    border:1px solid var(--accent);
-    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
-    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
-    display:none;
-    flex-direction:column;
-    gap:12px;
-    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  /* ---------- FIL D'ARIANE DE MÉTHODE (toujours visible, jamais bloquant) ---------- */
+  .phase-track{
+    display:flex; flex-wrap:wrap; gap:6px;
+    margin-top:12px;
   }
-  .analyze-popup.leaving{animation:popOut .18s ease both;}
-  @keyframes popIn{
-    from{opacity:0; transform:translateY(14px) scale(.96);}
-    to{opacity:1; transform:translateY(0) scale(1);}
+  .phase-pill{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;
+    color:var(--muted); border:1px solid var(--border); border-radius:20px;
+    padding:4px 10px; transition:color .2s, border-color .2s, background .2s;
   }
-  @keyframes popOut{
-    from{opacity:1; transform:scale(1);}
-    to{opacity:0; transform:scale(.95);}
+  .phase-pill.active{
+    color:var(--accent); border-color:var(--accent); background:var(--accent-soft);
   }
-  .ap-tag{
-    align-self:flex-start;
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:var(--accent);
-    border:1px solid var(--accent);
-    border-radius:3px;
-    padding:3px 8px;
+
+  /* ---------- CARNET DE MISSION (jamais bloquant : pas de dimmed, pas de clic forcé pour continuer) ---------- */
+  .notebook-btn{
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:6px;
+    padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    transition:border-color .15s, color .15s;
   }
-  .ap-question{
-    font-family:var(--sans);
-    font-size:14.5px;
-    color:var(--text);
-    line-height:1.55;
-    margin:0;
+  .notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .notebook-panel{
+    display:none; flex-direction:column; gap:10px;
+    margin:12px 22px 0; padding:14px 16px; max-height:260px; overflow-y:auto;
+    border-radius:10px; border:1px solid var(--border); background:var(--panel-alt);
   }
-  .ap-hint{
-    font-size:13px;
-    color:var(--muted);
-    max-height:0;
-    opacity:0;
-    overflow:hidden;
-    border-left:2px solid var(--accent);
-    padding-left:0;
-    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  .notebook-panel.show{display:flex;}
+  .notebook-empty{font-size:12.5px; color:var(--muted); margin:0;}
+  .notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
+  .notebook-item .nb-cmd{
+    font-family:var(--mono); font-size:12px; color:var(--text); margin-bottom:2px;
   }
-  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
-  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-  .ap-btn{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    transition:border-color .15s, transform .1s;
+  .notebook-item .nb-note{font-size:12.5px; color:var(--muted); line-height:1.5;}
+
+  /* ---------- INDICE (deux niveaux) ---------- */
+  .hint-more{
+    display:inline-block; margin-left:8px;
+    font-family:var(--mono); font-size:11px; color:var(--accent);
+    background:transparent; border:1px solid var(--accent); border-radius:12px;
+    padding:2px 9px; cursor:pointer;
   }
-  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-  .ap-btn.ap-continue{
-    margin-left:auto;
-    border-color:var(--ok);
-    color:var(--ok);
-    font-weight:600;
-    animation:ctaPulse 1.8s ease-in-out infinite;
-  }
-  @keyframes ctaPulse{
-    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
-    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
-  }
+  .hint-more:hover{background:var(--accent-soft);}
 
   /* animation sobre au passage d'une étape à l'autre */
   @keyframes successFlash{
@@ -1110,8 +1070,9 @@
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
         <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
-        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+        <button type="button" class="notebook-btn" id="notebook-btn">📓 Carnet (<span id="notebook-count">0</span>)</button>
       </div>
+      <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
         <span class="term-progress-label" id="sim-progress">étape 1/5</span>
@@ -1119,6 +1080,9 @@
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
         <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+      <div class="notebook-panel" id="notebook-panel">
+        <div id="notebook-list"></div>
       </div>
     </div>
 
@@ -1130,18 +1094,10 @@
     </div>
 
     <div class="term-fs-footer">
-      <div class="analyze-popup" id="analyze-popup">
-        <span class="ap-tag" id="ap-tag">À analyser</span>
-        <p class="ap-question" id="ap-question">—</p>
-        <div class="ap-actions">
-          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
-        </div>
-      </div>
       <div class="sim-hint-box" id="sim-hint-box"></div>
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
         <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
@@ -1150,10 +1106,11 @@
 
 <script>
   const steps = [
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
       task:"Confirme les ports SMB ouverts et la version de Samba",
       accepted:["nmap -sv -p 139,445 192.168.56.20"],
       hint:"Tu veux scanner uniquement les deux ports du protocole SMB, et obtenir la version exacte du service. L'outil de référence pour ça : nmap, avec l'option de détection de version, et la liste des ports ciblés.",
+      note:"nmap -sV -p 139,445 &lt;cible&gt; → <strong>-sV</strong> active la détection de version de service, <strong>-p 139,445</strong> restreint le scan aux deux ports SMB (NetBIOS sur 139, SMB direct sur 445).",
       output:[
         {t:"Starting Nmap 7.94 ( https://nmap.org )", c:"o"},
         {t:"Nmap scan report for 192.168.56.20", c:"o"},
@@ -1167,16 +1124,25 @@
         {t:"Nmap done: 1 IP address (1 host up) scanned in 6.51 seconds", c:"o"}
       ] },
 
-    { kind:"analyze",
-      question:"Le scan générique du cours #0 avait déjà montré ces ports. Qu'est-ce que ce scan ciblé apporte de plus, et pourquoi vouloir approfondir SMB spécifiquement ?",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
+      task:"Le scan générique du cours #0 avait déjà montré ces ports. Tape la question clé : que peut-on obtenir de plus avec SMB ?",
+      accepted:["quels partages sont accessibles", "quels partages et quels comptes"],
+      wrongAnswers:{
+        "quel est le mot de passe root":"Le bruteforce viendra plus tard — ici on cherche juste ce que SMB expose sans authentification.",
+        "est-ce que le port 445 est ouvert":"On le sait déjà depuis le scan : ce n'est pas la question."
+      },
       hint:"Compare ce que tu vois ici (ports, version précise) avec ce qu'un scan large montre. Ensuite, demande-toi ce que SMB peut révéler de plus qu'un simple numéro de version.",
+      hint2:"SMB expose des partages (des dossiers accessibles) et des comptes locaux (les utilisateurs de la machine) — deux choses introuvables avec un simple nmap -sV.",
       highlightIds:["hl-smb-ports"],
-      annotation:"→ On a la version exacte de Samba, mais surtout l'envie d'aller plus loin : SMB expose des partages et des comptes, introuvables avec un simple nmap -sV." },
+      annotation:"→ On a la version exacte de Samba, mais surtout l'envie d'aller plus loin : SMB expose des partages et des comptes, introuvables avec un simple nmap -sV.",
+      note:"Un scan nmap -sV ne liste que les services et versions ; pour obtenir partages, utilisateurs et groupes, il faut un outil d'énumération SMB dédié.",
+      output:[] },
 
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
       task:"Énumère SMB en profondeur : partages, utilisateurs, version",
       accepted:["enum4linux -a 192.168.56.20"],
       hint:"Un outil dédié à l'énumération SMB existe dans Kali : il interroge le service sous plusieurs angles (partages, utilisateurs, groupes) sans authentification. Cherche son nom, et utilise l'option qui active toutes les vérifications d'un coup.",
+      note:"enum4linux -a &lt;cible&gt; → <strong>-a</strong> active toutes les vérifications d'un coup : partages, utilisateurs, groupes, version Samba, sans jamais demander de mot de passe.",
       output:[
         {t:"Starting enum4linux v0.8.9 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Tue Jun 18 10:42:01 2024", c:"o"},
         {t:"", c:"o"},
@@ -1235,17 +1201,29 @@
         {t:"enum4linux complete on Tue Jun 18 10:43:12 2024", c:"o"}
       ] },
 
-    { kind:"analyze",
-      question:"On a maintenant des partages et des comptes. Comment ces informations serviront-elles dans les cours Samba suivants (symlink traversal, usermap_script) ?",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
+      task:"On a maintenant des partages et des comptes. Tape le nom d'un partage accessible anonymement.",
+      accepted:["tmp", "opt"],
+      wrongAnswers:{
+        "print$":"Ce partage est là pour les pilotes d'imprimante — pas le plus intéressant ici.",
+        "ipc$":"Partage technique, utile pour les échanges entre processus Windows, pas pour un accès direct."
+      },
       hint:"Deux choses : les partages tmp et opt sont accessibles anonymement — que peut-on en faire ? Les comptes root, msfadmin, etc. — à quoi peuvent-ils servir ?",
+      hint2:"Les partages tmp et opt apparaissent dans la section Share Enumeration. Les comptes listés (root, msfadmin, service...) serviront de cibles pour un bruteforce ou un exploit ciblé.",
       highlightIds:["hl-enum4linux"],
-      annotation:"→ Aucune action ici, juste de la préparation : tmp et opt seront utilisés pour le symlink traversal, et les comptes listés serviront de cibles dans les cours suivants." },
+      annotation:"→ Aucune action ici, juste de la préparation : tmp et opt seront utilisés pour le symlink traversal, et les comptes listés serviront de cibles dans les cours suivants.",
+      note:"Les partages tmp et opt sont accessibles sans authentification ; les comptes root, msfadmin, service, user et postgres remontent dans l'énumération — autant de cibles potentielles pour la suite.",
+      output:[] },
 
-    { kind:"analyze",
-      question:"C'est tout pour l'énumération — aucune exploitation n'a eu lieu. Le terminal passe en mode libre, toujours sur Kali. Tape exit pour voir.",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
+      task:"C'est tout pour l'énumération — aucune exploitation n'a eu lieu. Le terminal passe en mode libre, toujours sur Kali. Tape exit pour voir.",
+      accepted:["exit"],
       hint:"",
+      hint2:"",
       highlightIds:[],
-      annotation:"" }
+      annotation:"",
+      note:"",
+      output:[] }
   ];
 
   let freeContext = "kali@kali";
