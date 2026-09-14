@@ -343,7 +343,8 @@
     <div class="term-fs-header">
       <div class="term-fs-headrow">
         <div class="term-fs-titlebar">
-          <span class="term-fs-dot r"></span><span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
+          <button type="button" class="term-fs-dot r" id="term-close-dot" aria-label="Fermer le terminal" title="Fermer le terminal"></button>
+          <span class="term-fs-dot y"></span><span class="term-fs-dot g"></span>
           <span class="term-fs-context" id="sim-context">kali@kali</span>
         </div>
         <button class="term-fs-close" id="term-close-btn" type="button" aria-label="Fermer le terminal">✕</button>
@@ -381,7 +382,6 @@
   </div>
 
 <script>
-  // ---------- SÉQUENCE ----------
   const steps = [
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
       task:"Lance une reconnaissance complète sur la cible — tous les ports, avec détection de version et scripts de base.",
@@ -527,7 +527,6 @@
       ] }
   ];
 
-  // ---------- MODE LIBRE ----------
   let freeContext = "meterpreter";
   const freeCommands = {
     meterpreter: {
