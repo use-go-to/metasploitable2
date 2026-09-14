@@ -619,13 +619,68 @@ table.cheat tr:last-child td{border-bottom:none;}
 @media (min-width:640px){
   .term-fs-titlebar{font-size:13px;}
 }
-.term-fs-dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
+
+/* Points macOS dans le header du terminal. Le premier (rouge) est cliquable
+   pour fermer le terminal — c'est une convention familière, discrète, et
+   toujours visible en haut à gauche. */
+.term-fs-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  display:inline-block;
+  flex-shrink:0;
+  border:none;
+  padding:0;
+  background:transparent;
+  transition:transform .15s, filter .15s;
+}
 @media (min-width:640px){
   .term-fs-dot{width:9px; height:9px;}
 }
 .term-fs-dot.r{background:#ff5f57;}
 .term-fs-dot.y{background:#febc2e;}
 .term-fs-dot.g{background:#28c840;}
+
+/* Le point rouge devient un vrai bouton de fermeture discret */
+.term-fs-dot.r{
+  cursor:pointer;
+  position:relative;
+}
+.term-fs-dot.r:hover{
+  filter:brightness(1.15);
+  transform:scale(1.15);
+}
+.term-fs-dot.r:active{
+  transform:scale(1.05);
+}
+.term-fs-dot.r::after{
+  content:"×";
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--mono);
+  font-size:9px;
+  font-weight:700;
+  color:rgba(0,0,0,.7);
+  opacity:0;
+  transition:opacity .15s;
+  line-height:1;
+  pointer-events:none;
+}
+@media (min-width:640px){
+  .term-fs-dot.r::after{font-size:10px;}
+}
+.term-fs-dot.r:hover::after,
+.term-fs-dot.r:focus-visible::after{
+  opacity:1;
+}
+.term-fs-dot.r:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+
 .term-fs-context{
   margin-left:6px;
   color:var(--text);
@@ -707,8 +762,6 @@ table.cheat tr:last-child td{border-bottom:none;}
 @media (min-width:640px){
   .consigne-text{font-size:13.5px; line-height:1.5;}
 }
-
-/* Bloc consigne en mode libre : plus compact sur mobile */
 @media (max-width:639px){
   .term-fs-consigne{
     padding:6px 8px;
@@ -1024,7 +1077,7 @@ footer .note .ok{color:var(--ok);}
   height:4px;
 }
 
-/* ---------- BOUTON PLEIN ÉCRAN (fixe, toujours visible) ---------- */
+/* ---------- BOUTON PLEIN ÉCRAN (fixe, visible sur la page du cours) ---------- */
 .fs-toggle{
   position:fixed;
   top:14px;
@@ -1068,4 +1121,11 @@ footer .note .ok{color:var(--ok);}
     width:34px;
     height:34px;
   }
+}
+/* Quand le terminal d'entraînement est ouvert, on masque le bouton plein
+   écran (navigateur) : le terminal occupe déjà tout l'écran, et cela
+   évite qu'il chevauche le header du terminal. Le point rouge du header
+   permet de fermer et de revenir au cours. */
+body:has(.term-fullscreen.open) .fs-toggle{
+  display:none;
 }
