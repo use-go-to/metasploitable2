@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MySQL — Root sans mot de passe</title>
+<title>Énumération SMB — enum4linux</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="lab.css">
@@ -13,16 +13,16 @@
   <div class="wrap">
     <div class="hero">
       <p class="breadcrumb"><a href="index.html">← Hub</a></p>
-      <p class="kicker">metasploitable2 :: recon → connexion → énumération</p>
-      <h1>MySQL<br>Root sans mot de passe</h1>
-      <p class="lead">Un SGBD exposé avec un compte privilégié sans authentification. On s'y connecte directement, puis on énumère ce qui est accessible.</p>
+      <p class="kicker">metasploitable2 :: reconnaissance → énumération</p>
+      <h1>Énumération SMB<br>enum4linux</h1>
+      <p class="lead">SMB expose bien plus que des fichiers : partages, comptes locaux, version de Samba. Ici, on extrait tout ça sans jamais s'authentifier.</p>
       <div class="meta-row">
         <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
         <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
         <div class="meta-item"><span class="label">Réseau</span><span class="value">Réseau interne VirtualBox (isolé)</span></div>
-        <div class="meta-item"><span class="label">Résultat</span><span class="badge">accès base de données</span></div>
+        <div class="meta-item"><span class="label">Résultat</span><span class="badge">informations collectées</span></div>
         <div class="meta-item"><span class="label">Difficulté</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">2/10 · Introduction</span></div>
-        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#6db8ff; border:1px solid #6db8ff; background:#6db8ff18;">2/5 · Accès limité</span></div>
+        <div class="meta-item"><span class="label">Puissance</span><span class="score-badge" style="color:#5fd9a4; border:1px solid #5fd9a4; background:#5fd9a418;">1/5 · Information</span></div>
       </div>
     </div>
   </div>
@@ -30,29 +30,24 @@
   <div class="wrap">
     <section id="chrono">
       <h2 class="section-title">Chronologie</h2>
-      <p class="section-intro">Quatre étapes — la difficulté est dans ce qu'on observe, pas dans l'enchaînement technique.</p>
+      <p class="section-intro">Trois étapes courtes, sans exploitation : on confirme SMB, on choisit le port, on interroge.</p>
 
       <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
           <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
-          <div class="playbook-why">Repérer MySQL sur le port 3306, accessible depuis le réseau.</div>
+          <div class="playbook-why">Repérer les ports SMB (139, 445) et la version de Samba.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
-          <div class="playbook-what"><strong>Choix du port</strong><span>reconnaissance visuelle</span></div>
-          <div class="playbook-why">Le compte root existe par défaut sur MySQL — reste à savoir s'il est protégé.</div>
+          <div class="playbook-what"><strong>Choix du port</strong><span>139 ou 445</span></div>
+          <div class="playbook-why">SMB expose partages, utilisateurs, groupes sans authentification.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Connexion directe</strong><span>mysql -u root -h IP --skip-ssl</span></div>
-          <div class="playbook-why">Tester la connexion sans mot de passe (option -p absente).</div>
-        </div>
-        <div class="playbook-row">
-          <div class="playbook-num">4</div>
-          <div class="playbook-what"><strong>Énumération SQL</strong><span>show databases; select user();</span></div>
-          <div class="playbook-why">Lister les bases, vérifier l'identité effective, explorer.</div>
+          <div class="playbook-what"><strong>Énumération</strong><span>enum4linux -a IP</span></div>
+          <div class="playbook-why">Un seul outil pour tout interroger.</div>
         </div>
       </div>
 
@@ -70,8 +65,8 @@
 <span class="out">23/tcp   open  telnet      Linux telnetd</span>
 <span class="out">80/tcp   open  http        Apache httpd 2.2.8</span>
 <span class="out">111/tcp  open  rpcbind     2 (RPC #100000)</span>
-<span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X</span>
-<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span>
+<span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)</span>
+<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian (workgroup: WORKGROUP)</span>
 <span class="out">1524/tcp open  ingreslock?</span>
 <span class="out">2049/tcp open  nfs         2-4 (RPC #100003)</span>
 <span class="out">3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5</span>
@@ -81,74 +76,55 @@
 <span class="out">8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-sV / -sC</span><span class="v">versions + scripts NSE.</span>
-            <span class="k">triage</span><span class="v">On cherche des services exposés avec un accès non restreint.</span>
+            <span class="k">139 / 445</span><span class="v">SMB : NetBIOS over TCP (139) et SMB direct (445).</span>
+            <span class="k">Samba 3.0.20</span><span class="v">version ancienne, sur un système d'exploitation Linux.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">2</div>
           <h3>Choix du port à cibler</h3>
-          <p class="step-sub">MySQL écoute sur son port standard, accessible depuis le réseau.</p>
+          <p class="step-sub">SMB est riche en métadonnées : partages, utilisateurs, groupes.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>rappel de la sortie nmap</div>
-            <pre><span class="out">3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5</span></pre>
+            <pre><span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X</span>
+<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span></pre>
           </div>
           <div class="explain">
-            <span class="k">indice</span><span class="v">Sur une installation durcie, MySQL n'écoute que sur localhost. Ici, le service est accessible depuis l'extérieur — un signal direct.</span>
-            <span class="k">à retenir</span><span class="v">Le compte root existe par défaut sur MySQL. La question n'est pas « comment l'exploiter » mais « qui peut s'y connecter ».</span>
+            <span class="k">indice</span><span class="v">Le protocole SMB accepte souvent des <strong>sessions anonymes</strong> (null session).</span>
+            <span class="k">à retenir</span><span class="v">Un simple nmap -sV ne liste que ports et versions. Pour obtenir partages, utilisateurs, groupes, il faut un outil d'énumération dédié.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
-          <h3>Connexion directe — sans mot de passe</h3>
+          <h3>Énumération SMB complète</h3>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> mysql -u root -h 192.168.56.20 --skip-ssl<button class="copy-btn" type="button" data-copy="mysql -u root -h 192.168.56.20 --skip-ssl" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">Welcome to the MySQL monitor.</span>
-<span class="out">Your MySQL connection id is 12</span>
-<span class="out">Server version: 5.0.51a-3ubuntu5 (Ubuntu)</span>
-<span class="prompt">mysql></span></pre>
+            <pre><span class="prompt">$</span> enum4linux -a 192.168.56.20<button class="copy-btn" type="button" data-copy="enum4linux -a 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out"> ============================</span>
+<span class="out">|    Share Enumeration       |</span>
+<span class="out"> ============================</span>
+<span class="out">	print$          Disk      Printer Drivers</span>
+<span class="out">	tmp             Disk      oh noes!</span>
+<span class="out">	opt             Disk</span>
+<span class="out">	IPC$            IPC       IPC Service (metasploitable server (Samba 3.0.20-Debian))</span>
+<span class="out"></span>
+<span class="out"> ============================</span>
+<span class="out">|    Users on 192.168.56.20  |</span>
+<span class="out"> ============================</span>
+<span class="out">index: 0x1 Account: root</span>
+<span class="out">index: 0x2 Account: msfadmin</span>
+<span class="out">index: 0x3 Account: service</span>
+<span class="out">index: 0x4 Account: user</span>
+<span class="out">index: 0x5 Account: postgres</span>
+<span class="out"></span>
+<span class="ok">[+] Samba version: 3.0.20-Debian</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-u root</span><span class="v">compte d'administration par défaut MySQL — nom conventionnel, pas utilisateur système Linux.</span>
-            <span class="k">-h IP</span><span class="v">connexion distante. Sans -p, le client ne demande pas de mot de passe.</span>
-            <span class="k">--skip-ssl</span><span class="v">force la connexion en clair. Nécessaire avec les vieilles versions MySQL.</span>
-            <span class="k">invite</span><span class="v">mysql&gt; : on est dans un client SQL, pas un shell Unix.</span>
-          </div>
-        </div>
-
-        <div class="step">
-          <div class="step-num">4</div>
-          <h3>Énumération SQL</h3>
-          <div class="term">
-            <div class="term-bar"><span class="dot"></span>mysql</div>
-            <pre><span class="prompt">mysql></span> show databases;<button class="copy-btn" type="button" data-copy="show databases;" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">+--------------------+</span>
-<span class="out">| Database           |</span>
-<span class="out">+--------------------+</span>
-<span class="out">| information_schema |</span>
-<span class="out">| dvwa               |</span>
-<span class="out">| mysql              |</span>
-<span class="out">| owasp10            |</span>
-<span class="out">| tikiwiki           |</span>
-<span class="out">| tikiwiki195        |</span>
-<span class="out">+--------------------+</span>
-<span class="out">6 rows in set (0.00 sec)</span>
-
-<span class="prompt">mysql></span> select user();<button class="copy-btn" type="button" data-copy="select user();" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">+---------------------+</span>
-<span class="out">| user()              |</span>
-<span class="out">+---------------------+</span>
-<span class="out">| root@192.168.56.10  |</span>
-<span class="out">+---------------------+</span></pre>
-          </div>
-          <div class="explain">
-            <span class="k">information_schema</span><span class="v">base système présente partout.</span>
-            <span class="k">mysql</span><span class="v">contient les comptes et privilèges.</span>
-            <span class="k">dvwa / owasp10 / tikiwiki</span><span class="v">bases applicatives réelles — c'est là que se trouve la valeur.</span>
-            <span class="k">select user()</span><span class="v">confirme l'identité et l'hôte d'origine.</span>
+            <span class="k">-a</span><span class="v">mode « tout » : partages, utilisateurs, groupes, version — sans mot de passe.</span>
+            <span class="k">tmp / opt</span><span class="v">deux partages accessibles anonymement.</span>
+            <span class="k">root, msfadmin…</span><span class="v">liste des comptes locaux remontée automatiquement.</span>
           </div>
         </div>
 
@@ -162,23 +138,15 @@
         <h4>reconnaissance</h4>
         <table class="cheat">
           <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports + versions + scripts</td></tr>
+          <tr><td class="cmd">enum4linux -a IP</td><td class="desc">énumération complète SMB</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
-        <h4>connexion mysql (depuis Kali)</h4>
+        <h4>énumération alternative</h4>
         <table class="cheat">
-          <tr><td class="cmd">mysql -u root -h IP --skip-ssl</td><td class="desc">connexion sans mot de passe</td></tr>
-          <tr><td class="cmd">mysql -u root -h IP -p</td><td class="desc">connexion avec demande de mot de passe</td></tr>
-        </table>
-      </div>
-
-      <div class="cheat-group">
-        <h4>énumération SQL</h4>
-        <table class="cheat">
-          <tr><td class="cmd">show databases;</td><td class="desc">lister les bases</td></tr>
-          <tr><td class="cmd">select user();</td><td class="desc">voir l'utilisateur et l'hôte</td></tr>
-          <tr><td class="cmd">exit</td><td class="desc">quitter le client mysql</td></tr>
+          <tr><td class="cmd">smbclient -L //IP/</td><td class="desc">partages disponibles</td></tr>
+          <tr><td class="cmd">rpcclient -U "" -N IP</td><td class="desc">utilisateurs via RPC anonyme</td></tr>
         </table>
       </div>
     </section>
@@ -187,16 +155,16 @@
       <h2 class="section-title">Ce qu'il faut vraiment comprendre</h2>
       <div class="concepts">
         <div class="concept">
-          <h4>« root » MySQL ≠ root système</h4>
-          <p>Le compte root de MySQL est un utilisateur interne au SGBD. Il a tous les droits sur les bases, mais aucun droit sur le système d'exploitation.</p>
+          <h4>SMB, un protocole bavard</h4>
+          <p>SMB accepte souvent des sessions anonymes (null session). Cela permet d'énumérer partages, utilisateurs et version du serveur sans fournir de mot de passe.</p>
         </div>
         <div class="concept">
-          <h4>Un compte sans mot de passe n'est pas une faille, c'est une absence de configuration</h4>
-          <p>Pas de backdoor, pas de bug logiciel. MySQL a été installé, le compte root laissé sans mot de passe et en acceptant les connexions distantes. C'est une erreur de déploiement.</p>
+          <h4>Énumération ≠ exploitation</h4>
+          <p>Ici, on ne fait que poser des questions au service. Aucun code n'est exécuté sur la cible, aucun accès obtenu.</p>
         </div>
         <div class="concept">
-          <h4>Ce que l'accès permet — et ce qu'il ne permet pas</h4>
-          <p>On lit et modifie les données des bases. On peut aussi écrire des fichiers via INTO OUTFILE ou charger des UDF — techniques hors de ce cours.</p>
+          <h4>Pourquoi les comptes locaux sont précieux</h4>
+          <p>Savoir que les comptes root, msfadmin, service existent permet de cibler un bruteforce ou d'exploiter des services qui s'appuient sur ces noms.</p>
         </div>
       </div>
     </section>
@@ -206,24 +174,23 @@
 
       <div class="cheat-group">
         <table class="cheat">
-          <tr><td class="cmd">netstat -tulpn | grep 3306</td><td class="desc">vérifier l'interface d'écoute (0.0.0.0 = exposé)</td></tr>
-          <tr><td class="cmd">SELECT user, host FROM mysql.user;</td><td class="desc">lister les comptes et leurs hôtes autorisés</td></tr>
-          <tr><td class="cmd">bind-address = 127.0.0.1</td><td class="desc">limiter à localhost dans my.cnf</td></tr>
-          <tr><td class="cmd">SET PASSWORD FOR 'root'@'%' = PASSWORD('...');</td><td class="desc">définir un mot de passe fort</td></tr>
+          <tr><td class="cmd">restrict anonymous = 2</td><td class="desc">dans smb.conf, interdit les sessions nulles</td></tr>
+          <tr><td class="cmd">map to guest = never</td><td class="desc">désactive le compte invité</td></tr>
+          <tr><td class="cmd">surveillance logs Samba</td><td class="desc">détecter les rafales de requêtes RPC anonymes</td></tr>
         </table>
       </div>
     </section>
 
     <section id="practice">
       <h2 class="section-title">Terminal d'entraînement</h2>
-      <p class="section-intro">Rejoue la connexion et l'énumération. Le client SQL n'a pas les mêmes commandes qu'un shell Unix.</p>
+      <p class="section-intro">Rejoue l'énumération depuis Kali — aucune exploitation.</p>
 
       <div class="term-launch">
         <button class="term-launch-btn" id="term-open-btn" type="button">
           <span class="term-launch-dot"></span>
           Ouvrir le terminal
         </button>
-        <p class="term-launch-sub">Plein écran · client SQL simulé · historique ↑ / ↓</p>
+        <p class="term-launch-sub">Plein écran · indices logiques · historique ↑ / ↓</p>
       </div>
     </section>
 
@@ -250,7 +217,7 @@
       <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/4</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/3</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
@@ -278,7 +245,7 @@
 <script>
   const steps = [
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Lance une reconnaissance complète.",
+      task:"Lance une reconnaissance complète sur la cible.",
       accepted:["nmap -sv -sc 192.168.56.20"],
       hint:"-sV + -sC.",
       hint2:"nmap -sV -sC 192.168.56.20",
@@ -290,11 +257,11 @@
         {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
         {t:"80/tcp   open  http        Apache httpd 2.2.8", c:"o"},
         {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
-        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X", c:"o"},
-        {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian", c:"o"},
+        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)", c:"o", id:"hl-smb1"},
+        {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian (workgroup: WORKGROUP)", c:"o", id:"hl-smb2"},
         {t:"1524/tcp open  ingreslock?", c:"o"},
         {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
-        {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o", id:"hl-mysql"},
+        {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o"},
         {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
         {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
         {t:"6667/tcp open  irc         UnrealIRCd", c:"o"},
@@ -302,73 +269,75 @@
       ] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Un SGBD est exposé sur le réseau. Tape son numéro de port.",
-      accepted:["3306"],
+      task:"Un protocole de partage expose beaucoup d'informations. Tape un de ses ports.",
+      accepted:["139","445","139,445"],
       wrongAnswers:{
-        "5432":"PostgreSQL a aussi son intérêt — mais ici on cible MySQL, plus simple à exploiter.",
         "22":"SSH est un autre cours.",
-        "80":"Apache n'est pas la cible."
+        "80":"Apache n'est pas la cible ici.",
+        "3306":"MySQL, autre cours."
       },
-      hint:"Un service de base de données exposé depuis le réseau (au lieu de localhost uniquement).",
-      hint2:"3306/tcp = MySQL. Sur une installation durcie, il n'écouterait que sur localhost.",
-      highlightIds:["hl-mysql"],
-      note:"MySQL exposé sur le réseau (écoute 0.0.0.0, pas seulement 127.0.0.1) → compte root accessible depuis l'extérieur.",
+      hint:"Deux ports SMB : NetBIOS over TCP (139) et SMB direct (445).",
+      hint2:"139 ou 445 — Samba expose partages, utilisateurs, groupes sans authentification.",
+      highlightIds:["hl-smb1","hl-smb2"],
+      note:"SMB (139, 445) accepte souvent des sessions anonymes — partages, utilisateurs et version de Samba remontent sans mot de passe.",
       output:[] },
 
-    { kind:"type", phase:"config", context:"kali@kali", prompt:"$",
-      task:"Tente une connexion au compte root SANS mot de passe.",
-      accepted:["mysql -u root -h 192.168.56.20 --skip-ssl"],
-      hint:"Client mysql + -u root + -h IP + --skip-ssl (obligatoire pour les vieilles versions). Pas d'option -p.",
-      hint2:"mysql -u root -h 192.168.56.20 --skip-ssl",
-      note:"mysql -u root -h &lt;IP&gt; --skip-ssl → connexion sans mot de passe ; --skip-ssl pour les anciens serveurs qui ne supportent pas TLS moderne.",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
+      task:"Énumère SMB en profondeur : partages, utilisateurs, version.",
+      accepted:["enum4linux -a 192.168.56.20"],
+      hint:"Un outil dédié existe dans Kali. Option -a = tout d'un coup.",
+      hint2:"enum4linux -a 192.168.56.20",
+      note:"enum4linux -a &lt;cible&gt; → toutes les vérifications en une passe : partages, utilisateurs, groupes, version Samba, sans mot de passe.",
       output:[
-        {t:"Welcome to the MySQL monitor.", c:"o"},
-        {t:"Your MySQL connection id is 12", c:"o"},
-        {t:"Server version: 5.0.51a-3ubuntu5 (Ubuntu)", c:"o"}
-      ] },
-
-    { kind:"type", phase:"recon", context:"mysql", prompt:">",
-      task:"Liste les bases accessibles.",
-      accepted:["show databases;"],
-      hint:"Commande SQL : show + ce qu'on veut voir. Le point-virgule final est obligatoire.",
-      hint2:"show databases;",
-      note:"show databases; → liste toutes les bases accessibles avec le compte courant.",
-      output:[
-        {t:"+--------------------+", c:"o"},
-        {t:"| Database           |", c:"o"},
-        {t:"+--------------------+", c:"o"},
-        {t:"| information_schema |", c:"o"},
-        {t:"| dvwa               |", c:"o"},
-        {t:"| mysql              |", c:"o"},
-        {t:"| owasp10            |", c:"o"},
-        {t:"| tikiwiki           |", c:"o"},
-        {t:"| tikiwiki195        |", c:"o"},
-        {t:"+--------------------+", c:"o"}
+        {t:" ============================", c:"ok"},
+        {t:"|    Share Enumeration       |", c:"ok"},
+        {t:" ============================", c:"ok"},
+        {t:"	print$          Disk      Printer Drivers", c:"o"},
+        {t:"	tmp             Disk      oh noes!", c:"o", id:"hl-tmp"},
+        {t:"	opt             Disk", c:"o", id:"hl-opt"},
+        {t:"	IPC$            IPC       IPC Service (metasploitable server)", c:"o"},
+        {t:"", c:"o"},
+        {t:" ============================", c:"ok"},
+        {t:"|    Users on 192.168.56.20  |", c:"ok"},
+        {t:" ============================", c:"ok"},
+        {t:"index: 0x1 Account: root", c:"o"},
+        {t:"index: 0x2 Account: msfadmin", c:"o"},
+        {t:"index: 0x3 Account: service", c:"o"},
+        {t:"index: 0x4 Account: user", c:"o"},
+        {t:"index: 0x5 Account: postgres", c:"o"},
+        {t:"", c:"o"},
+        {t:"[+] Samba version: 3.0.20-Debian", c:"ok"}
       ] }
   ];
 
-  let freeContext = "mysql";
+  let freeContext = "kali@kali";
   const freeCommands = {
-    mysql: {
-      "show databases;": [
-        {t:"+--------------------+", c:"o"},
-        {t:"| Database           |", c:"o"},
-        {t:"+--------------------+", c:"o"},
-        {t:"| information_schema |", c:"o"},
-        {t:"| dvwa               |", c:"o"},
-        {t:"| mysql              |", c:"o"},
-        {t:"| owasp10            |", c:"o"},
-        {t:"| tikiwiki           |", c:"o"},
-        {t:"| tikiwiki195        |", c:"o"},
-        {t:"+--------------------+", c:"o"}
+    "kali@kali": {
+      "enum4linux -a 192.168.56.20": [
+        {t:"Sharename       Type      Comment", c:"o"},
+        {t:"---------       ----      -------", c:"o"},
+        {t:"tmp             Disk      oh noes!", c:"o"},
+        {t:"opt             Disk", c:"o"},
+        {t:"", c:"o"},
+        {t:"Users: root, msfadmin, service, user, postgres", c:"o"},
+        {t:"Samba version: 3.0.20-Debian", c:"o"}
       ],
-      "select user();": [{t:"| root@192.168.56.10 |", c:"ok"}],
-      "show tables;": [{t:"Tables_in_(database courante) — utilise d'abord USE nom_base;", c:"o"}],
-      "exit": {t:"Bye", c:"o"}
+      "smbclient -L //192.168.56.20/": [
+        {t:"Sharename       Type      Comment", c:"o"},
+        {t:"---------       ----      -------", c:"o"},
+        {t:"tmp             Disk      oh noes!", c:"o"},
+        {t:"opt             Disk", c:"o"}
+      ],
+      "rpcclient -U \"\" -N 192.168.56.20": [
+        {t:"rpcclient $>", c:"o"},
+        {t:"user:[root] rid:[0x3e8]", c:"o"},
+        {t:"user:[msfadmin] rid:[0x3e9]", c:"o"}
+      ],
+      "exit": [{t:"Rien à quitter : tu es toujours sur ta machine Kali.", c:"o"}]
     }
   };
 
-  let freeHintHtml = "Client mysql ouvert. Tape <strong style=\"color:var(--text)\">show databases;</strong>, <strong style=\"color:var(--text)\">select user();</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
+  let freeHintHtml = "Recon uniquement. Tape <strong style=\"color:var(--text)\">enum4linux -a &lt;IP&gt;</strong>, <strong style=\"color:var(--text)\">smbclient -L //&lt;IP&gt;/</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
 </script>
 <script src="engine.js"></script>
 
