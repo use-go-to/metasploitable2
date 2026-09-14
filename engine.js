@@ -3,7 +3,7 @@
 // Tous les éléments DOM sont traités comme optionnels : si un cours ne fournit pas
 // un bouton (ex: plus de bouton "Connexion réseau"), le moteur continue de fonctionner.
 (function(){
-  // ---------- ÉTAT ----------
+  // ---------- ÉTAT ---------
   let stepIndex = 0;
   const initialFreeContext = (typeof freeContext !== "undefined") ? freeContext : "kali@kali";
   let userHasInteracted = false;
