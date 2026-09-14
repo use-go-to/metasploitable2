@@ -698,11 +698,6 @@
     overflow-y:auto;
     max-height:none;
     padding:20px 26px;
-    transition:filter .25s ease;
-  }
-  .term-fullscreen .sim-body.dimmed{
-    filter:brightness(.5) saturate(.85);
-    pointer-events:none;
   }
   .term-fs-footer{
     flex-shrink:0;
@@ -712,84 +707,49 @@
   .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
   .term-fs-footer .sim-controls{padding:10px 22px 14px;}
 
-  /* ---------- POP-UP D'ANALYSE (remplace indice/solution/continuer en mode analyse) ---------- */
-  .analyze-popup{
-    margin:16px 22px 0;
-    padding:16px 18px;
-    border-radius:10px;
-    border:1px solid var(--accent);
-    background:linear-gradient(180deg, var(--accent-soft), var(--panel-alt) 75%);
-    box-shadow:0 14px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(255,138,92,.08);
-    display:none;
-    flex-direction:column;
-    gap:12px;
-    animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  /* ---------- FIL D'ARIANE DE MÉTHODE (toujours visible, jamais bloquant) ---------- */
+  .phase-track{
+    display:flex; flex-wrap:wrap; gap:6px;
+    margin-top:12px;
   }
-  .analyze-popup.leaving{animation:popOut .18s ease both;}
-  @keyframes popIn{
-    from{opacity:0; transform:translateY(14px) scale(.96);}
-    to{opacity:1; transform:translateY(0) scale(1);}
+  .phase-pill{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;
+    color:var(--muted); border:1px solid var(--border); border-radius:20px;
+    padding:4px 10px; transition:color .2s, border-color .2s, background .2s;
   }
-  @keyframes popOut{
-    from{opacity:1; transform:scale(1);}
-    to{opacity:0; transform:scale(.95);}
+  .phase-pill.active{
+    color:var(--accent); border-color:var(--accent); background:var(--accent-soft);
   }
-  .ap-tag{
-    align-self:flex-start;
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:var(--accent);
-    border:1px solid var(--accent);
-    border-radius:3px;
-    padding:3px 8px;
+
+  /* ---------- CARNET DE MISSION (jamais bloquant : pas de dimmed, pas de clic forcé pour continuer) ---------- */
+  .notebook-btn{
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:6px;
+    padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    transition:border-color .15s, color .15s;
   }
-  .ap-question{
-    font-family:var(--sans);
-    font-size:14.5px;
-    color:var(--text);
-    line-height:1.55;
-    margin:0;
+  .notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .notebook-panel{
+    display:none; flex-direction:column; gap:10px;
+    margin:12px 22px 0; padding:14px 16px; max-height:260px; overflow-y:auto;
+    border-radius:10px; border:1px solid var(--border); background:var(--panel-alt);
   }
-  .ap-hint{
-    font-size:13px;
-    color:var(--muted);
-    max-height:0;
-    opacity:0;
-    overflow:hidden;
-    border-left:2px solid var(--accent);
-    padding-left:0;
-    transition:max-height .25s ease, opacity .25s ease, padding .25s ease;
+  .notebook-panel.show{display:flex;}
+  .notebook-empty{font-size:12.5px; color:var(--muted); margin:0;}
+  .notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
+  .notebook-item .nb-cmd{
+    font-family:var(--mono); font-size:12px; color:var(--text); margin-bottom:2px;
   }
-  .ap-hint.show{max-height:200px; opacity:1; padding:8px 0 8px 12px;}
-  .ap-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-  .ap-btn{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    transition:border-color .15s, transform .1s;
+  .notebook-item .nb-note{font-size:12.5px; color:var(--muted); line-height:1.5;}
+
+  /* ---------- INDICE (deux niveaux) ---------- */
+  .hint-more{
+    display:inline-block; margin-left:8px;
+    font-family:var(--mono); font-size:11px; color:var(--accent);
+    background:transparent; border:1px solid var(--accent); border-radius:12px;
+    padding:2px 9px; cursor:pointer;
   }
-  .ap-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-  .ap-btn.ap-continue{
-    margin-left:auto;
-    border-color:var(--ok);
-    color:var(--ok);
-    font-weight:600;
-    animation:ctaPulse 1.8s ease-in-out infinite;
-  }
-  @keyframes ctaPulse{
-    0%,100%{box-shadow:0 0 0 rgba(95,217,164,0);}
-    50%{box-shadow:0 0 16px rgba(95,217,164,.5);}
-  }
+  .hint-more:hover{background:var(--accent-soft);}
 
   /* animation sobre au passage d'une étape à l'autre */
   @keyframes successFlash{
@@ -1128,8 +1088,9 @@
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
         <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
-        <span class="item mode" id="sim-mode-label">reconnaissance</span>
+        <button type="button" class="notebook-btn" id="notebook-btn">📓 Carnet (<span id="notebook-count">0</span>)</button>
       </div>
+      <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
         <span class="term-progress-label" id="sim-progress">étape 1/6</span>
@@ -1137,6 +1098,9 @@
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
         <span class="consigne-text" id="consigne-text">—</span>
+      </div>
+      <div class="notebook-panel" id="notebook-panel">
+        <div id="notebook-list"></div>
       </div>
     </div>
 
@@ -1148,18 +1112,10 @@
     </div>
 
     <div class="term-fs-footer">
-      <div class="analyze-popup" id="analyze-popup">
-        <span class="ap-tag" id="ap-tag">À analyser</span>
-        <p class="ap-question" id="ap-question">—</p>
-        <div class="ap-actions">
-          <button class="ap-btn ap-continue" id="ap-continue-btn" type="button">Continuer →</button>
-        </div>
-      </div>
       <div class="sim-hint-box" id="sim-hint-box"></div>
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-continue-btn" style="display:none;">Continuer →</button>
         <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
@@ -1168,29 +1124,45 @@
 
 <script>
   // ---------- SÉQUENCE ----------
-  // kind "type"    : il faut taper une commande pour avancer.
-  // kind "analyze" : pas de commande — on relit la sortie précédente, indice/solution surlignent, "Continuer" fait avancer.
+  // kind "type"    : il faut toujours taper quelque chose pour avancer — y compris
+  //                  les moments de réflexion (ex: "quel port cibler ?"), qui sont
+  //                  d'anciens moments "analyze" fondus ici : plus de pop-up, plus
+  //                  de clic "Continuer", plus d'écran assombri. On tape une courte
+  //                  réponse, l'indice/la solution marchent pareil que pour une
+  //                  vraie commande, et l'annotation s'affiche ensuite comme un
+  //                  simple commentaire dans le flux du terminal.
+  // kind "connect" : pas de saisie — la config réseau est déjà couverte plus haut
+  //                  dans le cours, ici on se contente de déclencher les deux
+  //                  machines via un bouton dédié.
   const steps = [
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
       task:"Confirme que SSH est ouvert et récupère la version exacte du serveur.",
       accepted:["nmap -sv -p 22 192.168.56.20"],
       hint:"Tu as déjà utilisé nmap pour un scan complet dans le cours vsftpd. Ici, on cible un seul port : SSH. Il te faut les options qui limitent le scan à un port précis (-p) et qui détectent la version du service (-sV).",
+      hint2:"La commande complète est : nmap -sV -p 22 192.168.56.20 — -p 22 restreint le scan au port SSH, -sV active la détection de version.",
+      note:"nmap -sV -p 22 &lt;cible&gt; → <strong>-p 22</strong> restreint le scan au port SSH, <strong>-sV</strong> active la détection de version du service. Sur un seul port, le scan est beaucoup plus rapide que sur toute la machine.",
       output:[
         {t:"PORT   STATE SERVICE VERSION", c:"o"},
         {t:"22/tcp open  ssh     OpenSSH 4.7p1 Debian 8ubuntu1 (protocol 2.0)", c:"o", id:"hl-ssh"},
         {t:"Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel", c:"o"}
       ] },
 
-    { kind:"analyze",
-      question:"Ce port 22 est ouvert, comme le port 23 (Telnet) l'était dans le cours précédent. Qu'est-ce qui change dans la façon d'attaquer, sachant que SSH chiffre tout ?",
+    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
+      task:"Ce port 22 est ouvert, comme le port 23 (Telnet) l'était dans le cours précédent. Tape le mot qui qualifie ce qui change dans la façon d'attaquer, sachant que SSH chiffre tout.",
+      accepted:["chiffrement"],
       hint:"Pense à ce qu'on pouvait faire sur Telnet (capture réseau) — et à ce qu'on ne peut PAS faire sur SSH à cause du chiffrement. Le mot de passe reste-t-il testable ?",
+      hint2:"Le mot qui définit ce que SSH change par rapport à Telnet : le canal est chiffré. Mais le mot de passe reste testable — la vraie différence, c'est que la capture réseau ne donne plus rien.",
       highlightIds:["hl-ssh"],
-      annotation:"→ SSH chiffre le canal : la capture réseau ne donne rien. Mais l'authentification reste un couple identifiant/mot de passe, testable par dictionnaire. Le chiffrement ne protège pas contre un mot de passe faible." },
+      annotation:"→ SSH chiffre le canal : la capture réseau ne donne rien. Mais l'authentification reste un couple identifiant/mot de passe, testable par dictionnaire. Le chiffrement ne protège pas contre un mot de passe faible.",
+      note:"Chiffrement ≠ robustesse de l'authentification : le canal SSH est chiffré, mais le mot de passe reste testable par dictionnaire.",
+      output:[] },
 
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"exploitation", context:"kali@kali", prompt:"$",
       task:"Lance un bruteforce SSH sur le compte msfadmin avec le dictionnaire rockyou, en limitant le parallélisme à 4.",
       accepted:["hydra -l msfadmin -p /usr/share/wordlists/rockyou.txt ssh://192.168.56.20 -t 4"],
       hint:"L'outil de bruteforce de référence sous Kali, déjà utilisé sur Telnet : hydra. Ici la cible est le protocole ssh://. Tu connais le login (msfadmin) mais pas le mot de passe : dictionnaire complet. Et comme SSH est plus lourd, limite à 4 tâches parallèles avec -t.",
+      hint2:"La commande complète : hydra -l msfadmin -P /usr/share/wordlists/rockyou.txt ssh://192.168.56.20 -t 4",
+      note:"hydra -l &lt;login&gt; -P &lt;dictionnaire&gt; ssh://&lt;cible&gt; -t 4 → <strong>-l</strong> teste un seul login, <strong>-P</strong> fournit la liste de mots de passe, <strong>ssh://</strong> cible le service SSH, <strong>-t 4</strong> limite à 4 connexions parallèles (SSH est lourd, chaque essai est un handshake complet).",
       output:[
         {t:"Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak", c:"o"},
         {t:"[DATA] max 4 tasks per 1 server, overall 4 tasks, 14344398 login tries (l:1/p:14344398)", c:"o"},
@@ -1199,16 +1171,22 @@
         {t:"1 of 1 target successfully completed, 1 valid password found", c:"ok"}
       ] },
 
-    { kind:"analyze",
-      question:"Parmi toutes ces lignes, laquelle contient l'information exploitable ? Que va-t-on en faire ?",
+    { kind:"type", phase:"exploitation", context:"kali@kali", prompt:"$",
+      task:"Parmi toutes ces lignes, laquelle contient l'information exploitable ? Tape le mot qui désigne le résultat exploitable.",
+      accepted:["password"],
       hint:"hydra affiche sa progression, ses statistiques, puis son résultat. Le résultat, c'est la ligne qui donne login et password. Une fois qu'on les a, la suite est une connexion SSH classique.",
+      hint2:"Le résultat exploitable, c'est la ligne [22][ssh] host: 192.168.56.20 login: msfadmin password: msfadmin — le mot password désigne le résultat exploitable.",
       highlightIds:["hl-found"],
-      annotation:"→ msfadmin:msfadmin — identifiants par défaut. La ligne [22][ssh] donne le login et le mot de passe trouvés. On peut maintenant se connecter." },
+      annotation:"→ msfadmin:msfadmin — identifiants par défaut. La ligne [22][ssh] donne le login et le mot de passe trouvés. On peut maintenant se connecter.",
+      note:"La ligne [22][ssh] de la sortie hydra donne le login et le mot de passe trouvés — c'est le seul résultat exploitable de toute la sortie.",
+      output:[] },
 
-    { kind:"type", context:"kali@kali", prompt:"$",
+    { kind:"type", phase:"exploitation", context:"kali@kali", prompt:"$",
       task:"Connecte-toi en SSH avec les identifiants trouvés.",
       accepted:["ssh msfadmin@192.168.56.20"],
       hint:"Maintenant que tu as le login et le mot de passe, la connexion est une simple session SSH interactive vers la cible. La syntaxe : ssh login@IP. Le mot de passe sera demandé ensuite.",
+      hint2:"La commande complète : ssh msfadmin@192.168.56.20",
+      note:"ssh &lt;login&gt;@&lt;cible&gt; → ouvre une session interactive sur la cible avec les identifiants trouvés ; le mot de passe est demandé ensuite.",
       output:[
         {t:"The authenticity of host '192.168.56.20 (192.168.56.20)' can't be established.", c:"o"},
         {t:"ED25519 key fingerprint is SHA256:…", c:"o"},
@@ -1218,10 +1196,12 @@
         {t:"Last login: … from 192.168.56.10", c:"ok"}
       ] },
 
-    { kind:"type", context:"msfadmin@metasploitable", prompt:"$",
+    { kind:"type", phase:"exploitation", context:"msfadmin@metasploitable", prompt:"$",
       task:"Vérifie ton identité et ton niveau de privilège.",
       accepted:["whoami"],
       hint:"Tu viens d'ouvrir une session sous msfadmin. La commande la plus simple pour confirmer qui tu es dans un shell Unix : whoami. Tu peux aussi essayer id ou pwd dans le mode libre ensuite.",
+      hint2:"La commande : whoami — affiche l'identité courante dans le shell.",
+      note:"whoami → affiche le nom de l'utilisateur courant dans le shell ; id affiche uid/gid/groupes, pwd le répertoire courant.",
       output:[
         {t:"msfadmin", c:"ok"}
       ] }
