@@ -2,794 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SNMP — Fuite d'informations</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#0b0e14;
-    --panel:#12161f;
-    --panel-alt:#161b26;
-    --border:#232937;
-    --text:#e7e9ee;
-    --muted:#8b93a5;
-    --accent:#ff8a5c;
-    --accent-soft:#ff8a5c22;
-    --ok:#5fd9a4;
-    --ok-soft:#5fd9a422;
-    --serif:'Fraunces', serif;
-    --sans:'IBM Plex Sans', sans-serif;
-    --mono:'IBM Plex Mono', monospace;
-  }
-
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:var(--sans);
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-  }
-
-  ::selection{background:var(--accent-soft); color:var(--accent);}
-
-  a{color:var(--accent);}
-
-  .wrap{
-    max-width:760px;
-    margin:0 auto;
-    padding:0 24px;
-  }
-
-  /* ---------- HERO ---------- */
-  .hero{
-    padding:96px 0 64px;
-    border-bottom:1px solid var(--border);
-  }
-  .breadcrumb{margin:0 0 18px;}
-  .breadcrumb a{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--muted);
-    text-decoration:none;
-    border-bottom:1px solid transparent;
-  }
-  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
-  .hero .kicker{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-    margin:0 0 20px;
-  }
-  .hero .kicker::before{content:"$ "; color:var(--muted);}
-  .hero h1{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:clamp(34px,5vw,52px);
-    line-height:1.1;
-    margin:0 0 20px;
-    letter-spacing:-0.01em;
-  }
-  .hero p.lead{
-    font-size:17px;
-    color:var(--muted);
-    max-width:56ch;
-    margin:0 0 32px;
-  }
-  .meta-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:28px;
-  }
-  .meta-item{font-size:13px;}
-  .meta-item .label{
-    display:block;
-    color:var(--muted);
-    margin-bottom:4px;
-  }
-  .meta-item .value{
-    font-family:var(--mono);
-    color:var(--text);
-  }
-  .badge{
-    display:inline-block;
-    font-family:var(--mono);
-    font-size:12px;
-    padding:3px 10px;
-    border:1px solid var(--ok);
-    color:var(--ok);
-    border-radius:3px;
-  }
-  .score-badge{
-    display:inline-block;
-    font-family:var(--mono);
-    font-size:12px;
-    padding:3px 10px;
-    border-radius:3px;
-  }
-
-  /* ---------- SECTION GENERIC ---------- */
-  section{
-    padding:64px 0;
-    border-bottom:1px solid var(--border);
-  }
-  section:last-of-type{border-bottom:none;}
-  h2.section-title{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:28px;
-    margin:0 0 12px;
-  }
-  .section-intro{
-    color:var(--muted);
-    max-width:60ch;
-    margin:0 0 40px;
-    font-size:15px;
-  }
-
-  /* ---------- TIMELINE ---------- */
-  .timeline{
-    position:relative;
-    padding-left:44px;
-  }
-  .timeline::before{
-    content:"";
-    position:absolute;
-    left:15px;
-    top:6px;
-    bottom:6px;
-    width:1px;
-    background:var(--border);
-  }
-  .step{
-    position:relative;
-    margin-bottom:56px;
-  }
-  .step:last-child{margin-bottom:0;}
-  .step-num{
-    position:absolute;
-    left:-44px;
-    top:0;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    background:var(--panel);
-    border:1px solid var(--border);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-  }
-  .step h3{
-    font-family:var(--sans);
-    font-weight:600;
-    font-size:19px;
-    margin:2px 0 6px;
-  }
-  .step .step-sub{
-    color:var(--muted);
-    font-size:14px;
-    margin:0 0 18px;
-  }
-
-  /* ---------- TERMINAL BLOCK ---------- */
-  .term{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-    margin:0 0 18px;
-  }
-  .term-bar{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:9px 14px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .term-bar .dot{
-    width:7px; height:7px; border-radius:50%;
-    background:var(--border);
-  }
-  .term pre{
-    margin:0;
-    padding:16px 18px;
-    font-family:var(--mono);
-    font-size:13px;
-    line-height:1.65;
-    overflow-x:auto;
-    white-space:pre-wrap;
-    word-break:break-word;
-  }
-  .term .prompt{color:var(--accent);}
-  .term .out{color:var(--muted);}
-  .term .ok{color:var(--ok);}
-  .term .flag{color:var(--accent);}
-
-  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
-  .copy-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:20px;
-    height:20px;
-    margin-left:8px;
-    padding:0;
-    border:1px solid transparent;
-    border-radius:4px;
-    background:transparent;
-    color:var(--muted);
-    font-size:12px;
-    line-height:1;
-    cursor:pointer;
-    vertical-align:middle;
-    opacity:.55;
-    transition:opacity .15s, border-color .15s, color .15s, background .15s;
-  }
-  .term:hover .copy-btn{opacity:.9;}
-  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
-  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
-
-  /* ---------- EXPLAIN BOX ---------- */
-  .explain{
-    display:grid;
-    grid-template-columns:auto 1fr;
-    gap:10px 12px;
-    background:transparent;
-    border-left:2px solid var(--border);
-    padding:2px 0 2px 18px;
-    margin-top:14px;
-  }
-  .explain .k{
-    font-family:var(--mono);
-    font-size:11px;
-    color:var(--muted);
-    padding-top:2px;
-    white-space:nowrap;
-  }
-  .explain .v{
-    font-size:14.5px;
-    color:var(--text);
-  }
-  .explain .v strong{color:var(--accent); font-weight:600;}
-  .explain .k.err{color:#ff5c72;}
-  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
-
-  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
-  .playbook{
-    display:flex;
-    flex-direction:column;
-    gap:0;
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-    margin-bottom:40px;
-  }
-  .playbook-row{
-    display:grid;
-    grid-template-columns:28px 1fr 1.3fr;
-    gap:16px;
-    padding:14px 18px;
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
-  }
-  .playbook-row:last-child{border-bottom:none;}
-  .playbook-num{
-    font-family:var(--mono);
-    color:var(--accent);
-    font-size:13px;
-  }
-  .playbook-what strong{
-    display:block;
-    font-size:14px;
-    color:var(--text);
-    margin-bottom:3px;
-  }
-  .playbook-what span{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--ok);
-  }
-  .playbook-why{
-    font-size:13px;
-    color:var(--muted);
-  }
-  @media (max-width:640px){
-    .playbook-row{grid-template-columns:1fr; gap:4px;}
-    .playbook-num{display:none;}
-  }
-
-  /* ---------- CHEATSHEET TABLE ---------- */
-  .cheat-group{margin-bottom:32px;}
-  .cheat-group h4{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-    margin:0 0 14px;
-    font-weight:500;
-  }
-  table.cheat{
-    width:100%;
-    border-collapse:collapse;
-    font-size:14px;
-  }
-  table.cheat td{
-    padding:10px 0;
-    border-bottom:1px solid var(--border);
-    vertical-align:top;
-  }
-  table.cheat td.cmd{
-    font-family:var(--mono);
-    color:var(--ok);
-    width:42%;
-    padding-right:20px;
-    white-space:nowrap;
-  }
-  table.cheat td.desc{color:var(--muted);}
-  table.cheat tr:last-child td{border-bottom:none;}
-
-  /* ---------- CONCEPT CARDS ---------- */
-  .concepts{
-    display:flex;
-    flex-direction:column;
-    gap:22px;
-  }
-  .concept{
-    padding:20px 0;
-    border-top:1px solid var(--border);
-  }
-  .concept:first-child{border-top:none; padding-top:0;}
-  .concept h4{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:18px;
-    margin:0 0 8px;
-  }
-  .concept p{
-    color:var(--muted);
-    margin:0;
-    font-size:14.5px;
-    max-width:62ch;
-  }
-
-  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
-  .practice-wrap{
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-  }
-  .info-bar{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px 28px;
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:13px 18px;
-    font-family:var(--mono);
-    font-size:12.5px;
-  }
-  .info-bar .item{color:var(--muted);}
-  .info-bar .item strong{color:var(--accent); font-weight:500;}
-
-  .sim{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-  }
-  .sim-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-    padding:9px 14px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .sim-progress{color:var(--accent);}
-  .sim-body{
-    padding:16px 18px;
-    font-family:var(--mono);
-    font-size:13px;
-    line-height:1.7;
-    max-height:420px;
-    overflow-y:auto;
-  }
-  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
-  .sim-line .p{color:var(--accent);}
-  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
-  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
-  .p-kali .p-user{color:var(--ok); font-weight:600;}
-  .p-kali .p-punc{color:var(--muted);}
-  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
-  .p-root{color:#ff5c72; font-weight:600;}
-  .p-path{color:#5fbfff;}
-  .sim-line .o{color:var(--muted); display:block;}
-  .sim-line .o.ok{color:var(--ok);}
-  .sim-line .o.err{color:#ff5c72;}
-  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
-  @keyframes fadeSlideIn{
-    from{opacity:0; transform:translateY(4px);}
-    to{opacity:1; transform:translateY(0);}
-  }
-
-  /* ligne mise en valeur pendant la correction */
-  .sim-line.hl{
-    background:rgba(255,138,92,.12);
-    border-radius:4px;
-    padding:2px 6px;
-    margin:0 -6px 4px;
-    animation:pulseGlow 1.3s ease-in-out 2;
-  }
-  @keyframes pulseGlow{
-    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
-    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
-  }
-
-  /* annotation ajoutée lors d'une correction d'analyse */
-  .sim-annot{
-    margin:2px 0 10px;
-    padding:8px 12px;
-    border-left:2px solid var(--accent);
-    color:var(--accent);
-    font-size:12.5px;
-    background:var(--accent-soft);
-    border-radius:0 6px 6px 0;
-  }
-
-  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
-     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
-  .sim-inputline{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin:0 0 4px;
-  }
-  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
-  .sim-input{
-    flex:1;
-    background:transparent;
-    border:none;
-    outline:none;
-    color:var(--text);
-    font-family:var(--mono);
-    font-size:13px;
-    caret-color:var(--accent);
-    padding:0;
-  }
-  .sim-input::placeholder{color:var(--muted); opacity:.6;}
-  .sim-controls{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 18px 16px;
-    border-top:1px solid var(--border);
-    flex-wrap:wrap;
-  }
-  .sim-btn{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    transition:border-color .15s, transform .1s;
-  }
-  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-  .sim-btn:active{transform:translateY(0);}
-  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
-  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
-
-  .sim-hint-box{
-    margin:0 18px 12px;
-    padding:10px 14px;
-    border-left:2px solid var(--accent);
-    font-size:13px;
-    color:var(--muted);
-    max-height:0;
-    opacity:0;
-    overflow:hidden;
-    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
-  }
-  .sim-hint-box.show{
-    max-height:120px;
-    opacity:1;
-  }
-
-  @media (max-width:640px){
-    .sim-body{max-height:320px;}
-  }
-
-  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
-  .term-launch{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:28px;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:12px;
-  }
-  .term-launch-btn{
-    font-family:var(--mono);
-    font-size:14px;
-    font-weight:600;
-    color:#05100b;
-    background:var(--ok);
-    border:none;
-    border-radius:8px;
-    padding:13px 24px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
-  .term-launch-btn:active{transform:translateY(0);}
-  .term-launch-dot{
-    width:8px; height:8px; border-radius:50%;
-    background:#05100b;
-    animation:launchBlink 1.6s ease-in-out infinite;
-  }
-  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
-  .term-launch-sub{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-    margin:0;
-  }
-
-  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
-  .term-fullscreen{
-    position:fixed;
-    inset:0;
-    z-index:9999;
-    display:none;
-    flex-direction:column;
-    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
-    opacity:0;
-    transform:scale(.98);
-    transition:opacity .22s ease, transform .22s ease;
-  }
-  .term-fullscreen.open{
-    display:flex;
-    opacity:1;
-    transform:scale(1);
-  }
-  .term-fs-header{
-    flex-shrink:0;
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
-    padding:14px 22px 16px;
-  }
-  .term-fs-headrow{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .term-fs-titlebar{
-    display:flex;
-    align-items:center;
-    gap:7px;
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--muted);
-  }
-  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
-  .term-fs-dot.r{background:#ff5f57;}
-  .term-fs-dot.y{background:#febc2e;}
-  .term-fs-dot.g{background:#28c840;}
-  .term-fs-context{margin-left:8px; color:var(--text);}
-  .term-fs-close{
-    font-family:var(--mono);
-    font-size:13px;
-    background:transparent;
-    border:1px solid var(--border);
-    color:var(--muted);
-    border-radius:6px;
-    width:30px; height:30px;
-    cursor:pointer;
-    transition:border-color .15s, color .15s, transform .15s;
-  }
-  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
-  .term-fs-info{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:8px 22px;
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--muted);
-    margin-bottom:14px;
-  }
-  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
-
-  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
-  .term-fs-consigne{
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    margin-top:14px;
-    padding:10px 12px;
-    background:var(--accent-soft);
-    border:1px solid var(--accent);
-    border-radius:6px;
-  }
-  .consigne-tag{
-    flex-shrink:0;
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:var(--accent);
-    border:1px solid var(--accent);
-    border-radius:3px;
-    padding:2px 7px;
-    margin-top:1px;
-  }
-  .consigne-text{
-    font-family:var(--sans);
-    font-size:13.5px;
-    color:var(--text);
-    line-height:1.5;
-  }
-  .term-fs-info .item.mode{
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    color:var(--ok);
-    font-size:10.5px;
-    border:1px solid var(--ok);
-    padding:3px 9px;
-    border-radius:3px;
-    transition:color .2s, border-color .2s;
-  }
-  .term-progress{
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  .term-progress-track{
-    flex:1;
-    height:6px;
-    border-radius:3px;
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    overflow:hidden;
-  }
-  .term-progress-fill{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg, var(--ok), var(--accent));
-    border-radius:3px;
-    transition:width .5s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 0 10px rgba(95,217,164,.55);
-  }
-  .term-progress-label{
-    font-family:var(--mono);
-    font-size:11.5px;
-    color:var(--accent);
-    white-space:nowrap;
-  }
-
-  .term-fullscreen .sim-body{
-    flex:1;
-    overflow-y:auto;
-    max-height:none;
-    padding:20px 26px;
-  }
-  .term-fs-footer{
-    flex-shrink:0;
-    border-top:1px solid var(--border);
-    background:var(--panel);
-  }
-  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
-  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
-
-  /* ---------- FIL D'ARIANE DE MÉTHODE (toujours visible, jamais bloquant) ---------- */
-  .phase-track{
-    display:flex; flex-wrap:wrap; gap:6px;
-    margin-top:12px;
-  }
-  .phase-pill{
-    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;
-    color:var(--muted); border:1px solid var(--border); border-radius:20px;
-    padding:4px 10px; transition:color .2s, border-color .2s, background .2s;
-  }
-  .phase-pill.active{
-    color:var(--accent); border-color:var(--accent); background:var(--accent-soft);
-  }
-
-  /* ---------- CARNET DE MISSION (jamais bloquant : pas de dimmed, pas de clic forcé pour continuer) ---------- */
-  .notebook-btn{
-    font-family:var(--mono); font-size:12px; color:var(--muted);
-    background:var(--panel-alt); border:1px solid var(--border); border-radius:6px;
-    padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
-    transition:border-color .15s, color .15s;
-  }
-  .notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
-  .notebook-panel{
-    display:none; flex-direction:column; gap:10px;
-    margin:12px 22px 0; padding:14px 16px; max-height:260px; overflow-y:auto;
-    border-radius:10px; border:1px solid var(--border); background:var(--panel-alt);
-  }
-  .notebook-panel.show{display:flex;}
-  .notebook-empty{font-size:12.5px; color:var(--muted); margin:0;}
-  .notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
-  .notebook-item .nb-cmd{
-    font-family:var(--mono); font-size:12px; color:var(--text); margin-bottom:2px;
-  }
-  .notebook-item .nb-note{font-size:12.5px; color:var(--muted); line-height:1.5;}
-
-  /* ---------- INDICE (deux niveaux) ---------- */
-  .hint-more{
-    display:inline-block; margin-left:8px;
-    font-family:var(--mono); font-size:11px; color:var(--accent);
-    background:transparent; border:1px solid var(--accent); border-radius:12px;
-    padding:2px 9px; cursor:pointer;
-  }
-  .hint-more:hover{background:var(--accent-soft);}
-
-  /* animation sobre au passage d'une étape à l'autre */
-  @keyframes successFlash{
-    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
-    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-  }
-  .sim-body.flash-ok{animation:successFlash .65s ease;}
-
-  @keyframes progressPulse{
-    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
-    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
-  }
-  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
-
-  /* ---------- FOOTER ---------- */
-  footer{
-    padding:48px 0 80px;
-  }
-  footer .note{
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--muted);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:16px 18px;
-    background:var(--panel);
-  }
-  footer .note .ok{color:var(--ok);}
-
-  @media (max-width:600px){
-    .hero{padding:64px 0 48px;}
-    .timeline{padding-left:34px;}
-    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
-    .explain{grid-template-columns:1fr;}
-    .explain .k{padding-top:0;}
-    .practice-wrap{grid-template-columns:1fr;}
-    .info-panel{position:static;}
-  }
-</style>
+<link rel="stylesheet" href="lab.css">
 </head>
 <body>
 
@@ -798,7 +15,7 @@
       <p class="breadcrumb"><a href="index.html">← Hub</a></p>
       <p class="kicker">metasploitable2 :: reconnaissance → snmp</p>
       <h1>SNMP<br>Fuite d'informations</h1>
-      <p class="lead">Un protocole de supervision oublié, une communauté restée à sa valeur par défaut, et un arbre d'informations système exposé sans aucune authentification réelle.</p>
+      <p class="lead">Un protocole de supervision oublié, une communauté restée à sa valeur par défaut, et un arbre d'informations système exposé sans authentification réelle.</p>
       <div class="meta-row">
         <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
         <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
@@ -813,24 +30,24 @@
   <div class="wrap">
     <section id="chrono">
       <h2 class="section-title">Chronologie</h2>
-      <p class="section-intro">Quatre étapes, dans l'ordre où elles doivent se faire — chacune répond à une question précise avant de passer à la suivante.</p>
+      <p class="section-intro">Trois étapes, dans l'ordre. C'est de la reconnaissance pure — aucune action sur la cible.</p>
 
       <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
-          <div class="playbook-what"><strong>Détection du service</strong><span>nmap -sU -p 161</span></div>
-          <div class="playbook-why">Confirmer que le port SNMP est ouvert en UDP — un scan TCP classique ne le verra jamais.</div>
+          <div class="playbook-what"><strong>Reconnaissance UDP</strong><span>nmap -sU -sV -sC</span></div>
+          <div class="playbook-why">Un scan TCP par défaut ne voit jamais SNMP. Il faut explicitement demander un scan UDP.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
-          <div class="playbook-what"><strong>Lecture de l'arbre</strong><span>snmpwalk -v1 -c public</span></div>
-          <div class="playbook-why">Parcourir les OIDs exposés avec la communauté par défaut, sans jamais s'authentifier réellement.</div>
+          <div class="playbook-what"><strong>Choix du port</strong><span>161/udp</span></div>
+          <div class="playbook-why">SNMP écoute sur le port 161 en UDP — c'est un angle mort classique de la reconnaissance.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Exploitation des données</strong><span>lecture, tri, corrélation</span></div>
-          <div class="playbook-why">Repérer les processus obsolètes, confirmer une version système, préparer une attaque ultérieure — sans rien exécuter sur la cible.</div>
+          <div class="playbook-what"><strong>Lecture de l'arbre</strong><span>snmpwalk -v1 -c public</span></div>
+          <div class="playbook-why">Parcourir les OIDs exposés avec la communauté par défaut, sans authentification.</div>
         </div>
       </div>
 
@@ -838,39 +55,44 @@
 
         <div class="step">
           <div class="step-num">1</div>
-          <h3>Détecter le service SNMP</h3>
-          <p class="step-sub">SNMP écoute en UDP sur le port 161 — invisible pour un scan TCP classique.</p>
+          <h3>Reconnaissance UDP — nmap -sU</h3>
+          <p class="step-sub">Un scan TCP classique ne voit jamais SNMP. Il faut préciser explicitement -sU pour scanner en UDP.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> nmap -sU -p 161 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sU -p 161 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">PORT    STATE SERVICE</span>
-<span class="out">161/udp open  snmp</span></pre>
+            <pre><span class="prompt">$</span> nmap -sU -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sU -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">PORT     STATE SERVICE VERSION</span>
+<span class="out">53/udp   open  domain  ISC BIND 9.4.2</span>
+<span class="out">69/udp   open  tftp    AT FTP server</span>
+<span class="out">111/udp  open  rpcbind 2 (RPC #100000)</span>
+<span class="out">161/udp  open  snmp    SNMPv1 server; net-snmp SNMPv3 server (public)</span>
+<span class="out">…</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-sU</span><span class="v">scan <strong>UDP</strong> — par défaut, nmap ne scanne que TCP. Sans ce flag, le port 161 n'apparaîtrait jamais.</span>
-            <span class="k">161/udp</span><span class="v">port standard de <strong>SNMP</strong> (Simple Network Management Protocol) — un protocole de supervision système, pas d'authentification utilisateur.</span>
-            <span class="k">angle mort</span><span class="v">La plupart des scans de reconnaissance se concentrent sur TCP : les services UDP comme SNMP passent souvent inaperçus alors qu'ils exposent des informations tout aussi sensibles.</span>
+            <span class="k">-sU</span><span class="v">scan <strong>UDP</strong> — par défaut, nmap ne scanne que TCP. Sans ce flag, le port 161 reste invisible.</span>
+            <span class="k">-sV</span><span class="v">version du service.</span>
+            <span class="k">-sC</span><span class="v">scripts NSE par défaut — remarque ici la mention <em>(public)</em> : la communauté « public » est acceptée.</span>
+            <span class="k">angle mort</span><span class="v">La plupart des scans se concentrent sur TCP. SNMP (161/udp), TFTP (69/udp), NTP (123/udp) passent souvent inaperçus.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">2</div>
-          <h3>Analyser la portée de cette exposition</h3>
-          <p class="step-sub">Le port est ouvert, mais qu'est-ce que ça implique concrètement ?</p>
+          <h3>Choix du port à cibler</h3>
+          <p class="step-sub">Parmi les services UDP, SNMP est le plus prometteur : il expose un arbre entier d'informations système.</p>
           <div class="term">
-            <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="out" style="color:var(--muted);">— le port 161/udp est ouvert, mais la sortie de nmap s'arrête là —</span></pre>
+            <div class="term-bar"><span class="dot"></span>rappel de la sortie nmap</div>
+            <pre><span class="out">161/udp  open  snmp    SNMPv1 server; net-snmp SNMPv3 server (public)</span></pre>
           </div>
           <div class="explain">
-            <span class="k">à comprendre</span><span class="v">SNMP n'est pas un service d'authentification : c'est un protocole de <strong>supervision</strong>. Il expose un arbre d'objets (OIDs) — processus en cours, interfaces réseau, uptime, description du système — conçu à l'origine pour du monitoring, pas pour être verrouillé.</span>
-            <span class="k">conséquence</span><span class="v">Un port SNMP ouvert avec une communauté par défaut est une fuite d'information directe : toute personne pouvant envoyer un paquet UDP et connaître la chaîne de communauté lit l'arbre entier.</span>
+            <span class="k">indice</span><span class="v">SNMP v1/v2c n'utilise qu'une chaîne de communauté comme mot de passe, envoyée <strong>en clair</strong>. La valeur par défaut, universellement documentée, c'est « public ».</span>
+            <span class="k">à retenir</span><span class="v">Un service exposé sur un port UDP avec une communauté par défaut = fuite d'informations directe.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
-          <h3>Lire l'arbre SNMP</h3>
-          <p class="step-sub">La communauté « public » est restée à sa valeur par défaut — aucune authentification réelle n'est nécessaire.</p>
+          <h3>Lecture de l'arbre SNMP — snmpwalk</h3>
+          <p class="step-sub">La communauté par défaut « public » suffit à lire tout l'arbre.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
             <pre><span class="prompt">$</span> snmpwalk -v1 -c public 192.168.56.20<button class="copy-btn" type="button" data-copy="snmpwalk -v1 -c public 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
@@ -885,25 +107,11 @@
 <span class="out">HOST-RESOURCES-MIB::hrSWRunName.4 = STRING: apache2</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-v1</span><span class="v">version 1 du protocole — la plus ancienne, la moins protégée. La communauté est envoyée <strong>en clair</strong> dans chaque paquet UDP.</span>
-            <span class="k">-c public</span><span class="v">chaîne de communauté utilisée comme un mot de passe partagé — celle par défaut, documentée, jamais changée sur la quasi-totalité des installations qui n'ont pas été durcies.</span>
-            <span class="k">sysDescr</span><span class="v">version exacte du noyau Linux — utile pour croiser avec une base d'exploits kernel comme ceux vus dans les cours de post-exploitation.</span>
-            <span class="k">hrSWRunName</span><span class="v">liste des <strong>processus en cours</strong> — on y voit apache2, inetd, portmap. Chaque processus est une piste d'attaque potentielle.</span>
-            <span class="k">ifDescr</span><span class="v">interfaces réseau de la cible — permet de cartographier ses éventuelles connexions à d'autres réseaux.</span>
-          </div>
-        </div>
-
-        <div class="step">
-          <div class="step-num">4</div>
-          <h3>Comprendre ce que cette fuite permet de préparer</h3>
-          <p class="step-sub">Les informations lues ne donnent aucun accès — mais elles orientent tout ce qui suit.</p>
-          <div class="term">
-            <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="out" style="color:var(--muted);">— aucune action supplémentaire sur la cible à cette étape —</span></pre>
-          </div>
-          <div class="explain">
-            <span class="k">ce qu'on en fait</span><span class="v">La version du noyau (<strong>2.6.24-16-server</strong>) et la liste des processus (<strong>apache2, inetd, portmap</strong>) permettent de cibler un exploit kernel ou un service spécifique sans scanner à l'aveugle.</span>
-            <span class="k">ce qu'on ne fait pas</span><span class="v">Aucune action n'est exécutée sur la cible dans ce cours : on lit un arbre d'informations exposé, on ne s'authentifie pas, on n'obtient aucun shell.</span>
+            <span class="k">-v1</span><span class="v">version 1 du protocole — la plus ancienne, la moins protégée. La communauté est envoyée en clair dans chaque paquet UDP.</span>
+            <span class="k">-c public</span><span class="v">chaîne de communauté utilisée comme mot de passe partagé — la valeur par défaut, documentée, jamais changée.</span>
+            <span class="k">sysDescr</span><span class="v">version exacte du noyau Linux — utile pour croiser avec une base d'exploits kernel.</span>
+            <span class="k">hrSWRunName</span><span class="v">liste des <strong>processus en cours</strong> — chaque processus est une piste d'attaque potentielle.</span>
+            <span class="k">ifDescr</span><span class="v">interfaces réseau de la cible.</span>
           </div>
         </div>
 
@@ -912,21 +120,20 @@
 
     <section id="cheatsheet">
       <h2 class="section-title">Commandes à retenir</h2>
-      <p class="section-intro">Le strict nécessaire, groupé par phase — le reste peut se retrouver avec <span style="font-family:var(--mono); color:var(--text);">man</span>.</p>
 
       <div class="cheat-group">
         <h4>détection</h4>
         <table class="cheat">
-          <tr><td class="cmd">nmap -sU -p 161 IP</td><td class="desc">détecter le port SNMP en UDP — un scan TCP par défaut ne le voit pas</td></tr>
+          <tr><td class="cmd">nmap -sU -sV -sC IP</td><td class="desc">scan UDP + version + scripts NSE</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
-        <h4>énumération</h4>
+        <h4>énumération SNMP</h4>
         <table class="cheat">
-          <tr><td class="cmd">snmpwalk -v1 -c public IP</td><td class="desc">parcourir tout l'arbre SNMP accessible — version 1, communauté par défaut</td></tr>
-          <tr><td class="cmd">snmpwalk -v1 -c public IP system</td><td class="desc">restreindre au sous-arbre système (sysDescr, sysName, uptime…)</td></tr>
-          <tr><td class="cmd">snmpwalk -v1 -c public IP hrSWRunName</td><td class="desc">lister uniquement les processus en cours d'exécution</td></tr>
+          <tr><td class="cmd">snmpwalk -v1 -c public IP</td><td class="desc">parcourir tout l'arbre SNMP</td></tr>
+          <tr><td class="cmd">snmpwalk -v1 -c public IP system</td><td class="desc">restreindre au sous-arbre système</td></tr>
+          <tr><td class="cmd">snmpwalk -v1 -c public IP hrSWRunName</td><td class="desc">lister uniquement les processus</td></tr>
         </table>
       </div>
     </section>
@@ -936,69 +143,48 @@
       <div class="concepts">
         <div class="concept">
           <h4>SNMP n'est pas un service d'authentification</h4>
-          <p>SNMP a été conçu pour superviser des équipements — routeurs, serveurs, imprimantes. Sa « communauté » fait office de mot de passe partagé, envoyé en clair dans chaque paquet. En version 1 et 2c, il n'y a ni chiffrement ni vraie vérification d'identité : quiconque connaît la chaîne lit l'arbre entier.</p>
+          <p>SNMP a été conçu pour superviser des équipements. Sa « communauté » fait office de mot de passe partagé, envoyé en clair dans chaque paquet. En version 1 et 2c, ni chiffrement ni vérification d'identité réelle.</p>
         </div>
         <div class="concept">
           <h4>Une communauté par défaut, pas une faille de code</h4>
-          <p>« public » n'exploite aucune vulnérabilité logicielle. C'est un abus de configuration par défaut : la communauté n'a jamais été changée, et le service n'est pas restreint par une ACL ou un pare-feu. C'est une erreur d'administration, pas un bug de SNMP.</p>
+          <p>« public » n'exploite aucune vulnérabilité logicielle. C'est un abus de configuration par défaut : la communauté n'a jamais été changée, et le service n'est pas restreint par une ACL.</p>
         </div>
         <div class="concept">
           <h4>UDP : l'angle mort des scans de reconnaissance</h4>
-          <p>La plupart des scans nmap se limitent à TCP, car UDP est plus lent et moins fiable à sonder. Résultat : les services UDP comme SNMP (161), mais aussi TFTP (69) ou NTP (123), sont souvent absents des rapports de reconnaissance. Un attaquant qui pense à scanner en UDP obtient une vision plus complète de la cible.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="anatomie">
-      <h2 class="section-title">Anatomie de la fuite</h2>
-      <p class="section-intro">Pourquoi cette exposition est structurelle, et en quoi elle diffère des cours de reconnaissance précédents.</p>
-
-      <div class="concepts">
-        <div class="concept">
-          <h4>Contraste avec le cours #0 — nmap générique</h4>
-          <p>Le cours #0 scanne tous les services ouverts, mais reste en surface : il liste des ports et des versions. Il ne creuse pas dans un protocole en particulier et ne s'attarde pas sur les services UDP. Ici, on prend un seul service — SNMP — et on l'explore en profondeur pour en extraire un maximum d'informations.</p>
-        </div>
-        <div class="concept">
-          <h4>Contraste avec le cours #7 — énumération SMB</h4>
-          <p>SMB et SNMP exposent tous deux des informations sans authentification réelle, mais leur nature diffère. SMB est un protocole de partage de fichiers orienté Windows : on y cherche des partages, des utilisateurs, des versions de Samba. SNMP est un protocole de supervision système indépendant de Samba : ce qui fuit, c'est un arbre d'objets normalisé (OIDs) — processus, interfaces, version de noyau. Les deux sont de la reconnaissance pure, mais l'un cartographie un système de fichiers partagé, l'autre un état système.</p>
-        </div>
-        <div class="concept">
-          <h4>Pourquoi SNMPv1/v2c est structurellement faible</h4>
-          <p>La version 1 (et 2c) du protocole n'a quasiment aucune notion d'authentification robuste : la communauté est un simple mot de passe partagé, envoyé en clair. Il n'existe pas de mécanisme de chiffrement ni de vérification d'intégrité réelle. SNMPv3 corrige cela avec une authentification (MD5/SHA) et un chiffrement (DES/AES) — mais il est rarement déployé sur les vieux systèmes, où la version 1 reste active par défaut.</p>
+          <p>La plupart des scans nmap se limitent à TCP. Résultat : SNMP (161/udp), TFTP (69/udp), NTP (123/udp) sont souvent absents des rapports. Un scan UDP donne une vision plus complète.</p>
         </div>
       </div>
     </section>
 
     <section id="detection">
       <h2 class="section-title">Détection &amp; remédiation</h2>
-      <p class="section-intro">Le point de vue du défenseur : comment repérer une exposition SNMP, et comment la fermer.</p>
 
       <div class="cheat-group">
         <table class="cheat">
-          <tr><td class="cmd">changer la communauté par défaut</td><td class="desc">remplacer « public » (et « private ») par une chaîne robuste, propre à l'installation — la première mesure, la plus simple</td></tr>
-          <tr><td class="cmd">restreindre par ACL / pare-feu</td><td class="desc">n'autoriser le port 161/UDP que depuis les adresses IP des serveurs de supervision légitimes, bloquer tout le reste</td></tr>
-          <tr><td class="cmd">migrer vers SNMPv3</td><td class="desc">passer à la version 3 avec authentification (MD5/SHA) et chiffrement (DES/AES) — la seule version qui protège réellement les échanges</td></tr>
-          <tr><td class="cmd">désactiver le service si non utilisé</td><td class="desc">si aucun outil de supervision n'exploite SNMP, couper le service élimine le vecteur entièrement</td></tr>
+          <tr><td class="cmd">changer la communauté par défaut</td><td class="desc">remplacer « public » et « private » par une chaîne robuste</td></tr>
+          <tr><td class="cmd">restreindre par ACL / pare-feu</td><td class="desc">n'autoriser 161/udp que depuis les serveurs de supervision légitimes</td></tr>
+          <tr><td class="cmd">migrer vers SNMPv3</td><td class="desc">authentification + chiffrement (DES/AES)</td></tr>
+          <tr><td class="cmd">désactiver si non utilisé</td><td class="desc">si aucun outil de supervision n'exploite SNMP, couper le service</td></tr>
         </table>
       </div>
     </section>
 
     <section id="practice">
       <h2 class="section-title">Terminal d'entraînement</h2>
-      <p class="section-intro">Rejoue la chaîne de reconnaissance SNMP toi-même — y compris la partie qu'on saute trop vite d'habitude : <strong style="color:var(--text)">lire un arbre d'OIDs et repérer ce qui compte</strong>. Aucune action sur la cible : on lit, on ne s'authentifie pas, on n'obtient aucun shell.</p>
+      <p class="section-intro">Rejoue la reconnaissance SNMP. Aucune action sur la cible : on lit, on ne s'authentifie pas, on n'obtient aucun shell.</p>
 
       <div class="term-launch">
         <button class="term-launch-btn" id="term-open-btn" type="button">
           <span class="term-launch-dot"></span>
           Ouvrir le terminal
         </button>
-        <p class="term-launch-sub">Plein écran · indices logiques, pas de commande donnée · historique ↑ / ↓ comme un vrai shell</p>
+        <p class="term-launch-sub">Plein écran · indices logiques · historique ↑ / ↓</p>
       </div>
     </section>
 
     <footer>
       <div class="note">
-        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox, aucune machine réelle ni connexion externe impliquée.
+        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox.
       </div>
     </footer>
   </div>
@@ -1015,26 +201,22 @@
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
         <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
-        <button type="button" class="notebook-btn" id="notebook-btn">📓 Carnet (<span id="notebook-count">0</span>)</button>
       </div>
       <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/4</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/3</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
         <span class="consigne-text" id="consigne-text">—</span>
-      </div>
-      <div class="notebook-panel" id="notebook-panel">
-        <div id="notebook-list"></div>
       </div>
     </div>
 
     <div class="sim-body" id="sim-body">
       <div class="sim-line sim-inputline" id="sim-inputline">
         <span class="p" id="sim-prompt-label">$</span>
-        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text">
       </div>
     </div>
 
@@ -1043,41 +225,51 @@
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
     </div>
   </div>
 
 <script>
-  // ---------- SÉQUENCE ----------
   const steps = [
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Détecte le port SNMP sur la cible. Attention : ce service écoute en UDP, pas en TCP.",
-      accepted:["nmap -su -p 161 192.168.56.20"],
-      hint:"L'outil de reconnaissance réseau de référence sait scanner les services UDP — contrairement à ce que fait un scan TCP par défaut. Il faut activer explicitement le mode UDP, et cibler le port standard de SNMP (161). La commande complète doit aussi préciser l'adresse IP de la cible.",
-      note:"nmap -sU -p 161 &lt;cible&gt; → <strong>-sU</strong> scan UDP (sans lui, nmap ne scanne que TCP et le port 161 reste invisible), <strong>-p 161</strong> cible le port standard de SNMP.",
+      task:"Lance une reconnaissance UDP complète sur la cible.",
+      accepted:["nmap -su -sv -sc 192.168.56.20"],
+      hint:"Pour scanner en UDP, nmap a besoin de -sU. Sans ça, tous les services UDP restent invisibles. Ajoute -sV (version) et -sC (scripts).",
+      hint2:"nmap -sU -sV -sC 192.168.56.20",
+      note:"nmap -sU -sV -sC &lt;cible&gt; → <strong>-sU</strong> active le scan UDP (sans lui, seuls les ports TCP sont scannés). Indispensable pour détecter SNMP, TFTP, NTP et autres services UDP.",
       output:[
-        {t:"PORT    STATE SERVICE", c:"o"},
-        {t:"161/udp open  snmp", c:"o", id:"hl-snmp-port"}
+        {t:"PORT     STATE SERVICE VERSION", c:"o"},
+        {t:"53/udp   open  domain  ISC BIND 9.4.2", c:"o"},
+        {t:"69/udp   open  tftp    AT FTP server", c:"o"},
+        {t:"111/udp  open  rpcbind 2 (RPC #100000)", c:"o"},
+        {t:"161/udp  open  snmp    SNMPv1 server; net-snmp SNMPv3 server (public)", c:"o", id:"hl-snmp"},
+        {t:"2049/udp open  nfs     2-4 (RPC #100003)", c:"o"},
+        {t:"32768/udp open  unknown", c:"o"}
       ] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Le port 161/UDP est ouvert. Pourquoi ce service est-il souvent absent d'un scan de reconnaissance classique — et qu'est-ce que ça change pour la suite ?",
-      accepted:["udp"],
-      hint:"Pense au protocole de transport : la plupart des scans nmap par défaut scannent TCP, pas UDP.",
-      highlightIds:["hl-snmp-port"],
-      annotation:"→ SNMP écoute en UDP : un scan TCP par défaut ne le voit jamais. C'est un angle mort classique des reconnaissances superficielles.",
-      note:"Le protocole de transport de SNMP est <strong>UDP</strong> : un scan TCP par défaut ne le détecte jamais, ce qui en fait un angle mort classique de la reconnaissance.",
+      task:"Un service UDP expose beaucoup d'informations système. Tape son numéro de port.",
+      accepted:["161"],
+      wrongAnswers:{
+        "53":"DNS est légitime sur ce port.",
+        "69":"TFTP permet du transfert de fichiers, mais SNMP expose plus d'informations système.",
+        "111":"RPC n'est pas la cible."
+      },
+      hint:"Un protocole de supervision système sur UDP, avec une communauté par défaut (mention « public » dans nmap).",
+      hint2:"161/udp = SNMP. Un protocole de supervision, communauté par défaut « public », ni chiffrement ni authentification réelle en v1.",
+      highlightIds:["hl-snmp"],
+      note:"SNMP sur 161/udp expose un arbre d'informations (processus, interfaces, version noyau) sans authentification robuste — seulement une chaîne de communauté.",
       output:[] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Lis l'arbre SNMP exposé. La communauté par défaut est presque toujours « public » et la version la plus simple à utiliser est la version 1.",
+      task:"Lis l'arbre SNMP avec la communauté par défaut.",
       accepted:["snmpwalk -v1 -c public 192.168.56.20"],
-      hint:"L'outil qui permet de parcourir un arbre SNMP s'appelle snmpwalk. Il faut lui préciser la version du protocole (-v1), la chaîne de communauté (-c public) et l'adresse IP de la cible. Aucun mot de passe utilisateur n'est demandé — c'est ça, la fuite.",
-      note:"snmpwalk -v1 -c public &lt;cible&gt; → <strong>-v1</strong> version 1 du protocole (communauté envoyée en clair), <strong>-c public</strong> communauté par défaut (mot de passe partagé jamais changé), <strong>adresse IP</strong> cible de l'arbre SNMP.",
+      hint:"Outil : snmpwalk. Options : -v1 (version 1 du protocole), -c public (communauté par défaut), puis l'adresse IP de la cible.",
+      hint2:"snmpwalk -v1 -c public 192.168.56.20",
+      note:"snmpwalk -v1 -c public &lt;cible&gt; → parcourt l'arbre SNMP. La communauté « public » est la valeur par défaut, jamais changée sur les installations non durcies.",
       output:[
-        {t:"SNMPv2-MIB::sysDescr.0 = STRING: Linux metasploitable 2.6.24-16-server #1 SMP i686", c:"o", id:"hl-snmpwalk"},
+        {t:"SNMPv2-MIB::sysDescr.0 = STRING: Linux metasploitable 2.6.24-16-server #1 SMP i686", c:"o", id:"hl-walk"},
         {t:"SNMPv2-MIB::sysName.0 = STRING: metasploitable", c:"o"},
         {t:"SNMPv2-MIB::sysUpTime.0 = Timeticks: (1234567) 3:25:45.67", c:"o"},
         {t:"IF-MIB::ifDescr.1 = STRING: lo", c:"o"},
@@ -1086,31 +278,15 @@
         {t:"HOST-RESOURCES-MIB::hrSWRunName.2 = STRING: inetd", c:"o"},
         {t:"HOST-RESOURCES-MIB::hrSWRunName.3 = STRING: portmap", c:"o"},
         {t:"HOST-RESOURCES-MIB::hrSWRunName.4 = STRING: apache2", c:"o"}
-      ] },
-
-    { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Que peut-on préparer à partir de ces informations — sans rien exécuter sur la cible pour l'instant ?",
-      accepted:["kernel"],
-      hint:"Regarde la version du noyau et la liste des processus : ça oriente directement vers des pistes d'exploitation.",
-      highlightIds:["hl-snmpwalk"],
-      annotation:"→ Version de noyau exacte (2.6.24-16-server) et processus actifs (apache2, inetd, portmap) : de quoi cibler un exploit kernel ou un service précis. Aucune action n'est faite ici — seulement de la préparation.",
-      note:"sysDescr révèle la version exacte du noyau Linux : combinée à la liste des processus (hrSWRunName), elle permet de cibler un exploit kernel précis sans scanner à l'aveugle.",
-      output:[] }
+      ] }
   ];
 
-  // ---------- MODE LIBRE ----------
   let freeContext = "kali@kali";
   const freeCommands = {
     "kali@kali": {
       "snmpwalk -v1 -c public 192.168.56.20": [
         {t:"SNMPv2-MIB::sysDescr.0 = STRING: Linux metasploitable 2.6.24-16-server #1 SMP i686", c:"o"},
         {t:"SNMPv2-MIB::sysName.0 = STRING: metasploitable", c:"o"},
-        {t:"SNMPv2-MIB::sysUpTime.0 = Timeticks: (1234567) 3:25:45.67", c:"o"},
-        {t:"IF-MIB::ifDescr.1 = STRING: lo", c:"o"},
-        {t:"IF-MIB::ifDescr.2 = STRING: eth0", c:"o"},
-        {t:"HOST-RESOURCES-MIB::hrSWRunName.1 = STRING: init", c:"o"},
-        {t:"HOST-RESOURCES-MIB::hrSWRunName.2 = STRING: inetd", c:"o"},
-        {t:"HOST-RESOURCES-MIB::hrSWRunName.3 = STRING: portmap", c:"o"},
         {t:"HOST-RESOURCES-MIB::hrSWRunName.4 = STRING: apache2", c:"o"}
       ],
       "snmpwalk -v1 -c public 192.168.56.20 system": [
@@ -1128,7 +304,7 @@
     }
   };
 
-  let freeHintHtml = "Session ouverte — explore par toi-même. Essaie <strong style=\"color:var(--text)\">snmpwalk -v1 -c public <IP></strong>, <strong style=\"color:var(--text)\">snmpwalk -v1 -c public <IP> system</strong>, <strong style=\"color:var(--text)\">snmpwalk -v1 -c public <IP> hrSWRunName</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
+  let freeHintHtml = "Recon uniquement. Tape <strong style=\"color:var(--text)\">snmpwalk -v1 -c public &lt;IP&gt;</strong>, <strong style=\"color:var(--text)\">... &lt;IP&gt; system</strong>, <strong style=\"color:var(--text)\">... &lt;IP&gt; hrSWRunName</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
 </script>
 <script src="engine.js"></script>
 
