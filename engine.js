@@ -32,10 +32,8 @@
   const closeBtn = $("term-close-btn");
   const phaseTrackEl = $("phase-track");
 
-  // Si l'essentiel manque, on abandonne silencieusement (pas de crash).
   if(!body || !input || !inputline) return;
 
-  // historique de commandes (↑ / ↓)
   let cmdHistory = [];
   let historyPos = 0;
 
@@ -47,14 +45,13 @@
 
   // ---------- BOUTON PLEIN ÉCRAN (injecté dynamiquement, fixe, toujours visible) ----------
   function injectFsToggle(){
-    if(document.getElementById("fs-toggle")) return; // déjà injecté
+    if(document.getElementById("fs-toggle")) return;
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "fs-toggle";
     btn.id = "fs-toggle";
     btn.setAttribute("aria-label", "Basculer en plein écran");
     btn.title = "Plein écran";
-    // Icône "expand" (4 coins vers l'extérieur)
     btn.innerHTML =
       '<svg viewBox="0 0 24 24" aria-hidden="true">' +
         '<path d="M4 9V4h5"/>' +
@@ -68,21 +65,14 @@
       const doc = document;
       const el = doc.documentElement;
       if(!doc.fullscreenElement && !doc.webkitFullscreenElement){
-        if(el.requestFullscreen){
-          el.requestFullscreen().catch(()=>{});
-        } else if(el.webkitRequestFullscreen){
-          el.webkitRequestFullscreen();
-        }
+        if(el.requestFullscreen){ el.requestFullscreen().catch(()=>{}); }
+        else if(el.webkitRequestFullscreen){ el.webkitRequestFullscreen(); }
       } else {
-        if(doc.exitFullscreen){
-          doc.exitFullscreen().catch(()=>{});
-        } else if(doc.webkitExitFullscreen){
-          doc.webkitExitFullscreen();
-        }
+        if(doc.exitFullscreen){ doc.exitFullscreen().catch(()=>{}); }
+        else if(doc.webkitExitFullscreen){ doc.webkitExitFullscreen(); }
       }
     });
 
-    // Synchronise l'icône selon l'état réel du navigateur
     function updateIcon(){
       const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       btn.innerHTML = isFs
@@ -104,6 +94,39 @@
     document.addEventListener("webkitfullscreenchange", updateIcon);
   }
 
+  // ---------- GESTION DU CLAVIER MOBILE (visualViewport) ----------
+  // Sur iOS/Android, quand le clavier s'ouvre, la hauteur visible réelle se réduit
+  // (window.visualViewport.height), alors que 100dvh reste inchangé. On adapte la
+  // hauteur du terminal en conséquence et on scrolle vers la ligne de saisie
+  // pour qu'elle reste visible au-dessus du clavier.
+  function setupKeyboardHandling(){
+    if(!window.visualViewport) return;
+    const vv = window.visualViewport;
+
+    function adjust(){
+      // Hauteur réelle visible de la fenêtre (clavier déduit)
+      const visibleH = vv.height;
+      // On applique cette hauteur au terminal plein écran
+      if(termFullscreen && termFullscreen.classList.contains("open")){
+        termFullscreen.style.height = visibleH + "px";
+        termFullscreen.style.top = vv.offsetTop + "px";
+      }
+      // Et on force le scroll de la zone body pour montrer la ligne de saisie
+      requestAnimationFrame(()=>{
+        if(body) body.scrollTop = body.scrollHeight;
+        if(input && input.scrollIntoView){
+          try{ input.scrollIntoView({block:"end", behavior:"instant"}); }catch(e){}
+        }
+      });
+    }
+
+    vv.addEventListener("resize", adjust);
+    vv.addEventListener("scroll", adjust);
+
+    // Reset quand on ferme le terminal
+    document.addEventListener("fullscreenchange", adjust);
+  }
+
   // ---------- FOCUS CONDITIONNEL (anti-clavier-mobile) ----------
   function isMobileViewport(){
     return window.matchMedia("(max-width: 639px)").matches;
@@ -113,10 +136,21 @@
     try{ input.focus({ preventScroll:true }); }catch(e){ input.focus(); }
   }
 
+  // Ferme le clavier mobile (uniquement si on est sur mobile et que le clavier est ouvert)
+  function blurInputOnMobile(){
+    if(!isMobileViewport()) return;
+    if(document.activeElement === input){
+      input.blur();
+    }
+  }
+
   // ---------- OUVERTURE / FERMETURE PLEIN ÉCRAN ----------
   function openTerminal(){
     if(!termFullscreen) return;
     termFullscreen.style.display = "flex";
+    // Réinitialise la hauteur/position (au cas où visualViewport a laissé une valeur)
+    termFullscreen.style.height = "";
+    termFullscreen.style.top = "";
     requestAnimationFrame(()=> termFullscreen.classList.add("open"));
     document.documentElement.style.overflow = "hidden";
     if(!isMobileViewport()){
@@ -127,6 +161,11 @@
     if(!termFullscreen) return;
     termFullscreen.classList.remove("open");
     document.documentElement.style.overflow = "";
+    // Réinitialise la hauteur au cas où elle a été modifiée par le clavier
+    termFullscreen.style.height = "";
+    termFullscreen.style.top = "";
+    // Ferme le clavier mobile au passage
+    blurInputOnMobile();
     setTimeout(()=>{
       if(!termFullscreen.classList.contains("open")) termFullscreen.style.display = "none";
     }, 240);
@@ -233,6 +272,14 @@
     if(body) body.scrollTop = body.scrollHeight;
   }
 
+  // Scroll vers la ligne de saisie (après une commande) + fermeture clavier mobile
+  function scrollToInput(){
+    if(!body) return;
+    requestAnimationFrame(()=>{
+      body.scrollTop = body.scrollHeight;
+    });
+  }
+
   // ---------- UI ----------
   function updateUI(){
     if(!hintBox) return;
@@ -272,7 +319,7 @@
       if(solutionBtn) solutionBtn.disabled = false;
       input.disabled = false;
       maybeFocus();
-      if(body) body.scrollTop = body.scrollHeight;
+      scrollToInput();
     } else {
       if(contextEl) contextEl.textContent = freeContext;
       if(promptEl) promptEl.innerHTML = promptHtml(freeContext, freeSymbolFor(freeContext));
@@ -288,7 +335,7 @@
       if(solutionBtn) solutionBtn.disabled = true;
       input.disabled = false;
       maybeFocus();
-      if(body) body.scrollTop = body.scrollHeight;
+      scrollToInput();
     }
   }
 
@@ -378,14 +425,21 @@
       const s = steps[stepIndex];
       const norm = normalize(raw);
       if(s.accepted.includes(norm)){
+        // Sur mobile : on ferme le clavier AVANT d'avancer, pour que l'utilisateur
+        // voie immédiatement le résultat et la consigne suivante.
+        blurInputOnMobile();
         advanceTypeStep(raw);
       } else if(s.wrongAnswers && s.wrongAnswers[norm]){
         printLine(s.prompt, s.context, raw, [{t:s.wrongAnswers[norm], c:"err"}]);
+        scrollToInput();
       } else {
         printLine(s.prompt, s.context, raw, [{t:"commande non reconnue — 💡 pour un indice, 🔍 pour la solution", c:"err"}]);
+        scrollToInput();
       }
     } else if(m === "free"){
+      blurInputOnMobile();
       handleFree(raw);
+      scrollToInput();
     }
   });
 
@@ -413,6 +467,7 @@
   on(solutionBtn, "click", ()=>{
     if(mode() !== "type") return;
     if(hintBox) hintBox.classList.remove("show");
+    blurInputOnMobile();
     advanceTypeStep(steps[stepIndex].accepted[0]);
   });
 
@@ -447,9 +502,10 @@
     }
   });
 
-  // ---------- INITIALISATION (après DOMContentLoaded) ----------
+  // ---------- INITIALISATION ----------
   function init(){
     injectFsToggle();
+    setupKeyboardHandling();
     renderPhaseTrackSkeleton();
     updateUI();
   }
