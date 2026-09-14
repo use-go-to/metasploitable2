@@ -581,7 +581,6 @@ table.cheat tr:last-child td{border-bottom:none;}
   height:100vh;
   height:100dvh;
   overflow:hidden;
-  /* Sur mobile : la vraie hauteur visible est pilotée par JS via visualViewport. */
 }
 .term-fullscreen.open{
   display:flex;
@@ -709,6 +708,18 @@ table.cheat tr:last-child td{border-bottom:none;}
   .consigne-text{font-size:13.5px; line-height:1.5;}
 }
 
+/* Bloc consigne en mode libre : plus compact sur mobile */
+@media (max-width:639px){
+  .term-fs-consigne{
+    padding:6px 8px;
+    gap:6px;
+  }
+  .consigne-text{
+    font-size:12px;
+    line-height:1.35;
+  }
+}
+
 /* ---------- BARRE DE PROGRESSION (sobre) ---------- */
 .term-progress{
   display:flex;
@@ -787,9 +798,6 @@ table.cheat tr:last-child td{border-bottom:none;}
 }
 
 /* ---------- BODY DU TERMINAL PLEIN ÉCRAN ---------- */
-/* min-height:0 est critique : sans lui, un enfant flex refuse de rétrécir
-   sous sa taille de contenu, ce qui empêche la zone body de scroller
-   correctement quand le clavier mobile s'ouvre. */
 .term-fullscreen .sim-body{
   flex:1 1 auto;
   min-height:0;
@@ -894,7 +902,7 @@ table.cheat tr:last-child td{border-bottom:none;}
   outline:none;
   color:var(--text);
   font-family:var(--mono);
-  font-size:16px; /* évite le zoom auto iOS */
+  font-size:16px;
   caret-color:var(--accent);
   padding:0;
 }
@@ -928,136 +936,4 @@ table.cheat tr:last-child td{border-bottom:none;}
   gap:6px;
   transition:border-color .15s, transform .1s;
   white-space:nowrap;
-  min-height:36px;
-}
-@media (min-width:640px){
-  .sim-btn{padding:6px 12px; min-height:auto;}
-}
-.sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-.sim-btn:active{transform:translateY(0);}
-.sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
-.sim-btn.continue{border-color:var(--accent); color:var(--accent);}
-
-/* ---------- HINT BOX ---------- */
-.sim-hint-box{
-  margin:0 14px 8px;
-  padding:8px 12px;
-  border-left:2px solid var(--accent);
-  font-size:12.5px;
-  color:var(--muted);
-  max-height:0;
-  opacity:0;
-  overflow:hidden;
-  transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
-}
-@media (min-width:640px){
-  .sim-hint-box{margin:0 18px 12px; padding:10px 14px; font-size:13px;}
-}
-.sim-hint-box.show{
-  max-height:200px;
-  opacity:1;
-}
-
-/* ---------- FLASH ---------- */
-@keyframes successFlash{
-  0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-  35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
-  100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-}
-.sim-body.flash-ok{animation:successFlash .65s ease;}
-
-/* ---------- FOOTER ---------- */
-footer{
-  padding:36px 0 60px;
-}
-@media (min-width:640px){
-  footer{padding:48px 0 80px;}
-}
-footer .note{
-  font-family:var(--mono);
-  font-size:11.5px;
-  color:var(--muted);
-  border:1px solid var(--border);
-  border-radius:8px;
-  padding:14px 16px;
-  background:var(--panel);
-  line-height:1.6;
-}
-@media (min-width:640px){
-  footer .note{font-size:12.5px; padding:16px 18px;}
-}
-footer .note .ok{color:var(--ok);}
-
-/* ---------- SCROLLBARS DISCRÈTES ---------- */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-*::-webkit-scrollbar{
-  width:6px;
-  height:6px;
-}
-*::-webkit-scrollbar-track{
-  background:transparent;
-}
-*::-webkit-scrollbar-thumb{
-  background:var(--border);
-  border-radius:3px;
-}
-*::-webkit-scrollbar-thumb:hover{
-  background:var(--muted);
-}
-.sim-body::-webkit-scrollbar,
-.term-fullscreen .sim-body::-webkit-scrollbar{
-  width:5px;
-}
-.term pre::-webkit-scrollbar,
-.term-bar::-webkit-scrollbar{
-  height:4px;
-}
-
-/* ---------- BOUTON PLEIN ÉCRAN (fixe, toujours visible) ---------- */
-.fs-toggle{
-  position:fixed;
-  top:14px;
-  right:14px;
-  z-index:10000; /* au-dessus même du terminal plein écran (9999) */
-  width:38px;
-  height:38px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:8px;
-  color:var(--muted);
-  font-size:16px;
-  line-height:1;
-  cursor:pointer;
-  transition:border-color .15s, color .15s, background .15s, transform .1s;
-  box-shadow:0 4px 16px rgba(0,0,0,.35);
-}
-.fs-toggle:hover{
-  border-color:var(--accent);
-  color:var(--accent);
-  transform:translateY(-1px);
-}
-.fs-toggle:active{ transform:translateY(0); }
-.fs-toggle svg{
-  width:16px;
-  height:16px;
-  display:block;
-  stroke:currentColor;
-  fill:none;
-  stroke-width:2;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-}
-@media (max-width:639px){
-  .fs-toggle{
-    top:10px;
-    right:10px;
-    width:34px;
-    height:34px;
-  }
-}
+  min
