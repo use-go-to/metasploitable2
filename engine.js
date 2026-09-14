@@ -30,6 +30,7 @@
   const termFullscreen = $("term-fullscreen");
   const openBtn = $("term-open-btn");
   const closeBtn = $("term-close-btn");
+  const closeDot = $("term-close-dot");
   const phaseTrackEl = $("phase-track");
 
   if(!body || !input || !inputline) return;
@@ -103,7 +104,6 @@
     try{ input.focus({ preventScroll:true }); }catch(e){ input.focus(); }
   }
 
-  // Ferme le clavier mobile (uniquement si on est sur mobile et que le clavier est ouvert)
   function blurInputOnMobile(){
     if(!isMobileViewport()) return;
     if(document.activeElement === input){
@@ -126,7 +126,6 @@
     termFullscreen.classList.remove("open");
     document.documentElement.style.overflow = "";
     blurInputOnMobile();
-    // Réinitialise le padding (au cas où le clavier l'avait augmenté)
     if(body) body.style.paddingBottom = "";
     setTimeout(()=>{
       if(!termFullscreen.classList.contains("open")) termFullscreen.style.display = "none";
@@ -134,6 +133,7 @@
   }
   on(openBtn, "click", openTerminal);
   on(closeBtn, "click", closeTerminal);
+  on(closeDot, "click", closeTerminal);
   document.addEventListener("keydown", (e)=>{
     if(e.key === "Escape" && termFullscreen && termFullscreen.classList.contains("open")) closeTerminal();
   });
@@ -461,9 +461,6 @@
   });
 
   // ---------- GESTION DU CLAVIER MOBILE (padding dynamique) ----------
-  // Quand le clavier mobile s'ouvre, visualViewport.height diminue. On ajoute cette
-  // différence en padding-bottom à la zone de contenu, ce qui pousse la ligne de saisie
-  // au-dessus du clavier — SANS jamais modifier la hauteur du terminal (pas d'écran noir).
   function setupKeyboardPadding(){
     if(!window.visualViewport) return;
     const vv = window.visualViewport;
