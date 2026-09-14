@@ -621,8 +621,7 @@ table.cheat tr:last-child td{border-bottom:none;}
 }
 
 /* Points macOS dans le header du terminal. Le premier (rouge) est cliquable
-   pour fermer le terminal — c'est une convention familière, discrète, et
-   toujours visible en haut à gauche. */
+   pour fermer le terminal — convention familière, discrète, toujours visible. */
 .term-fs-dot{
   width:8px;
   height:8px;
@@ -688,6 +687,9 @@ table.cheat tr:last-child td{border-bottom:none;}
   overflow:hidden;
   text-overflow:ellipsis;
 }
+
+/* Bouton plein écran (navigateur) dans le header du terminal.
+   Le point rouge à gauche ferme ; ce bouton à droite bascule en plein écran. */
 .term-fs-close{
   font-family:var(--mono);
   font-size:13px;
@@ -699,9 +701,28 @@ table.cheat tr:last-child td{border-bottom:none;}
   height:32px;
   flex-shrink:0;
   cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
   transition:border-color .15s, color .15s, transform .15s;
 }
-.term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
+.term-fs-close:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  transform:translateY(-1px);
+}
+.term-fs-close svg{
+  width:14px;
+  height:14px;
+  display:block;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
 .term-fs-info{
   display:flex;
   flex-wrap:wrap;
@@ -1077,7 +1098,7 @@ footer .note .ok{color:var(--ok);}
   height:4px;
 }
 
-/* ---------- BOUTON PLEIN ÉCRAN (fixe, visible sur la page du cours) ---------- */
+/* ---------- BOUTON PLEIN ÉCRAN FLOTTANT (page du cours) ---------- */
 .fs-toggle{
   position:fixed;
   top:14px;
@@ -1121,11 +1142,4 @@ footer .note .ok{color:var(--ok);}
     width:34px;
     height:34px;
   }
-}
-/* Quand le terminal d'entraînement est ouvert, on masque le bouton plein
-   écran (navigateur) : le terminal occupe déjà tout l'écran, et cela
-   évite qu'il chevauche le header du terminal. Le point rouge du header
-   permet de fermer et de revenir au cours. */
-body:has(.term-fullscreen.open) .fs-toggle{
-  display:none;
 }
