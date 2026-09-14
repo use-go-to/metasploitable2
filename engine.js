@@ -25,16 +25,12 @@
   const consigneTextEl = $("consigne-text");
   const hintBtn = $("sim-hint-btn");
   const solutionBtn = $("sim-solution-btn");
-  const connectBtn = $("sim-connect-btn"); // optionnel — absent dans certains cours
+  const connectBtn = $("sim-connect-btn");
   const resetBtn = $("sim-reset-btn");
   const termFullscreen = $("term-fullscreen");
   const openBtn = $("term-open-btn");
   const closeBtn = $("term-close-btn");
   const phaseTrackEl = $("phase-track");
-  const notebookBtn = $("notebook-btn");
-  const notebookPanel = $("notebook-panel");
-  const notebookList = $("notebook-list");
-  const notebookCount = $("notebook-count");
 
   // Si l'essentiel manque, on abandonne silencieusement (pas de crash).
   if(!body || !input || !inputline) return;
@@ -47,6 +43,65 @@
     if(typeof steps === "undefined") return "free";
     if(stepIndex >= steps.length) return "free";
     return steps[stepIndex].kind;
+  }
+
+  // ---------- BOUTON PLEIN ÉCRAN (injecté dynamiquement, fixe, toujours visible) ----------
+  function injectFsToggle(){
+    if(document.getElementById("fs-toggle")) return; // déjà injecté
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "fs-toggle";
+    btn.id = "fs-toggle";
+    btn.setAttribute("aria-label", "Basculer en plein écran");
+    btn.title = "Plein écran";
+    // Icône "expand" (4 coins vers l'extérieur)
+    btn.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4 9V4h5"/>' +
+        '<path d="M20 9V4h-5"/>' +
+        '<path d="M4 15v5h5"/>' +
+        '<path d="M20 15v5h-5"/>' +
+      '</svg>';
+    document.body.appendChild(btn);
+
+    btn.addEventListener("click", ()=>{
+      const doc = document;
+      const el = doc.documentElement;
+      if(!doc.fullscreenElement && !doc.webkitFullscreenElement){
+        if(el.requestFullscreen){
+          el.requestFullscreen().catch(()=>{});
+        } else if(el.webkitRequestFullscreen){
+          el.webkitRequestFullscreen();
+        }
+      } else {
+        if(doc.exitFullscreen){
+          doc.exitFullscreen().catch(()=>{});
+        } else if(doc.webkitExitFullscreen){
+          doc.webkitExitFullscreen();
+        }
+      }
+    });
+
+    // Synchronise l'icône selon l'état réel du navigateur
+    function updateIcon(){
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      btn.innerHTML = isFs
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+            '<path d="M9 4v5H4"/>' +
+            '<path d="M15 4v5h5"/>' +
+            '<path d="M9 20v-5H4"/>' +
+            '<path d="M15 20v-5h5"/>' +
+          '</svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+            '<path d="M4 9V4h5"/>' +
+            '<path d="M20 9V4h-5"/>' +
+            '<path d="M4 15v5h5"/>' +
+            '<path d="M20 15v5h-5"/>' +
+          '</svg>';
+      btn.title = isFs ? "Quitter le plein écran" : "Plein écran";
+    }
+    document.addEventListener("fullscreenchange", updateIcon);
+    document.addEventListener("webkitfullscreenchange", updateIcon);
   }
 
   // ---------- FOCUS CONDITIONNEL (anti-clavier-mobile) ----------
@@ -125,60 +180,6 @@
       pill.classList.toggle("active", pill.dataset.phase === current);
     });
   }
-
-  // ---------- CARNET DE MISSION ----------
-  const NOTEBOOK_KEY = "pentestlab_notebook_v1";
-
-  function loadNotebook(){
-    try{ return JSON.parse(localStorage.getItem(NOTEBOOK_KEY)) || []; }
-    catch(e){ return []; }
-  }
-  function saveNotebook(list){
-    try{ localStorage.setItem(NOTEBOOK_KEY, JSON.stringify(list)); }
-    catch(e){}
-  }
-  function addToNotebook(note, cmdLabel){
-    if(!note || !notebookList) return;
-    const list = loadNotebook();
-    if(list.some(item => item.note === note)) { renderNotebook(); return; }
-    list.push({ cmd: cmdLabel || "", note: note });
-    saveNotebook(list);
-    renderNotebook();
-  }
-  function renderNotebook(){
-    if(!notebookList) return;
-    const list = loadNotebook();
-    if(notebookCount) notebookCount.textContent = list.length;
-    notebookList.innerHTML = "";
-    if(list.length === 0){
-      notebookList.innerHTML = '<p class="notebook-empty">Ton carnet est vide pour l’instant — chaque commande validée avec une explication s’y ajoute, cours après cours.</p>';
-      return;
-    }
-    list.forEach(item=>{
-      const div = document.createElement("div");
-      div.className = "notebook-item";
-      div.innerHTML = `<div class="nb-cmd">${item.cmd}</div><div class="nb-note">${item.note}</div>`;
-      notebookList.appendChild(div);
-    });
-    // Bouton de purge discret en pied de panneau
-    const footer = document.createElement("div");
-    footer.style.cssText = "margin-top:6px;padding-top:8px;border-top:1px solid var(--border);text-align:right;";
-    const clearBtn = document.createElement("button");
-    clearBtn.type = "button";
-    clearBtn.textContent = "vider le carnet";
-    clearBtn.style.cssText = "font-family:var(--mono);font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 8px;cursor:pointer;transition:border-color .15s,color .15s;";
-    clearBtn.addEventListener("mouseenter", ()=>{ clearBtn.style.borderColor="var(--accent)"; clearBtn.style.color="var(--accent)"; });
-    clearBtn.addEventListener("mouseleave", ()=>{ clearBtn.style.borderColor="var(--border)"; clearBtn.style.color="var(--muted)"; });
-    clearBtn.addEventListener("click", ()=>{
-      if(confirm("Vider le carnet de toutes les notes cumulées ?")){
-        try{ localStorage.removeItem(NOTEBOOK_KEY); }catch(e){}
-        renderNotebook();
-      }
-    });
-    footer.appendChild(clearBtn);
-    notebookList.appendChild(footer);
-  }
-  on(notebookBtn, "click", ()=>{ if(notebookPanel) notebookPanel.classList.toggle("show"); });
 
   // ---------- HELPERS AFFICHAGE ----------
   function flashSuccess(){
@@ -301,7 +302,6 @@
   function advanceTypeStep(cmdShown){
     const s = steps[stepIndex];
     printLine(s.prompt, s.context, cmdShown, s.output);
-    if(s.note) addToNotebook(s.note, s.accepted[0]);
     stepIndex++;
     afterAdvance();
   }
@@ -420,16 +420,12 @@
 
   // ---------- RESET (durci) ----------
   on(resetBtn, "click", ()=>{
-    // Retour à l'étape 1, purge de l'historique et de la zone de sortie,
-    // réaffichage de la ligne de saisie (au cas où on était en étape "connect"),
-    // puis recalcul complet de l'UI.
     stepIndex = 0;
     if(typeof initialFreeContext !== "undefined") freeContext = initialFreeContext;
     cmdHistory = [];
     historyPos = 0;
     userHasInteracted = false;
 
-    // Supprime toutes les lignes sauf la ligne de saisie, puis la remet en place.
     const children = Array.from(body.children);
     children.forEach(child=>{
       if(child !== inputline) child.remove();
@@ -452,12 +448,9 @@
   });
 
   // ---------- INITIALISATION (après DOMContentLoaded) ----------
-  // Garantit que les variables du cours (steps, freeContext, freeCommands)
-  // sont bien définies avant le premier rendu, quel que soit l'ordre
-  // des balises <script> dans le fichier HTML.
   function init(){
+    injectFsToggle();
     renderPhaseTrackSkeleton();
-    renderNotebook();
     updateUI();
   }
 
