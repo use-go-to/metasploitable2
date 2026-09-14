@@ -2,799 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MySQL — Root sans mot de passe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#0b0e14;
-    --panel:#12161f;
-    --panel-alt:#161b26;
-    --border:#232937;
-    --text:#e7e9ee;
-    --muted:#8b93a5;
-    --accent:#ff8a5c;
-    --accent-soft:#ff8a5c22;
-    --ok:#5fd9a4;
-    --ok-soft:#5fd9a422;
-    --serif:'Fraunces', serif;
-    --sans:'IBM Plex Sans', sans-serif;
-    --mono:'IBM Plex Mono', monospace;
-  }
-
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:var(--sans);
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-  }
-
-  ::selection{background:var(--accent-soft); color:var(--accent);}
-
-  a{color:var(--accent);}
-
-  .wrap{
-    max-width:760px;
-    margin:0 auto;
-    padding:0 24px;
-  }
-
-  /* ---------- HERO ---------- */
-  .hero{
-    padding:96px 0 64px;
-    border-bottom:1px solid var(--border);
-  }
-  .breadcrumb{margin:0 0 18px;}
-  .breadcrumb a{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--muted);
-    text-decoration:none;
-    border-bottom:1px solid transparent;
-  }
-  .breadcrumb a:hover{color:var(--accent); border-bottom-color:var(--accent);}
-  .hero .kicker{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-    margin:0 0 20px;
-  }
-  .hero .kicker::before{content:"$ "; color:var(--muted);}
-  .hero h1{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:clamp(34px,5vw,52px);
-    line-height:1.1;
-    margin:0 0 20px;
-    letter-spacing:-0.01em;
-  }
-  .hero p.lead{
-    font-size:17px;
-    color:var(--muted);
-    max-width:56ch;
-    margin:0 0 32px;
-  }
-  .meta-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:28px;
-  }
-  .meta-item{font-size:13px;}
-  .meta-item .label{
-    display:block;
-    color:var(--muted);
-    margin-bottom:4px;
-  }
-  .meta-item .value{
-    font-family:var(--mono);
-    color:var(--text);
-  }
-  .badge{
-    display:inline-block;
-    font-family:var(--mono);
-    font-size:12px;
-    padding:3px 10px;
-    border:1px solid var(--ok);
-    color:var(--ok);
-    border-radius:3px;
-  }
-  .score-badge{
-    display:inline-block;
-    font-family:var(--mono);
-    font-size:12px;
-    padding:3px 10px;
-    border-radius:3px;
-  }
-
-  /* ---------- SECTION GENERIC ---------- */
-  section{
-    padding:64px 0;
-    border-bottom:1px solid var(--border);
-  }
-  section:last-of-type{border-bottom:none;}
-  h2.section-title{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:28px;
-    margin:0 0 12px;
-  }
-  .section-intro{
-    color:var(--muted);
-    max-width:60ch;
-    margin:0 0 40px;
-    font-size:15px;
-  }
-
-  /* ---------- TIMELINE ---------- */
-  .timeline{
-    position:relative;
-    padding-left:44px;
-  }
-  .timeline::before{
-    content:"";
-    position:absolute;
-    left:15px;
-    top:6px;
-    bottom:6px;
-    width:1px;
-    background:var(--border);
-  }
-  .step{
-    position:relative;
-    margin-bottom:56px;
-  }
-  .step:last-child{margin-bottom:0;}
-  .step-num{
-    position:absolute;
-    left:-44px;
-    top:0;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    background:var(--panel);
-    border:1px solid var(--border);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-  }
-  .step h3{
-    font-family:var(--sans);
-    font-weight:600;
-    font-size:19px;
-    margin:2px 0 6px;
-  }
-  .step .step-sub{
-    color:var(--muted);
-    font-size:14px;
-    margin:0 0 18px;
-  }
-
-  /* ---------- TERMINAL BLOCK ---------- */
-  .term{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-    margin:0 0 18px;
-  }
-  .term-bar{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:9px 14px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .term-bar .dot{
-    width:7px; height:7px; border-radius:50%;
-    background:var(--border);
-  }
-  .term pre{
-    margin:0;
-    padding:16px 18px;
-    font-family:var(--mono);
-    font-size:13px;
-    line-height:1.65;
-    overflow-x:auto;
-    white-space:pre-wrap;
-    word-break:break-word;
-  }
-  .term .prompt{color:var(--accent);}
-  .term .out{color:var(--muted);}
-  .term .ok{color:var(--ok);}
-  .term .flag{color:var(--accent);}
-
-  /* ---------- BOUTON COPIER (discret, par commande) ---------- */
-  .copy-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:20px;
-    height:20px;
-    margin-left:8px;
-    padding:0;
-    border:1px solid transparent;
-    border-radius:4px;
-    background:transparent;
-    color:var(--muted);
-    font-size:12px;
-    line-height:1;
-    cursor:pointer;
-    vertical-align:middle;
-    opacity:.55;
-    transition:opacity .15s, border-color .15s, color .15s, background .15s;
-  }
-  .term:hover .copy-btn{opacity:.9;}
-  .copy-btn:hover{opacity:1; border-color:var(--border); background:var(--panel-alt); color:var(--accent);}
-  .copy-btn.copied{opacity:1; border-color:var(--ok); color:var(--ok);}
-
-  /* ---------- EXPLAIN BOX ---------- */
-  .explain{
-    display:grid;
-    grid-template-columns:auto 1fr;
-    gap:10px 12px;
-    background:transparent;
-    border-left:2px solid var(--border);
-    padding:2px 0 2px 18px;
-    margin-top:14px;
-  }
-  .explain .k{
-    font-family:var(--mono);
-    font-size:11px;
-    color:var(--muted);
-    padding-top:2px;
-    white-space:nowrap;
-  }
-  .explain .v{
-    font-size:14.5px;
-    color:var(--text);
-  }
-  .explain .v strong{color:var(--accent); font-weight:600;}
-  .explain .k.err{color:#ff5c72;}
-  .explain .v em.err-em{color:#ff5c72; font-style:normal; font-weight:600;}
-
-  /* ---------- MÉTHODE EXACTE (playbook récapitulatif) ---------- */
-  .playbook{
-    display:flex;
-    flex-direction:column;
-    gap:0;
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-    margin-bottom:40px;
-  }
-  .playbook-row{
-    display:grid;
-    grid-template-columns:28px 1fr 1.3fr;
-    gap:16px;
-    padding:14px 18px;
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
-  }
-  .playbook-row:last-child{border-bottom:none;}
-  .playbook-num{
-    font-family:var(--mono);
-    color:var(--accent);
-    font-size:13px;
-  }
-  .playbook-what strong{
-    display:block;
-    font-size:14px;
-    color:var(--text);
-    margin-bottom:3px;
-  }
-  .playbook-what span{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--ok);
-  }
-  .playbook-why{
-    font-size:13px;
-    color:var(--muted);
-  }
-  @media (max-width:640px){
-    .playbook-row{grid-template-columns:1fr; gap:4px;}
-    .playbook-num{display:none;}
-  }
-
-  /* ---------- CHEATSHEET TABLE ---------- */
-  .cheat-group{margin-bottom:32px;}
-  .cheat-group h4{
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--accent);
-    margin:0 0 14px;
-    font-weight:500;
-  }
-  table.cheat{
-    width:100%;
-    border-collapse:collapse;
-    font-size:14px;
-  }
-  table.cheat td{
-    padding:10px 0;
-    border-bottom:1px solid var(--border);
-    vertical-align:top;
-  }
-  table.cheat td.cmd{
-    font-family:var(--mono);
-    color:var(--ok);
-    width:42%;
-    padding-right:20px;
-    white-space:nowrap;
-  }
-  table.cheat td.desc{color:var(--muted);}
-  table.cheat tr:last-child td{border-bottom:none;}
-
-  /* ---------- CONCEPT CARDS ---------- */
-  .concepts{
-    display:flex;
-    flex-direction:column;
-    gap:22px;
-  }
-  .concept{
-    padding:20px 0;
-    border-top:1px solid var(--border);
-  }
-  .concept:first-child{border-top:none; padding-top:0;}
-  .concept h4{
-    font-family:var(--serif);
-    font-weight:600;
-    font-size:18px;
-    margin:0 0 8px;
-  }
-  .concept p{
-    color:var(--muted);
-    margin:0;
-    font-size:14.5px;
-    max-width:62ch;
-  }
-
-  /* ---------- TERMINAL D'ENTRAÎNEMENT ---------- */
-  .practice-wrap{
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-  }
-  .info-bar{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px 28px;
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:13px 18px;
-    font-family:var(--mono);
-    font-size:12.5px;
-  }
-  .info-bar .item{color:var(--muted);}
-  .info-bar .item strong{color:var(--accent); font-weight:500;}
-
-  .sim{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    overflow:hidden;
-  }
-  .sim-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-    padding:9px 14px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-  }
-  .sim-progress{color:var(--accent);}
-  .sim-body{
-    padding:16px 18px;
-    font-family:var(--mono);
-    font-size:13px;
-    line-height:1.7;
-    max-height:420px;
-    overflow-y:auto;
-  }
-  .sim-line{margin:0 0 4px; white-space:pre-wrap; word-break:break-word;}
-  .sim-line .p{color:var(--accent);}
-  /* ---------- PROMPT RÉALISTE (style Kali / zsh deux lignes) ---------- */
-  .p-kali{display:inline-flex; flex-direction:column; line-height:1.4; vertical-align:top;}
-  .p-kali .p-user{color:var(--ok); font-weight:600;}
-  .p-kali .p-punc{color:var(--muted);}
-  .p-kali .p-dollar{color:var(--accent); margin-left:4px;}
-  .p-root{color:#ff5c72; font-weight:600;}
-  .p-path{color:#5fbfff;}
-  .sim-line .o{color:var(--muted); display:block;}
-  .sim-line .o.ok{color:var(--ok);}
-  .sim-line .o.err{color:#ff5c72;}
-  .sim-line.appear{animation:fadeSlideIn .3s ease both;}
-  @keyframes fadeSlideIn{
-    from{opacity:0; transform:translateY(4px);}
-    to{opacity:1; transform:translateY(0);}
-  }
-
-  /* ligne mise en valeur pendant la correction */
-  .sim-line.hl{
-    background:rgba(255,138,92,.12);
-    border-radius:4px;
-    padding:2px 6px;
-    margin:0 -6px 4px;
-    animation:pulseGlow 1.3s ease-in-out 2;
-  }
-  @keyframes pulseGlow{
-    0%,100%{box-shadow:0 0 0 rgba(255,138,92,0);}
-    50%{box-shadow:0 0 14px rgba(255,138,92,.45);}
-  }
-
-  /* annotation ajoutée lors d'une correction d'analyse */
-  .sim-annot{
-    margin:2px 0 10px;
-    padding:8px 12px;
-    border-left:2px solid var(--accent);
-    color:var(--accent);
-    font-size:12.5px;
-    background:var(--accent-soft);
-    border-radius:0 6px 6px 0;
-  }
-
-  /* la ligne de saisie vit DANS le flux du terminal, comme un vrai shell —
-     c'est la dernière ligne, elle défile avec le reste, pas de bloc à part */
-  .sim-inputline{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin:0 0 4px;
-  }
-  .sim-inputline .p{color:var(--accent); flex-shrink:0;}
-  .sim-input{
-    flex:1;
-    background:transparent;
-    border:none;
-    outline:none;
-    color:var(--text);
-    font-family:var(--mono);
-    font-size:13px;
-    caret-color:var(--accent);
-    padding:0;
-  }
-  .sim-input::placeholder{color:var(--muted); opacity:.6;}
-  .sim-controls{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 18px 16px;
-    border-top:1px solid var(--border);
-    flex-wrap:wrap;
-  }
-  .sim-btn{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 12px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    transition:border-color .15s, transform .1s;
-  }
-  .sim-btn:hover{border-color:var(--muted); transform:translateY(-1px);}
-  .sim-btn:active{transform:translateY(0);}
-  .sim-btn:disabled{opacity:.3; cursor:default; transform:none;}
-  .sim-btn.continue{border-color:var(--accent); color:var(--accent);}
-
-  .sim-hint-box{
-    margin:0 18px 12px;
-    padding:10px 14px;
-    border-left:2px solid var(--accent);
-    font-size:13px;
-    color:var(--muted);
-    max-height:0;
-    opacity:0;
-    overflow:hidden;
-    transition:max-height .25s ease, opacity .25s ease, padding .25s ease, margin .25s ease;
-  }
-  .sim-hint-box.show{
-    max-height:120px;
-    opacity:1;
-  }
-
-  @media (max-width:640px){
-    .sim-body{max-height:320px;}
-  }
-
-  /* ---------- BOUTON D'OUVERTURE DU TERMINAL ---------- */
-  .term-launch{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:28px;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:12px;
-  }
-  .term-launch-btn{
-    font-family:var(--mono);
-    font-size:14px;
-    font-weight:600;
-    color:#05100b;
-    background:var(--ok);
-    border:none;
-    border-radius:8px;
-    padding:13px 24px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .term-launch-btn:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(95,217,164,.28);}
-  .term-launch-btn:active{transform:translateY(0);}
-  .term-launch-dot{
-    width:8px; height:8px; border-radius:50%;
-    background:#05100b;
-    animation:launchBlink 1.6s ease-in-out infinite;
-  }
-  @keyframes launchBlink{0%,100%{opacity:1;} 50%{opacity:.2;}}
-  .term-launch-sub{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--muted);
-    margin:0;
-  }
-
-  /* ---------- OVERLAY PLEIN ÉCRAN ---------- */
-  .term-fullscreen{
-    position:fixed;
-    inset:0;
-    z-index:9999;
-    display:none;
-    flex-direction:column;
-    background:radial-gradient(circle at 50% 0%, #131826 0%, #05070a 72%);
-    opacity:0;
-    transform:scale(.98);
-    transition:opacity .22s ease, transform .22s ease;
-  }
-  .term-fullscreen.open{
-    display:flex;
-    opacity:1;
-    transform:scale(1);
-  }
-  .term-fs-header{
-    flex-shrink:0;
-    border-bottom:1px solid var(--border);
-    background:var(--panel);
-    padding:14px 22px 16px;
-  }
-  .term-fs-headrow{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .term-fs-titlebar{
-    display:flex;
-    align-items:center;
-    gap:7px;
-    font-family:var(--mono);
-    font-size:13px;
-    color:var(--muted);
-  }
-  .term-fs-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
-  .term-fs-dot.r{background:#ff5f57;}
-  .term-fs-dot.y{background:#febc2e;}
-  .term-fs-dot.g{background:#28c840;}
-  .term-fs-context{margin-left:8px; color:var(--text);}
-  .term-fs-close{
-    font-family:var(--mono);
-    font-size:13px;
-    background:transparent;
-    border:1px solid var(--border);
-    color:var(--muted);
-    border-radius:6px;
-    width:30px; height:30px;
-    cursor:pointer;
-    transition:border-color .15s, color .15s, transform .15s;
-  }
-  .term-fs-close:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
-  .term-fs-info{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:8px 22px;
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--muted);
-    margin-bottom:14px;
-  }
-  .term-fs-info .item strong{color:var(--accent); font-weight:500;}
-
-  /* ---------- CONSIGNE FIXE (toujours visible, comme les infos IP) ---------- */
-  .term-fs-consigne{
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    margin-top:14px;
-    padding:10px 12px;
-    background:var(--accent-soft);
-    border:1px solid var(--accent);
-    border-radius:6px;
-  }
-  .consigne-tag{
-    flex-shrink:0;
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:var(--accent);
-    border:1px solid var(--accent);
-    border-radius:3px;
-    padding:2px 7px;
-    margin-top:1px;
-  }
-  .consigne-text{
-    font-family:var(--sans);
-    font-size:13.5px;
-    color:var(--text);
-    line-height:1.5;
-  }
-  .term-fs-info .item.mode{
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    color:var(--ok);
-    font-size:10.5px;
-    border:1px solid var(--ok);
-    padding:3px 9px;
-    border-radius:3px;
-    transition:color .2s, border-color .2s;
-  }
-  .term-progress{
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  .term-progress-track{
-    flex:1;
-    height:6px;
-    border-radius:3px;
-    background:var(--panel-alt);
-    border:1px solid var(--border);
-    overflow:hidden;
-  }
-  .term-progress-fill{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg, var(--ok), var(--accent));
-    border-radius:3px;
-    transition:width .5s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 0 10px rgba(95,217,164,.55);
-  }
-  .term-progress-label{
-    font-family:var(--mono);
-    font-size:11.5px;
-    color:var(--accent);
-    white-space:nowrap;
-  }
-
-  .term-fullscreen .sim-body{
-    flex:1;
-    overflow-y:auto;
-    max-height:none;
-    padding:20px 26px;
-    transition:filter .25s ease;
-  }
-  .term-fullscreen .sim-body.dimmed{
-    filter:brightness(.5) saturate(.85);
-    pointer-events:none;
-  }
-  .term-fs-footer{
-    flex-shrink:0;
-    border-top:1px solid var(--border);
-    background:var(--panel);
-  }
-  .term-fs-footer .sim-hint-box{margin:10px 22px 0;}
-  .term-fs-footer .sim-controls{padding:10px 22px 14px;}
-
-  /* ---------- FIL D'ARIANE DE MÉTHODE (toujours visible, jamais bloquant) ---------- */
-  .phase-track{
-    display:flex; flex-wrap:wrap; gap:6px;
-    margin-top:12px;
-  }
-  .phase-pill{
-    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;
-    color:var(--muted); border:1px solid var(--border); border-radius:20px;
-    padding:4px 10px; transition:color .2s, border-color .2s, background .2s;
-  }
-  .phase-pill.active{
-    color:var(--accent); border-color:var(--accent); background:var(--accent-soft);
-  }
-
-  /* ---------- CARNET DE MISSION (jamais bloquant : pas de dimmed, pas de clic forcé pour continuer) ---------- */
-  .notebook-btn{
-    font-family:var(--mono); font-size:12px; color:var(--muted);
-    background:var(--panel-alt); border:1px solid var(--border); border-radius:6px;
-    padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
-    transition:border-color .15s, color .15s;
-  }
-  .notebook-btn:hover{border-color:var(--accent); color:var(--accent);}
-  .notebook-panel{
-    display:none; flex-direction:column; gap:10px;
-    margin:12px 22px 0; padding:14px 16px; max-height:260px; overflow-y:auto;
-    border-radius:10px; border:1px solid var(--border); background:var(--panel-alt);
-  }
-  .notebook-panel.show{display:flex;}
-  .notebook-empty{font-size:12.5px; color:var(--muted); margin:0;}
-  .notebook-item{border-left:2px solid var(--accent); padding-left:10px;}
-  .notebook-item .nb-cmd{
-    font-family:var(--mono); font-size:12px; color:var(--text); margin-bottom:2px;
-  }
-  .notebook-item .nb-note{font-size:12.5px; color:var(--muted); line-height:1.5;}
-
-  /* ---------- INDICE (deux niveaux) ---------- */
-  .hint-more{
-    display:inline-block; margin-left:8px;
-    font-family:var(--mono); font-size:11px; color:var(--accent);
-    background:transparent; border:1px solid var(--accent); border-radius:12px;
-    padding:2px 9px; cursor:pointer;
-  }
-  .hint-more:hover{background:var(--accent-soft);}
-
-  /* animation sobre au passage d'une étape à l'autre */
-  @keyframes successFlash{
-    0%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-    35%{box-shadow:inset 0 0 46px rgba(95,217,164,.16);}
-    100%{box-shadow:inset 0 0 0 rgba(95,217,164,0);}
-  }
-  .sim-body.flash-ok{animation:successFlash .65s ease;}
-
-  @keyframes progressPulse{
-    0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
-    50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
-  }
-  .term-progress-fill.pulse{animation:progressPulse .65s ease;}
-
-  /* ---------- FOOTER ---------- */
-  footer{
-    padding:48px 0 80px;
-  }
-  footer .note{
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--muted);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:16px 18px;
-    background:var(--panel);
-  }
-  footer .note .ok{color:var(--ok);}
-
-  @media (max-width:600px){
-    .hero{padding:64px 0 48px;}
-    .timeline{padding-left:34px;}
-    .step-num{left:-34px; width:26px; height:26px; font-size:11px;}
-    .explain{grid-template-columns:1fr;}
-    .explain .k{padding-top:0;}
-    .practice-wrap{grid-template-columns:1fr;}
-    .info-panel{position:static;}
-  }
-</style>
+<link rel="stylesheet" href="lab.css">
 </head>
 <body>
 
@@ -803,7 +15,7 @@
       <p class="breadcrumb"><a href="index.html">← Hub</a></p>
       <p class="kicker">metasploitable2 :: recon → connexion → énumération</p>
       <h1>MySQL<br>Root sans mot de passe</h1>
-      <p class="lead">Un SGBD exposé avec un compte privilégié sans authentification. On s'y connecte directement, puis on énumère ce qui est accessible — sans chercher à exécuter de commande système.</p>
+      <p class="lead">Un SGBD exposé avec un compte privilégié sans authentification. On s'y connecte directement, puis on énumère ce qui est accessible.</p>
       <div class="meta-row">
         <div class="meta-item"><span class="label">Cible</span><span class="value">Metasploitable2 · 192.168.56.20</span></div>
         <div class="meta-item"><span class="label">Attaquant</span><span class="value">Kali Linux · 192.168.56.10</span></div>
@@ -818,29 +30,29 @@
   <div class="wrap">
     <section id="chrono">
       <h2 class="section-title">Chronologie</h2>
-      <p class="section-intro">Quatre étapes seulement — la difficulté est dans ce qu'on observe, pas dans l'enchaînement technique.</p>
+      <p class="section-intro">Quatre étapes — la difficulté est dans ce qu'on observe, pas dans l'enchaînement technique.</p>
 
       <h4 style="font-family:var(--mono); font-size:13px; color:var(--accent); margin:0 0 14px; font-weight:500;">Méthode exacte, en un coup d'œil</h4>
       <div class="playbook">
         <div class="playbook-row">
           <div class="playbook-num">1</div>
-          <div class="playbook-what"><strong>Reconnaissance ciblée</strong><span>nmap -sV -p 3306</span></div>
-          <div class="playbook-why">Confirmer que le port MySQL est ouvert et identifier la version exacte du SGBD — la faille n'est pas dans la version, mais dans sa configuration.</div>
+          <div class="playbook-what"><strong>Reconnaissance</strong><span>nmap -sV -sC</span></div>
+          <div class="playbook-why">Repérer MySQL sur le port 3306, accessible depuis le réseau.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">2</div>
-          <div class="playbook-what"><strong>Lecture du résultat</strong><span>port ouvert, aucune auth visible</span></div>
-          <div class="playbook-why">Un service de base de données exposé sur le réseau sans restriction d'accès est un signal direct : la question n'est pas « comment l'exploiter » mais « qui peut s'y connecter ».</div>
+          <div class="playbook-what"><strong>Choix du port</strong><span>reconnaissance visuelle</span></div>
+          <div class="playbook-why">Le compte root existe par défaut sur MySQL — reste à savoir s'il est protégé.</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">3</div>
-          <div class="playbook-what"><strong>Tentative de connexion directe</strong><span>mysql -u root -h IP --skip-ssl</span></div>
-          <div class="playbook-why">Le compte root existe par défaut sur toute installation MySQL. Tester s'il est protégé par mot de passe est la première vérification à faire — pas une attaque, juste une connexion.</div>
+          <div class="playbook-what"><strong>Connexion directe</strong><span>mysql -u root -h IP --skip-ssl</span></div>
+          <div class="playbook-why">Tester la connexion sans mot de passe (option -p absente).</div>
         </div>
         <div class="playbook-row">
           <div class="playbook-num">4</div>
-          <div class="playbook-what"><strong>Énumération</strong><span>show databases / select user()</span></div>
-          <div class="playbook-why">Une fois connecté, lister ce qui est accessible : bases, utilisateurs, tables. C'est là que se trouve la valeur réelle de l'accès obtenu.</div>
+          <div class="playbook-what"><strong>Énumération SQL</strong><span>show databases; select user();</span></div>
+          <div class="playbook-why">Lister les bases, vérifier l'identité effective, explorer.</div>
         </div>
       </div>
 
@@ -848,47 +60,68 @@
 
         <div class="step">
           <div class="step-num">1</div>
-          <h3>Reconnaissance — le port MySQL</h3>
-          <p class="step-sub">Un scan ciblé sur le port 3306, pour confirmer le service et sa version.</p>
+          <h3>Reconnaissance complète — nmap</h3>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> nmap -sV -p 3306 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -p 3306 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">Nmap scan report for 192.168.56.20</span>
-<span class="out">PORT     STATE SERVICE VERSION</span>
-<span class="out">3306/tcp open  mysql   MySQL 5.0.51a-3ubuntu5</span></pre>
+            <pre><span class="prompt">$</span> nmap -sV -sC 192.168.56.20<button class="copy-btn" type="button" data-copy="nmap -sV -sC 192.168.56.20" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">PORT     STATE SERVICE     VERSION</span>
+<span class="out">21/tcp   open  ftp         vsftpd 2.3.4</span>
+<span class="out">22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1</span>
+<span class="out">23/tcp   open  telnet      Linux telnetd</span>
+<span class="out">80/tcp   open  http        Apache httpd 2.2.8</span>
+<span class="out">111/tcp  open  rpcbind     2 (RPC #100000)</span>
+<span class="out">139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X</span>
+<span class="out">445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian</span>
+<span class="out">1524/tcp open  ingreslock?</span>
+<span class="out">2049/tcp open  nfs         2-4 (RPC #100003)</span>
+<span class="out">3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5</span>
+<span class="out">5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7</span>
+<span class="out">5900/tcp open  vnc         VNC (protocol 3.3)</span>
+<span class="out">6667/tcp open  irc         UnrealIRCd</span>
+<span class="out">8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-p 3306</span><span class="v">ne scanner qu'un seul port — on sait déjà que MySQL écoute là, inutile de tout rescanner.</span>
-            <span class="k">version</span><span class="v">MySQL 5.0.51a — ancienne, mais ce n'est pas une faille de version qui nous intéresse ici : c'est l'absence de mot de passe sur le compte root, une question de <strong>configuration</strong>, pas de code.</span>
-            <span class="k">exposé</span><span class="v">Le port est accessible depuis l'extérieur de la machine. Sur une installation durcie, MySQL n'écoute que sur <strong>localhost</strong> (127.0.0.1) et n'est pas joignable depuis le réseau.</span>
+            <span class="k">-sV / -sC</span><span class="v">versions + scripts NSE.</span>
+            <span class="k">triage</span><span class="v">On cherche des services exposés avec un accès non restreint.</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">2</div>
-          <h3>Connexion directe — sans mot de passe</h3>
-          <p class="step-sub">Le compte root existe par défaut. La seule question est : est-il protégé ?</p>
+          <h3>Choix du port à cibler</h3>
+          <p class="step-sub">MySQL écoute sur son port standard, accessible depuis le réseau.</p>
           <div class="term">
-            <div class="term-bar"><span class="dot"></span>kali@kali</div>
-            <pre><span class="prompt">$</span> mysql -u root -h 192.168.56.20 --skip-ssl<button class="copy-btn" type="button" data-copy="mysql -u root -h 192.168.56.20 --skip-ssl" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">Welcome to the MySQL monitor.  Commands end with ; or \g.</span>
-<span class="out">Your MySQL connection id is 12</span>
-<span class="out">Server version: 5.0.51a-3ubuntu5 (Ubuntu)</span>
-<span class="out">Type 'help;' or '\h' for help. Type '\c' to clear the buffer.</span>
-<span class="prompt">mysql></span></pre>
+            <div class="term-bar"><span class="dot"></span>rappel de la sortie nmap</div>
+            <pre><span class="out">3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5</span></pre>
           </div>
           <div class="explain">
-            <span class="k">-u root</span><span class="v">on précise le compte utilisateur MySQL. <strong>root</strong> est le nom du compte d'administration par défaut de MySQL — un nom conventionnel, pas un utilisateur système Linux.</span>
-            <span class="k">-h IP</span><span class="v">on se connecte à distance (host), depuis Kali vers la cible. Sans <strong>-p</strong>, le client ne demande pas de mot de passe : si le serveur en exige un, la connexion échoue. Ici, elle réussit — donc <strong>aucun mot de passe n'est requis</strong>.</span>
-            <span class="k">--skip-ssl</span><span class="v">force la connexion en clair, sans négociation TLS. Sur les anciennes versions de MySQL (comme la 5.0 de Metasploitable2), le client moderne peut refuser la connexion si le serveur n'utilise pas le même protocole de chiffrement. <strong>--skip-ssl</strong> contourne ce problème et permet la connexion.</span>
-            <span class="k">invite mysql&gt;</span><span class="v">Le prompt change : on n'est plus dans un shell Unix, on est dans un <strong>client SQL interactif</strong>. Les commandes sont du SQL, pas des commandes système.</span>
+            <span class="k">indice</span><span class="v">Sur une installation durcie, MySQL n'écoute que sur localhost. Ici, le service est accessible depuis l'extérieur — un signal direct.</span>
+            <span class="k">à retenir</span><span class="v">Le compte root existe par défaut sur MySQL. La question n'est pas « comment l'exploiter » mais « qui peut s'y connecter ».</span>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
-          <h3>Énumération — ce qui est accessible</h3>
-          <p class="step-sub">Une fois connecté, lister les bases pour mesurer la portée de l'accès.</p>
+          <h3>Connexion directe — sans mot de passe</h3>
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span>kali@kali</div>
+            <pre><span class="prompt">$</span> mysql -u root -h 192.168.56.20 --skip-ssl<button class="copy-btn" type="button" data-copy="mysql -u root -h 192.168.56.20 --skip-ssl" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">Welcome to the MySQL monitor.</span>
+<span class="out">Your MySQL connection id is 12</span>
+<span class="out">Server version: 5.0.51a-3ubuntu5 (Ubuntu)</span>
+<span class="prompt">mysql></span></pre>
+          </div>
+          <div class="explain">
+            <span class="k">-u root</span><span class="v">compte d'administration par défaut MySQL — nom conventionnel, pas utilisateur système Linux.</span>
+            <span class="k">-h IP</span><span class="v">connexion distante. Sans -p, le client ne demande pas de mot de passe.</span>
+            <span class="k">--skip-ssl</span><span class="v">force la connexion en clair. Nécessaire avec les vieilles versions MySQL.</span>
+            <span class="k">invite</span><span class="v">mysql&gt; : on est dans un client SQL, pas un shell Unix.</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Énumération SQL</h3>
           <div class="term">
             <div class="term-bar"><span class="dot"></span>mysql</div>
             <pre><span class="prompt">mysql></span> show databases;<button class="copy-btn" type="button" data-copy="show databases;" aria-label="Copier la commande" title="Copier">⧉</button>
@@ -902,33 +135,20 @@
 <span class="out">| tikiwiki           |</span>
 <span class="out">| tikiwiki195        |</span>
 <span class="out">+--------------------+</span>
-<span class="out">6 rows in set (0.00 sec)</span></pre>
-          </div>
-          <div class="explain">
-            <span class="k">information_schema</span><span class="v">base système présente sur toute installation MySQL — elle décrit les autres bases. Sa seule présence ne choque pas.</span>
-            <span class="k">mysql</span><span class="v">base système contenant les comptes et privilèges. Y accéder en lecture permet de connaître les autres utilisateurs déclarés.</span>
-            <span class="k">dvwa / owasp10 / tikiwiki</span><span class="v">bases applicatives bien réelles — elles contiennent les données des applications web hébergées sur la machine. C'est là que se trouve la valeur de l'accès.</span>
-          </div>
-        </div>
+<span class="out">6 rows in set (0.00 sec)</span>
 
-        <div class="step">
-          <div class="step-num">4</div>
-          <h3>Contexte de la connexion</h3>
-          <p class="step-sub">Vérifier sous quelle identité MySQL on est connecté, et d'où.</p>
-          <div class="term">
-            <div class="term-bar"><span class="dot"></span>mysql</div>
-            <pre><span class="prompt">mysql></span> select user();<button class="copy-btn" type="button" data-copy="select user();" aria-label="Copier la commande" title="Copier">⧉</button>
-<span class="out">+----------------+</span>
-<span class="out">| user()         |</span>
-<span class="out">+----------------+</span>
-<span class="out">| root@192.168.56.10 |</span>
-<span class="out">+----------------+</span>
-<span class="out">1 row in set (0.00 sec)</span></pre>
+<span class="prompt">mysql></span> select user();<button class="copy-btn" type="button" data-copy="select user();" aria-label="Copier la commande" title="Copier">⧉</button>
+<span class="out">+---------------------+</span>
+<span class="out">| user()              |</span>
+<span class="out">+---------------------+</span>
+<span class="out">| root@192.168.56.10  |</span>
+<span class="out">+---------------------+</span></pre>
           </div>
           <div class="explain">
-            <span class="k">user()</span><span class="v">retourne l'identité MySQL sous laquelle on est connecté, et l'hôte depuis lequel on vient. Ici : <strong>root</strong>, connecté depuis 192.168.56.10 (Kali).</span>
-            <span class="k">ce que ça veut dire</span><span class="v">Le compte <strong>root@%</strong> (ou <strong>root@192.168.56.10</strong>) existe sans mot de passe et accepte les connexions distantes. C'est le cœur du problème.</span>
-            <span class="k">ce que ça ne veut pas dire</span><span class="v">Ce « root » est un <strong>compte de base de données</strong>, pas le compte superutilisateur de Linux. On peut lire et modifier les données MySQL — pas exécuter de commandes système. Cette étape est volontairement hors de ce cours.</span>
+            <span class="k">information_schema</span><span class="v">base système présente partout.</span>
+            <span class="k">mysql</span><span class="v">contient les comptes et privilèges.</span>
+            <span class="k">dvwa / owasp10 / tikiwiki</span><span class="v">bases applicatives réelles — c'est là que se trouve la valeur.</span>
+            <span class="k">select user()</span><span class="v">confirme l'identité et l'hôte d'origine.</span>
           </div>
         </div>
 
@@ -937,32 +157,28 @@
 
     <section id="cheatsheet">
       <h2 class="section-title">Commandes à retenir</h2>
-      <p class="section-intro">Uniquement ce qui sert dans ce cours : reconnaissance réseau, connexion, et énumération de base.</p>
 
       <div class="cheat-group">
         <h4>reconnaissance</h4>
         <table class="cheat">
-          <tr><td class="cmd">nmap -sV -p 3306 IP</td><td class="desc">identifier le service MySQL et sa version sur le port standard</td></tr>
-          <tr><td class="cmd">nmap -sV -p- IP</td><td class="desc">scanner tous les ports si le port 3306 est fermé ou déplacé</td></tr>
+          <tr><td class="cmd">nmap -sV -sC IP</td><td class="desc">ports + versions + scripts</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
         <h4>connexion mysql (depuis Kali)</h4>
         <table class="cheat">
-          <tr><td class="cmd">mysql -u root -h IP --skip-ssl</td><td class="desc">tenter une connexion sans mot de passe — si le serveur en exige un, la commande échoue</td></tr>
-          <tr><td class="cmd">mysql -u root -h IP -p</td><td class="desc">connexion avec demande de mot de passe (le mot de passe n'est pas écrit dans l'historique)</td></tr>
-          <tr><td class="cmd">mysql -u root -h IP -e "SELECT user();"</td><td class="desc">exécuter une seule requête sans entrer dans le client interactif</td></tr>
+          <tr><td class="cmd">mysql -u root -h IP --skip-ssl</td><td class="desc">connexion sans mot de passe</td></tr>
+          <tr><td class="cmd">mysql -u root -h IP -p</td><td class="desc">connexion avec demande de mot de passe</td></tr>
         </table>
       </div>
 
       <div class="cheat-group">
-        <h4>énumération — dans le client mysql</h4>
+        <h4>énumération SQL</h4>
         <table class="cheat">
-          <tr><td class="cmd">show databases;</td><td class="desc">lister toutes les bases accessibles avec le compte courant</td></tr>
-          <tr><td class="cmd">select user();</td><td class="desc">voir l'utilisateur MySQL et l'hôte d'origine de la connexion</td></tr>
-          <tr><td class="cmd">show tables;</td><td class="desc">lister les tables de la base courante (après un <span style="color:var(--ok)">use nom_base;</span>)</td></tr>
-          <tr><td class="cmd">exit</td><td class="desc">quitter le client MySQL</td></tr>
+          <tr><td class="cmd">show databases;</td><td class="desc">lister les bases</td></tr>
+          <tr><td class="cmd">select user();</td><td class="desc">voir l'utilisateur et l'hôte</td></tr>
+          <tr><td class="cmd">exit</td><td class="desc">quitter le client mysql</td></tr>
         </table>
       </div>
     </section>
@@ -972,58 +188,35 @@
       <div class="concepts">
         <div class="concept">
           <h4>« root » MySQL ≠ root système</h4>
-          <p>Le compte <strong>root</strong> de MySQL est un utilisateur interne au SGBD. Il a tous les droits <em>sur les bases de données</em> — mais aucun droit sur le système d'exploitation. On ne peut pas exécuter de commande Unix avec ce compte, ni lire /etc/shadow, ni modifier des fichiers système. Ce sont deux mondes séparés : la base de données d'un côté, le système qui la fait tourner de l'autre.</p>
+          <p>Le compte root de MySQL est un utilisateur interne au SGBD. Il a tous les droits sur les bases, mais aucun droit sur le système d'exploitation.</p>
         </div>
         <div class="concept">
           <h4>Un compte sans mot de passe n'est pas une faille, c'est une absence de configuration</h4>
-          <p>Contrairement à vsftpd, il n'y a pas ici de backdoor ni de bug logiciel. MySQL a été installé, le compte root a été laissé tel quel — sans mot de passe, et en acceptant les connexions distantes. C'est une erreur de déploiement, pas une vulnérabilité du logiciel. La distinction compte pour la remédiation : une mise à jour ne corrigerait rien, c'est la configuration qu'il faut reprendre.</p>
+          <p>Pas de backdoor, pas de bug logiciel. MySQL a été installé, le compte root laissé sans mot de passe et en acceptant les connexions distantes. C'est une erreur de déploiement.</p>
         </div>
         <div class="concept">
           <h4>Ce que l'accès permet — et ce qu'il ne permet pas</h4>
-          <p>Avec un accès root à MySQL, on lit et on modifie toutes les données des bases hébergées (utilisateurs, applications web). On peut aussi, dans certains cas, écrire des fichiers sur le disque du serveur via des mécanismes SQL comme <strong>INTO OUTFILE</strong> ou charger des fonctions définies par l'utilisateur (UDF). Ces techniques ne sont pas couvertes ici : elles font l'objet d'une étape distincte de la roadmap, sur un autre service. Ce cours s'arrête volontairement à l'énumération.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="anatomie">
-      <h2 class="section-title">Pourquoi root sans mot de passe existe par défaut</h2>
-      <p class="section-intro">Un compte d'administration sans mot de passe n'est jamais un choix délibéré — c'est une configuration par défaut jamais reprise.</p>
-
-      <div class="concepts">
-        <div class="concept">
-          <h4>Le compte root MySQL est créé automatiquement à l'installation</h4>
-          <p>Sur toute installation MySQL, le compte <strong>root</strong> est créé dès l'initialisation, avec tous les privilèges. Historiquement, sur les premières versions (et sur certaines installations non interactives), ce compte pouvait être laissé <strong>sans mot de passe</strong> — ou avec un accès restreint à localhost seulement. Sur Metasploitable2, qui est une machine volontairement vulnérable, l'accès a été étendu à toutes les interfaces réseau (<strong>root@%</strong>) et laissé sans mot de passe, pour servir de cible pédagogique.</p>
-        </div>
-        <div class="concept">
-          <h4>Le risque vient de l'exposition, pas du compte</h4>
-          <p>Un root MySQL sans mot de passe mais qui n'écoute que sur <strong>localhost</strong> est peu exposé : seul quelqu'un ayant déjà un accès au système peut l'utiliser. Le danger apparaît quand <strong>deux conditions</strong> sont réunies : le port 3306 est accessible depuis le réseau, et le compte accepte les connexions distantes. C'est la combinaison des deux qui transforme une commodité de développement en porte ouverte.</p>
-        </div>
-        <div class="concept">
-          <h4>Pourquoi c'est distinct du root système — et pourquoi ça limite la puissance</h4>
-          <p>Le nom « root » porte à confusion : on s'attend à un accès total. Mais le compte MySQL root n'a de pouvoir que <strong>dans le contexte du SGBD</strong>. Sans mécanisme supplémentaire d'écriture de fichier ou d'exécution de code (UDF), on ne peut pas transformer cet accès en shell système. C'est exactement ce qui fixe la puissance de ce cours à 2/5 : on obtient un accès en lecture/écriture aux données, pas un contrôle de la machine.</p>
+          <p>On lit et modifie les données des bases. On peut aussi écrire des fichiers via INTO OUTFILE ou charger des UDF — techniques hors de ce cours.</p>
         </div>
       </div>
     </section>
 
     <section id="detection">
       <h2 class="section-title">Détection &amp; remédiation</h2>
-      <p class="section-intro">Comment repérer une configuration MySQL dangereuse, et comment la corriger.</p>
 
       <div class="cheat-group">
         <table class="cheat">
-          <tr><td class="cmd">netstat -tulpn | grep 3306</td><td class="desc">vérifier sur quelle interface le serveur écoute. <strong>0.0.0.0:3306</strong> = exposé à tout le réseau · <strong>127.0.0.1:3306</strong> = local seulement</td></tr>
-          <tr><td class="cmd">SELECT user, host FROM mysql.user;</td><td class="desc">lister les comptes MySQL et leurs hôtes autorisés. Un compte <strong>root@%</strong> est une invitation à se connecter depuis n'importe où</td></tr>
-          <tr><td class="cmd">SELECT user, host, password FROM mysql.user WHERE password = '';</td><td class="desc">lister les comptes sans mot de passe (le champ password vide signifie « aucun mot de passe »)</td></tr>
-          <tr><td class="cmd">bind-address = 127.0.0.1</td><td class="desc">dans my.cnf — limiter MySQL aux connexions locales. Si un accès distant est nécessaire, le restreindre à des adresses IP précises via des règles de pare-feu</td></tr>
-          <tr><td class="cmd">SET PASSWORD FOR 'root'@'%' = PASSWORD('...');</td><td class="desc">définir un mot de passe fort sur tous les comptes privilégiés — ne jamais laisser root sans authentification</td></tr>
-          <tr><td class="cmd">DELETE FROM mysql.user WHERE user='';</td><td class="desc">supprimer les comptes anonymes souvent créés par défaut sur les anciennes installations</td></tr>
+          <tr><td class="cmd">netstat -tulpn | grep 3306</td><td class="desc">vérifier l'interface d'écoute (0.0.0.0 = exposé)</td></tr>
+          <tr><td class="cmd">SELECT user, host FROM mysql.user;</td><td class="desc">lister les comptes et leurs hôtes autorisés</td></tr>
+          <tr><td class="cmd">bind-address = 127.0.0.1</td><td class="desc">limiter à localhost dans my.cnf</td></tr>
+          <tr><td class="cmd">SET PASSWORD FOR 'root'@'%' = PASSWORD('...');</td><td class="desc">définir un mot de passe fort</td></tr>
         </table>
       </div>
     </section>
 
     <section id="practice">
       <h2 class="section-title">Terminal d'entraînement</h2>
-      <p class="section-intro">Rejoue la connexion et l'énumération. Le client SQL n'a pas les mêmes commandes qu'un shell Unix — tape du SQL, pas du shell.</p>
+      <p class="section-intro">Rejoue la connexion et l'énumération. Le client SQL n'a pas les mêmes commandes qu'un shell Unix.</p>
 
       <div class="term-launch">
         <button class="term-launch-btn" id="term-open-btn" type="button">
@@ -1036,7 +229,7 @@
 
     <footer>
       <div class="note">
-        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox, aucune machine réelle ni connexion externe impliquée.
+        <span class="ok">✓</span> lab isolé — réseau interne VirtualBox.
       </div>
     </footer>
   </div>
@@ -1053,26 +246,22 @@
       <div class="term-fs-info">
         <span class="item">Cible <strong id="ib-target">192.168.56.20</strong></span>
         <span class="item">Attaquant <strong id="ib-attacker">192.168.56.10</strong></span>
-        <button type="button" class="notebook-btn" id="notebook-btn">📓 Carnet (<span id="notebook-count">0</span>)</button>
       </div>
       <div class="phase-track" id="phase-track"></div>
       <div class="term-progress">
         <div class="term-progress-track"><div class="term-progress-fill" id="term-progress-fill"></div></div>
-        <span class="term-progress-label" id="sim-progress">étape 1/3</span>
+        <span class="term-progress-label" id="sim-progress">étape 1/4</span>
       </div>
       <div class="term-fs-consigne" id="term-fs-consigne">
         <span class="consigne-tag" id="consigne-tag">Consigne</span>
         <span class="consigne-text" id="consigne-text">—</span>
-      </div>
-      <div class="notebook-panel" id="notebook-panel">
-        <div id="notebook-list"></div>
       </div>
     </div>
 
     <div class="sim-body" id="sim-body">
       <div class="sim-line sim-inputline" id="sim-inputline">
         <span class="p" id="sim-prompt-label">$</span>
-        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" spellcheck="false">
+        <input id="sim-input" class="sim-input" type="text" placeholder="tape ta commande puis Entrée… (↑ ↓ pour l'historique)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text">
       </div>
     </div>
 
@@ -1081,64 +270,69 @@
       <div class="sim-controls">
         <button class="sim-btn" id="sim-hint-btn">💡 Indice</button>
         <button class="sim-btn" id="sim-solution-btn">🔍 Solution</button>
-        <button class="sim-btn continue" id="sim-connect-btn" style="display:none;">🔌 Connexion réseau</button>
         <button class="sim-btn" id="sim-reset-btn">↺ Recommencer</button>
       </div>
     </div>
   </div>
 
 <script>
-  // ---------- SÉQUENCE ----------
   const steps = [
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Scanne le port MySQL sur la cible",
-      accepted:["nmap -sv -p 3306 192.168.56.20"],
-      hint:"Comme pour tout service, on commence par confirmer qu'il est bien là et identifier sa version. Le port standard de MySQL est connu (3306). L'outil de scan classique, avec l'option qui donne les versions.",
-      hint2:"nmap -sV -p 3306 192.168.56.20 — -sV active la détection de version ; -p 3306 restreint le scan à ce seul port, ce qui va beaucoup plus vite qu'un scan complet.",
-      note:"nmap -sV -p 3306 &lt;IP&gt; → <strong>-sV</strong> active la détection de version des services ; <strong>-p 3306</strong> restreint le scan à ce seul port (plus rapide qu'un scan complet).",
+      task:"Lance une reconnaissance complète.",
+      accepted:["nmap -sv -sc 192.168.56.20"],
+      hint:"-sV + -sC.",
+      hint2:"nmap -sV -sC 192.168.56.20",
+      note:"nmap -sV -sC &lt;cible&gt; → versions + scripts NSE.",
       output:[
-        {t:"Nmap scan report for 192.168.56.20", c:"o"},
-        {t:"PORT     STATE SERVICE VERSION", c:"o"},
-        {t:"3306/tcp open  mysql   MySQL 5.0.51a-3ubuntu5", c:"o", id:"hl-mysql"}
+        {t:"PORT     STATE SERVICE     VERSION", c:"o"},
+        {t:"21/tcp   open  ftp         vsftpd 2.3.4", c:"o"},
+        {t:"22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1", c:"o"},
+        {t:"23/tcp   open  telnet      Linux telnetd", c:"o"},
+        {t:"80/tcp   open  http        Apache httpd 2.2.8", c:"o"},
+        {t:"111/tcp  open  rpcbind     2 (RPC #100000)", c:"o"},
+        {t:"139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X", c:"o"},
+        {t:"445/tcp  open  netbios-ssn Samba smbd 3.0.20-Debian", c:"o"},
+        {t:"1524/tcp open  ingreslock?", c:"o"},
+        {t:"2049/tcp open  nfs         2-4 (RPC #100003)", c:"o"},
+        {t:"3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5", c:"o", id:"hl-mysql"},
+        {t:"5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7", c:"o"},
+        {t:"5900/tcp open  vnc         VNC (protocol 3.3)", c:"o"},
+        {t:"6667/tcp open  irc         UnrealIRCd", c:"o"},
+        {t:"8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1", c:"o"}
       ] },
 
     { kind:"type", phase:"recon", context:"kali@kali", prompt:"$",
-      task:"Le port 3306 est ouvert. Qu'est-ce que ça t'apprend sur la façon dont MySQL est configuré sur cette machine ?",
-      accepted:["exposé au réseau"],
-      hint:"Sur une installation normale, ce port ne devrait pas être joignable depuis l'extérieur. Le fait qu'il soit ouvert et qu'aucune authentification ne soit requise pour l'instant est un signal fort.",
-      hint2:"Un service de base de données accessible depuis une autre machine signifie que l'écoute n'est pas limitée à localhost — et sur cette version, le compte root peut très bien accepter les connexions distantes sans mot de passe.",
+      task:"Un SGBD est exposé sur le réseau. Tape son numéro de port.",
+      accepted:["3306"],
+      wrongAnswers:{
+        "5432":"PostgreSQL a aussi son intérêt — mais ici on cible MySQL, plus simple à exploiter.",
+        "22":"SSH est un autre cours.",
+        "80":"Apache n'est pas la cible."
+      },
+      hint:"Un service de base de données exposé depuis le réseau (au lieu de localhost uniquement).",
+      hint2:"3306/tcp = MySQL. Sur une installation durcie, il n'écouterait que sur localhost.",
       highlightIds:["hl-mysql"],
-      annotation:"→ Port ouvert depuis le réseau, aucune restriction visible. C'est une invitation à tester si un compte existe sans mot de passe.",
-      note:"MySQL exposé sur le réseau = écoute sur 0.0.0.0, pas seulement localhost. Sur une installation durcie, il resterait en 127.0.0.1." },
+      note:"MySQL exposé sur le réseau (écoute 0.0.0.0, pas seulement 127.0.0.1) → compte root accessible depuis l'extérieur.",
+      output:[] },
 
     { kind:"type", phase:"config", context:"kali@kali", prompt:"$",
-      task:"Tente une connexion au compte root SANS mot de passe",
+      task:"Tente une connexion au compte root SANS mot de passe.",
       accepted:["mysql -u root -h 192.168.56.20 --skip-ssl"],
-      hint:"Le client MySQL en ligne de commande s'appelle simplement `mysql`. Il faut lui préciser le compte utilisateur (`-u`), l'hôte distant (`-h`), NE PAS lui demander de mot de passe, et ajouter `--skip-ssl` car le serveur ancien ne supporte pas le chiffrement TLS moderne — sans cette option, la connexion échoue avec une erreur de protocole.",
-      hint2:"mysql -u root -h 192.168.56.20 --skip-ssl : -u root indique le compte à utiliser, -h spécifie la cible distante, et --skip-ssl force la connexion sans TLS pour les vieux serveurs.",
-      note:"mysql -u root -h &lt;IP&gt; --skip-ssl → <strong>-u root</strong> indique le compte MySQL visé, <strong>-h</strong> précise l'hôte distant, et <strong>--skip-ssl</strong> force une connexion sans TLS, nécessaire avec les anciens serveurs qui ne supportent pas les protocoles modernes.",
+      hint:"Client mysql + -u root + -h IP + --skip-ssl (obligatoire pour les vieilles versions). Pas d'option -p.",
+      hint2:"mysql -u root -h 192.168.56.20 --skip-ssl",
+      note:"mysql -u root -h &lt;IP&gt; --skip-ssl → connexion sans mot de passe ; --skip-ssl pour les anciens serveurs qui ne supportent pas TLS moderne.",
       output:[
-        {t:"Welcome to the MySQL monitor.  Commands end with ; or \\g.", c:"o"},
+        {t:"Welcome to the MySQL monitor.", c:"o"},
         {t:"Your MySQL connection id is 12", c:"o"},
-        {t:"Server version: 5.0.51a-3ubuntu5 (Ubuntu)", c:"o"},
-        {t:"Type 'help;' or '\\h' for help. Type '\\c' to clear the buffer.", c:"o"}
+        {t:"Server version: 5.0.51a-3ubuntu5 (Ubuntu)", c:"o"}
       ] },
 
     { kind:"type", phase:"recon", context:"mysql", prompt:">",
-      task:"La connexion a réussi sans mot de passe. Que peut-on en déduire sur la configuration du serveur, et quelle est la prochaine action logique ?",
-      accepted:["lister les bases"],
-      hint:"Deux choses sont vraies en même temps : le compte root n'a pas de mot de passe, ET il accepte les connexions depuis cette machine. Maintenant qu'on est dedans, que fait-on en premier ?",
-      hint2:"La première chose à faire quand on arrive dans une base inconnue, c'est de voir ce qui est accessible : les bases disponibles. En SQL, ça se fait avec show databases;.",
-      highlightIds:[],
-      annotation:"→ root sans mot de passe + accès distant = on est connecté en tant qu'administrateur de la base. La première chose à faire est de voir ce qui est accessible : lister les bases.",
-      note:"Une fois connecté à MySQL, la première commande d'énumération est <strong>show databases;</strong> — elle liste toutes les bases accessibles avec le compte courant." },
-
-    { kind:"type", phase:"recon", context:"mysql", prompt:">",
-      task:"Liste les bases de données accessibles",
+      task:"Liste les bases accessibles.",
       accepted:["show databases;"],
-      hint:"On est maintenant dans le client MySQL — les commandes sont du SQL, pas des commandes Unix. Pour lister quelque chose en SQL, on utilise l'instruction `show`, suivie de ce qu'on veut voir. Ici, on veut voir les bases.",
-      hint2:"show databases; — n'oublie pas le point-virgule, obligatoire pour terminer une instruction SQL.",
-      note:"show databases; → liste toutes les bases accessibles avec le compte courant. Le point-virgule final est obligatoire en SQL.",
+      hint:"Commande SQL : show + ce qu'on veut voir. Le point-virgule final est obligatoire.",
+      hint2:"show databases;",
+      note:"show databases; → liste toutes les bases accessibles avec le compte courant.",
       output:[
         {t:"+--------------------+", c:"o"},
         {t:"| Database           |", c:"o"},
@@ -1149,12 +343,10 @@
         {t:"| owasp10            |", c:"o"},
         {t:"| tikiwiki           |", c:"o"},
         {t:"| tikiwiki195        |", c:"o"},
-        {t:"+--------------------+", c:"o"},
-        {t:"6 rows in set (0.00 sec)", c:"o"}
+        {t:"+--------------------+", c:"o"}
       ] }
   ];
 
-  // ---------- MODE LIBRE ----------
   let freeContext = "mysql";
   const freeCommands = {
     mysql: {
@@ -1171,10 +363,12 @@
         {t:"+--------------------+", c:"o"}
       ],
       "select user();": [{t:"| root@192.168.56.10 |", c:"ok"}],
+      "show tables;": [{t:"Tables_in_(database courante) — utilise d'abord USE nom_base;", c:"o"}],
       "exit": {t:"Bye", c:"o"}
     }
   };
-  let freeHintHtml = "Session ouverte — explore par toi-même. Essaie <strong style=\"color:var(--text)\">show databases;</strong>, <strong style=\"color:var(--text)\">select user();</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
+
+  let freeHintHtml = "Client mysql ouvert. Tape <strong style=\"color:var(--text)\">show databases;</strong>, <strong style=\"color:var(--text)\">select user();</strong> ou <strong style=\"color:var(--text)\">exit</strong>.";
 </script>
 <script src="engine.js"></script>
 
