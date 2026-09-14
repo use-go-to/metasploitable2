@@ -3,7 +3,7 @@
 // Tous les éléments DOM sont traités comme optionnels : si un cours ne fournit pas
 // un bouton (ex: plus de bouton "Connexion réseau"), le moteur continue de fonctionner.
 (function(){
-  // ---------- ÉTAT ---------
+  // ---------- ÉTAT ----------
   let stepIndex = 0;
   const initialFreeContext = (typeof freeContext !== "undefined") ? freeContext : "kali@kali";
   let userHasInteracted = false;
@@ -43,7 +43,7 @@
     return steps[stepIndex].kind;
   }
 
-  // ---------- BOUTON PLEIN ÉCRAN (injecté dynamiquement, fixe, toujours visible) ----------
+  // ---------- BOUTON PLEIN ÉCRAN ----------
   function injectFsToggle(){
     if(document.getElementById("fs-toggle")) return;
     const btn = document.createElement("button");
@@ -234,7 +234,6 @@
     if(body) body.scrollTop = body.scrollHeight;
   }
 
-  // Scroll vers la ligne de saisie après une commande
   function scrollToInput(){
     if(!body) return;
     requestAnimationFrame(()=>{
@@ -290,7 +289,7 @@
       if(consigneTextEl){
         consigneTextEl.innerHTML = (typeof freeHintHtml !== "undefined" && freeHintHtml)
           ? freeHintHtml
-          : `Session ouverte — explore par toi-même. Essaie <strong style="color:var(--text)">whoami</strong>, <strong style="color:var(--text)">id</strong>, <strong style="color:var(--text)">pwd</strong>, <strong style="color:var(--text)">ls</strong> ou <strong style="color:var(--text)">exit</strong>.`;
+          : `Session root ouverte. Tape <strong style="color:var(--text)">whoami</strong>, <strong style="color:var(--text)">id</strong>, <strong style="color:var(--text)">ls /</strong> ou <strong style="color:var(--text)">exit</strong>.`;
       }
       if(connectBtn) connectBtn.style.display = "none";
       if(hintBtn) hintBtn.disabled = true;
@@ -387,8 +386,6 @@
       const s = steps[stepIndex];
       const norm = normalize(raw);
       if(s.accepted.includes(norm)){
-        // Succès : on ferme le clavier mobile pour que l'utilisateur voie le résultat
-        // et la consigne suivante. On avance ensuite normalement.
         blurInputOnMobile();
         advanceTypeStep(raw);
       } else if(s.wrongAnswers && s.wrongAnswers[norm]){
@@ -399,14 +396,11 @@
         scrollToInput();
       }
     } else if(m === "free"){
-      // En mode libre : on ne ferme PAS le clavier (l'utilisateur explore),
-      // on se contente d'afficher la réponse et de scroller.
       handleFree(raw);
       scrollToInput();
     }
   });
 
-  // ---------- TRACKING INTERACTION ----------
   on(input, "touchstart", ()=>{ userHasInteracted = true; }, { passive:true });
   on(input, "click",      ()=>{ userHasInteracted = true; });
   on(input, "focus",      ()=>{ userHasInteracted = true; });
@@ -436,7 +430,7 @@
 
   on(connectBtn, "click", ()=> advanceConnectStep());
 
-  // ---------- RESET (durci) ----------
+  // ---------- RESET ----------
   on(resetBtn, "click", ()=>{
     stepIndex = 0;
     if(typeof initialFreeContext !== "undefined") freeContext = initialFreeContext;
@@ -453,6 +447,7 @@
     if(inputline) inputline.style.display = "flex";
     input.disabled = false;
     input.value = "";
+    if(body) body.style.paddingBottom = "";
 
     if(hintBox){ hintBox.classList.remove("show"); hintBox.innerHTML = ""; }
 
@@ -465,16 +460,14 @@
     }
   });
 
-  // ---------- GESTION DU CLAVIER MOBILE (padding dynamique, sans toucher à la hauteur) ----------
-  // Quand le clavier Android/iOS s'ouvre, visualViewport.height diminue. On ajoute cette
+  // ---------- GESTION DU CLAVIER MOBILE (padding dynamique) ----------
+  // Quand le clavier mobile s'ouvre, visualViewport.height diminue. On ajoute cette
   // différence en padding-bottom à la zone de contenu, ce qui pousse la ligne de saisie
   // au-dessus du clavier — SANS jamais modifier la hauteur du terminal (pas d'écran noir).
-  // Cette approche fonctionne sur Android (où 100dvh ne se réduit pas) et reste neutre
-  // sur desktop (où visualViewport.height == window.innerHeight → padding inchangé).
   function setupKeyboardPadding(){
     if(!window.visualViewport) return;
     const vv = window.visualViewport;
-    const BASE_PADDING = 14; // correspond au padding normal de .sim-body sur mobile
+    const BASE_PADDING = 14;
 
     function updatePadding(){
       if(!termFullscreen || !termFullscreen.classList.contains("open")) return;
@@ -483,10 +476,8 @@
       const terminalBottom = terminalRect.top + terminalRect.height;
       const hiddenBottom = Math.max(0, terminalBottom - visibleBottom);
       if(body){
-        // On ne réduit jamais en dessous de la base, on ne fait qu'ajouter.
         body.style.paddingBottom = (BASE_PADDING + hiddenBottom) + "px";
       }
-      // Et on scrolle tout en bas pour que la ligne de saisie soit visible.
       requestAnimationFrame(()=>{
         if(body) body.scrollTop = body.scrollHeight;
       });
@@ -495,7 +486,6 @@
     vv.addEventListener("resize", updatePadding);
     vv.addEventListener("scroll", updatePadding);
 
-    // Quand on ferme le terminal, on remet le padding d'origine.
     document.addEventListener("visibilitychange", ()=>{
       if(document.hidden && body){ body.style.paddingBottom = ""; }
     });
@@ -516,7 +506,7 @@
   }
 })();
 
-// ---------- BOUTONS "COPIER" DES COMMANDES DU COURS ----------
+// ---------- BOUTONS "COPIER" ----------
 document.addEventListener("click", function(e){
   const btn = e.target.closest(".copy-btn");
   if(!btn) return;
@@ -545,4 +535,4 @@ function fallbackCopy(text){
   ta.focus(); ta.select();
   try{ document.execCommand("copy"); }catch(err){}
   document.body.removeChild(ta);
-      }
+}
