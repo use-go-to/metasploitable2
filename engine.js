@@ -1,42 +1,50 @@
 // engine.js — moteur commun du lab pentest (terminal simulé, indice/solution, copier-coller)
 // Chaque cours définit ses propres 'steps', 'freeCommands' et 'freeContext' AVANT d'inclure ce fichier.
+// Tous les éléments DOM sont traités comme optionnels : si un cours ne fournit pas
+// un bouton (ex: plus de bouton "Connexion réseau"), le moteur continue de fonctionner.
 (function(){
   // ---------- ÉTAT ----------
   let stepIndex = 0;
-  const initialFreeContext = freeContext; // capturé avant toute mutation, pour un reset fidèle au cours
-  let userHasInteracted = false;          // évite l'ouverture du clavier mobile tant que l'utilisateur n'a pas touché l'input
+  const initialFreeContext = (typeof freeContext !== "undefined") ? freeContext : "kali@kali";
+  let userHasInteracted = false;
 
-  const body = document.getElementById("sim-body");
-  const input = document.getElementById("sim-input");
-  const inputline = document.getElementById("sim-inputline");
-  const contextEl = document.getElementById("sim-context");
-  const promptEl = document.getElementById("sim-prompt-label");
-  const progressEl = document.getElementById("sim-progress");
-  const progressFill = document.getElementById("term-progress-fill");
-  const hintBox = document.getElementById("sim-hint-box");
-  const consigneBox = document.getElementById("term-fs-consigne");
-  const consigneTagEl = document.getElementById("consigne-tag");
-  const consigneTextEl = document.getElementById("consigne-text");
-  const hintBtn = document.getElementById("sim-hint-btn");
-  const solutionBtn = document.getElementById("sim-solution-btn");
-  const connectBtn = document.getElementById("sim-connect-btn");
-  const resetBtn = document.getElementById("sim-reset-btn");
-  const termFullscreen = document.getElementById("term-fullscreen");
-  const openBtn = document.getElementById("term-open-btn");
-  const closeBtn = document.getElementById("term-close-btn");
-  // fil d'Ariane de méthode + carnet cumulatif (optionnels : un cours qui ne
-  // fournit pas ces éléments dans son HTML continue de fonctionner sans eux)
-  const phaseTrackEl = document.getElementById("phase-track");
-  const notebookBtn = document.getElementById("notebook-btn");
-  const notebookPanel = document.getElementById("notebook-panel");
-  const notebookList = document.getElementById("notebook-list");
-  const notebookCount = document.getElementById("notebook-count");
+  // ---------- HELPERS DOM TOLÉRANTS ----------
+  function $(id){ return document.getElementById(id); }
+  function on(el, ev, fn){ if(el && el.addEventListener) el.addEventListener(ev, fn); }
 
-  // historique de commandes, façon vrai shell (↑ / ↓)
+  const body = $("sim-body");
+  const input = $("sim-input");
+  const inputline = $("sim-inputline");
+  const contextEl = $("sim-context");
+  const promptEl = $("sim-prompt-label");
+  const progressEl = $("sim-progress");
+  const progressFill = $("term-progress-fill");
+  const hintBox = $("sim-hint-box");
+  const consigneBox = $("term-fs-consigne");
+  const consigneTagEl = $("consigne-tag");
+  const consigneTextEl = $("consigne-text");
+  const hintBtn = $("sim-hint-btn");
+  const solutionBtn = $("sim-solution-btn");
+  const connectBtn = $("sim-connect-btn"); // optionnel — absent dans certains cours
+  const resetBtn = $("sim-reset-btn");
+  const termFullscreen = $("term-fullscreen");
+  const openBtn = $("term-open-btn");
+  const closeBtn = $("term-close-btn");
+  const phaseTrackEl = $("phase-track");
+  const notebookBtn = $("notebook-btn");
+  const notebookPanel = $("notebook-panel");
+  const notebookList = $("notebook-list");
+  const notebookCount = $("notebook-count");
+
+  // Si l'essentiel manque, on abandonne silencieusement (pas de crash).
+  if(!body || !input || !inputline) return;
+
+  // historique de commandes (↑ / ↓)
   let cmdHistory = [];
   let historyPos = 0;
 
   function mode(){
+    if(typeof steps === "undefined") return "free";
     if(stepIndex >= steps.length) return "free";
     return steps[stepIndex].kind;
   }
@@ -46,37 +54,37 @@
     return window.matchMedia("(max-width: 639px)").matches;
   }
   function maybeFocus(){
-    // Sur mobile : on ne vole le focus que si l'utilisateur a déjà touché le champ.
-    // Sur desktop : focus auto pour le confort de frappe.
     if(isMobileViewport() && !userHasInteracted) return;
     try{ input.focus({ preventScroll:true }); }catch(e){ input.focus(); }
   }
 
   // ---------- OUVERTURE / FERMETURE PLEIN ÉCRAN ----------
   function openTerminal(){
+    if(!termFullscreen) return;
     termFullscreen.style.display = "flex";
     requestAnimationFrame(()=> termFullscreen.classList.add("open"));
     document.documentElement.style.overflow = "hidden";
-    // Sur desktop uniquement : focus auto. Sur mobile, l'utilisateur touchera le champ lui-même.
     if(!isMobileViewport()){
       setTimeout(()=> input.focus({ preventScroll:true }), 200);
     }
   }
   function closeTerminal(){
+    if(!termFullscreen) return;
     termFullscreen.classList.remove("open");
     document.documentElement.style.overflow = "";
     setTimeout(()=>{
       if(!termFullscreen.classList.contains("open")) termFullscreen.style.display = "none";
     }, 240);
   }
-  openBtn.addEventListener("click", openTerminal);
-  closeBtn.addEventListener("click", closeTerminal);
+  on(openBtn, "click", openTerminal);
+  on(closeBtn, "click", closeTerminal);
   document.addEventListener("keydown", (e)=>{
-    if(e.key === "Escape" && termFullscreen.classList.contains("open")) closeTerminal();
+    if(e.key === "Escape" && termFullscreen && termFullscreen.classList.contains("open")) closeTerminal();
   });
 
   // ---------- BARRE DE PROGRESSION ----------
   function updateProgress(){
+    if(!progressFill || typeof steps === "undefined") return;
     const total = steps.length;
     const pct = mode() === "free" ? 100 : Math.round((stepIndex/total)*100);
     progressFill.style.width = pct + "%";
@@ -85,7 +93,7 @@
     progressFill.classList.add("pulse");
   }
 
-  // ---------- FIL D'ARIANE DE MÉTHODE ----------
+  // ---------- FIL D'ARIANE ----------
   const PHASES = [
     {key:"recon", label:"recon"},
     {key:"recherche", label:"recherche exploit"},
@@ -121,7 +129,7 @@
     });
   }
 
-  // ---------- CARNET DE MISSION (cumulatif entre tous les cours) ----------
+  // ---------- CARNET DE MISSION ----------
   const NOTEBOOK_KEY = "pentestlab_notebook_v1";
 
   function loadNotebook(){
@@ -130,7 +138,7 @@
   }
   function saveNotebook(list){
     try{ localStorage.setItem(NOTEBOOK_KEY, JSON.stringify(list)); }
-    catch(e){ /* stockage indisponible (navigation privée…) : le cours continue sans carnet persistant */ }
+    catch(e){}
   }
   function addToNotebook(note, cmdLabel){
     if(!note || !notebookList) return;
@@ -156,12 +164,11 @@
       notebookList.appendChild(div);
     });
   }
-  if(notebookBtn && notebookPanel){
-    notebookBtn.addEventListener("click", ()=> notebookPanel.classList.toggle("show"));
-  }
+  on(notebookBtn, "click", ()=>{ if(notebookPanel) notebookPanel.classList.toggle("show"); });
 
-  // flash sobre au passage d'une étape à l'autre
+  // ---------- HELPERS AFFICHAGE ----------
   function flashSuccess(){
+    if(!body) return;
     body.classList.remove("flash-ok");
     void body.offsetWidth;
     body.classList.add("flash-ok");
@@ -169,14 +176,12 @@
 
   function normalize(s){ return s.trim().toLowerCase().replace(/\s+/g," "); }
 
-  // symbole de prompt en mode libre
   function freeSymbolFor(ctx){
     if(ctx === "meterpreter") return ">";
     if(ctx.indexOf("root@") === 0) return "#";
     return "$";
   }
 
-  // rendu réaliste du prompt selon la machine/console
   function promptHtml(ctx, sym){
     if(ctx === "kali@kali"){
       return `<span class="p-kali">`
@@ -190,13 +195,12 @@
     return `${ctx} <span class="p-dollar">${sym}</span>`;
   }
 
-  // insère un nœud juste avant la ligne de saisie (toujours la dernière ligne)
   function pushLine(node){
+    if(!body || !inputline) return;
     body.insertBefore(node, inputline);
   }
 
-  function printLine(promptLabel, contextLabel, cmd, outputArr, opts){
-    opts = opts || {};
+  function printLine(promptLabel, contextLabel, cmd, outputArr){
     const cmdLine = document.createElement("div");
     cmdLine.className = "sim-line appear";
     const rendered = promptHtml(contextLabel, promptLabel);
@@ -211,67 +215,65 @@
       line.innerHTML = `<span class="o ${o.c==='ok'?'ok':o.c==='err'?'err':''}">${o.t}</span>`;
       pushLine(line);
     });
-    body.scrollTop = body.scrollHeight;
+    if(body) body.scrollTop = body.scrollHeight;
   }
 
-  function bindBlurPeeks(container){
-    container.querySelectorAll(".blur-peek").forEach(el=>{
-      el.addEventListener("click", ()=> el.classList.toggle("revealed"));
-    });
-  }
-
+  // ---------- UI ----------
   function updateUI(){
+    if(!hintBox) return;
     hintBox.classList.remove("show");
     hintBox.innerHTML = "";
     const m = mode();
     updateProgress();
     updatePhaseTrack();
 
-    body.classList.remove("dimmed");
-    consigneBox.style.display = "flex";
-    hintBtn.style.display = "";
-    solutionBtn.style.display = "";
+    if(body) body.classList.remove("dimmed");
+    if(consigneBox) consigneBox.style.display = "flex";
+    if(hintBtn) hintBtn.style.display = "";
+    if(solutionBtn) solutionBtn.style.display = "";
 
     if(m === "connect"){
       const s = steps[stepIndex];
-      contextEl.textContent = "kali@kali";
-      promptEl.innerHTML = promptHtml("kali@kali", "$");
-      progressEl.textContent = `étape ${stepIndex+1}/${steps.length}`;
-      consigneTagEl.textContent = "Configuration réseau";
-      consigneTextEl.textContent = s.consigne;
-      inputline.style.display = "none";
-      connectBtn.style.display = "inline-flex";
-      hintBtn.disabled = true;
-      solutionBtn.disabled = true;
+      if(contextEl) contextEl.textContent = "kali@kali";
+      if(promptEl) promptEl.innerHTML = promptHtml("kali@kali", "$");
+      if(progressEl) progressEl.textContent = `étape ${stepIndex+1}/${steps.length}`;
+      if(consigneTagEl) consigneTagEl.textContent = "Configuration réseau";
+      if(consigneTextEl) consigneTextEl.textContent = s.consigne;
+      if(inputline) inputline.style.display = "none";
+      if(connectBtn) connectBtn.style.display = "inline-flex";
+      if(hintBtn) hintBtn.disabled = true;
+      if(solutionBtn) solutionBtn.disabled = true;
       input.disabled = true;
     } else if(m === "type"){
       const s = steps[stepIndex];
-      contextEl.textContent = s.context;
-      promptEl.innerHTML = promptHtml(s.context, s.prompt);
-      progressEl.textContent = `étape ${stepIndex+1}/${steps.length}`;
-      consigneTagEl.textContent = `À faire — étape ${stepIndex+1}/${steps.length}`;
-      consigneTextEl.textContent = s.task;
-      inputline.style.display = "flex";
-      connectBtn.style.display = "none";
-      hintBtn.disabled = false;
-      solutionBtn.disabled = false;
+      if(contextEl) contextEl.textContent = s.context;
+      if(promptEl) promptEl.innerHTML = promptHtml(s.context, s.prompt);
+      if(progressEl) progressEl.textContent = `étape ${stepIndex+1}/${steps.length}`;
+      if(consigneTagEl) consigneTagEl.textContent = `À faire — étape ${stepIndex+1}/${steps.length}`;
+      if(consigneTextEl) consigneTextEl.textContent = s.task;
+      if(inputline) inputline.style.display = "flex";
+      if(connectBtn) connectBtn.style.display = "none";
+      if(hintBtn) hintBtn.disabled = false;
+      if(solutionBtn) solutionBtn.disabled = false;
       input.disabled = false;
       maybeFocus();
-      body.scrollTop = body.scrollHeight;
+      if(body) body.scrollTop = body.scrollHeight;
     } else {
-      contextEl.textContent = freeContext;
-      promptEl.innerHTML = promptHtml(freeContext, freeSymbolFor(freeContext));
-      progressEl.textContent = "mode libre";
-      consigneTagEl.textContent = "Mode libre";
-      consigneTextEl.innerHTML = (typeof freeHintHtml !== "undefined" && freeHintHtml)
-        ? freeHintHtml
-        : `Session ouverte — explore par toi-même. Essaie <strong style="color:var(--text)">getuid</strong>, <strong style="color:var(--text)">shell</strong>, <strong style="color:var(--text)">whoami</strong>, <strong style="color:var(--text)">id</strong>, <strong style="color:var(--text)">pwd</strong>, <strong style="color:var(--text)">ls</strong> ou <strong style="color:var(--text)">exit</strong>.`;
-      connectBtn.style.display = "none";
-      hintBtn.disabled = true;
-      solutionBtn.disabled = true;
+      if(contextEl) contextEl.textContent = freeContext;
+      if(promptEl) promptEl.innerHTML = promptHtml(freeContext, freeSymbolFor(freeContext));
+      if(progressEl) progressEl.textContent = "mode libre";
+      if(consigneTagEl) consigneTagEl.textContent = "Mode libre";
+      if(consigneTextEl){
+        consigneTextEl.innerHTML = (typeof freeHintHtml !== "undefined" && freeHintHtml)
+          ? freeHintHtml
+          : `Session ouverte — explore par toi-même. Essaie <strong style="color:var(--text)">whoami</strong>, <strong style="color:var(--text)">id</strong>, <strong style="color:var(--text)">pwd</strong>, <strong style="color:var(--text)">ls</strong> ou <strong style="color:var(--text)">exit</strong>.`;
+      }
+      if(connectBtn) connectBtn.style.display = "none";
+      if(hintBtn) hintBtn.disabled = true;
+      if(solutionBtn) solutionBtn.disabled = true;
       input.disabled = false;
       maybeFocus();
-      body.scrollTop = body.scrollHeight;
+      if(body) body.scrollTop = body.scrollHeight;
     }
   }
 
@@ -287,7 +289,6 @@
     printLine(s.prompt, s.context, cmdShown, s.output);
     if(s.note) addToNotebook(s.note, s.accepted[0]);
     stepIndex++;
-    highlightAndAnnotate(s);
     afterAdvance();
   }
 
@@ -302,31 +303,14 @@
     updateUI();
   }
 
-  function highlightAndAnnotate(step){
-    (step.highlightIds||[]).forEach(id=>{
-      const el = document.getElementById(id);
-      if(el){
-        el.classList.add("hl");
-        setTimeout(()=> el.classList.remove("hl"), 2600);
-      }
-    });
-    if(step.annotation){
-      const annot = document.createElement("div");
-      annot.className = "sim-annot appear";
-      annot.textContent = step.annotation;
-      pushLine(annot);
-      body.scrollTop = body.scrollHeight;
-    }
-  }
-
   function handleFree(raw){
     const cmd = normalize(raw);
-    const table = freeCommands[freeContext] || {};
+    const table = (typeof freeCommands !== "undefined" && freeCommands[freeContext]) || {};
     if(cmd === "exit"){
       if(table["exit"] !== undefined){
         printLine(freeSymbolFor(freeContext), freeContext, raw, table["exit"]);
         input.disabled = true;
-        progressEl.textContent = "terminé";
+        if(progressEl) progressEl.textContent = "terminé";
         return;
       }
       if(freeContext !== "meterpreter"){
@@ -337,7 +321,7 @@
       }
       printLine(">", "meterpreter", raw, [{t:"session terminée.", c:"o"}]);
       input.disabled = true;
-      progressEl.textContent = "terminé";
+      if(progressEl) progressEl.textContent = "terminé";
       return;
     }
     if(table[cmd] !== undefined){
@@ -354,7 +338,7 @@
     requestAnimationFrame(()=> input.setSelectionRange(input.value.length, input.value.length));
   }
 
-  input.addEventListener("keydown", (e)=>{
+  on(input, "keydown", (e)=>{
     if(e.key === "ArrowUp"){
       if(cmdHistory.length === 0) return;
       e.preventDefault();
@@ -391,12 +375,13 @@
     }
   });
 
-  // ---------- TRACKING INTERACTION (anti-clavier mobile) ----------
-  input.addEventListener("touchstart", ()=>{ userHasInteracted = true; }, { passive:true });
-  input.addEventListener("click",     ()=>{ userHasInteracted = true; });
-  input.addEventListener("focus",     ()=>{ userHasInteracted = true; });
+  // ---------- TRACKING INTERACTION ----------
+  on(input, "touchstart", ()=>{ userHasInteracted = true; }, { passive:true });
+  on(input, "click",      ()=>{ userHasInteracted = true; });
+  on(input, "focus",      ()=>{ userHasInteracted = true; });
 
   function toggleHintBox(boxEl, hintText){
+    if(!boxEl) return;
     const isShown = boxEl.classList.contains("show");
     if(isShown){
       boxEl.classList.remove("show");
@@ -406,20 +391,20 @@
     }
   }
 
-  hintBtn.addEventListener("click", ()=>{
-    if(mode() !== "type") return;
+  on(hintBtn, "click", ()=>{
+    if(mode() !== "type" || !steps[stepIndex].hint) return;
     toggleHintBox(hintBox, steps[stepIndex].hint);
   });
 
-  solutionBtn.addEventListener("click", ()=>{
+  on(solutionBtn, "click", ()=>{
     if(mode() !== "type") return;
-    hintBox.classList.remove("show");
+    if(hintBox) hintBox.classList.remove("show");
     advanceTypeStep(steps[stepIndex].accepted[0]);
   });
 
-  connectBtn.addEventListener("click", ()=> advanceConnectStep());
+  on(connectBtn, "click", ()=> advanceConnectStep());
 
-  resetBtn.addEventListener("click", ()=>{
+  on(resetBtn, "click", ()=>{
     stepIndex = 0;
     freeContext = initialFreeContext;
     cmdHistory = [];
