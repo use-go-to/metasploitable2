@@ -270,7 +270,7 @@ h2.section-title{
 .term .ok{color:var(--ok);}
 .term .flag{color:var(--accent);}
 
-/* ---------- COPY (désactivé sur mobile : on cache les boutons ⧉) ---------- */
+/* ---------- COPY (désactivé sur mobile) ---------- */
 .copy-btn{
   display:none;
 }
@@ -451,7 +451,6 @@ table.cheat td.cmd{
 table.cheat td.desc{color:var(--muted);}
 table.cheat tr:last-child td{border-bottom:none;}
 
-/* Mobile : on transforme le tableau en cartes empilées */
 @media (max-width:639px){
   table.cheat,
   table.cheat tbody,
@@ -665,7 +664,7 @@ table.cheat tr:last-child td{border-bottom:none;}
   text-overflow:ellipsis;
 }
 
-/* Consigne — toujours visible, plus compacte sur mobile */
+/* ---------- CONSIGNE ---------- */
 .term-fs-consigne{
   display:flex;
   align-items:flex-start;
@@ -705,7 +704,7 @@ table.cheat tr:last-child td{border-bottom:none;}
   .consigne-text{font-size:13.5px; line-height:1.5;}
 }
 
-/* Progression */
+/* ---------- BARRE DE PROGRESSION (sobre) ---------- */
 .term-progress{
   display:flex;
   align-items:center;
@@ -717,34 +716,30 @@ table.cheat tr:last-child td{border-bottom:none;}
 }
 .term-progress-track{
   flex:1;
-  height:5px;
-  border-radius:3px;
-  background:var(--panel-alt);
-  border:1px solid var(--border);
+  height:2px;
+  border-radius:2px;
+  background:var(--border);
   overflow:hidden;
-}
-@media (min-width:640px){
-  .term-progress-track{height:6px;}
 }
 .term-progress-fill{
   height:100%;
   width:0%;
-  background:linear-gradient(90deg, var(--ok), var(--accent));
-  border-radius:3px;
+  background:var(--accent);
+  border-radius:2px;
   transition:width .5s cubic-bezier(.4,0,.2,1);
-  box-shadow:0 0 10px rgba(95,217,164,.55);
 }
 .term-progress-label{
   font-family:var(--mono);
   font-size:11px;
-  color:var(--accent);
+  color:var(--muted);
   white-space:nowrap;
+  letter-spacing:.02em;
 }
 @media (min-width:640px){
   .term-progress-label{font-size:11.5px;}
 }
 
-/* Fil d'Ariane de méthode — sur mobile : phase active + compteur */
+/* ---------- FIL D'ARIANE ---------- */
 .phase-track{
   display:flex;
   flex-wrap:wrap;
@@ -768,7 +763,6 @@ table.cheat tr:last-child td{border-bottom:none;}
 @media (min-width:640px){
   .phase-pill{font-size:10.5px; padding:4px 10px;}
 }
-/* Sur mobile : n'afficher que la phase active */
 @media (max-width:639px){
   .phase-pill{display:none;}
   .phase-pill.active{
@@ -945,9 +939,6 @@ table.cheat tr:last-child td{border-bottom:none;}
   .sim-input{font-size:13px;}
 }
 .sim-input::placeholder{color:var(--muted); opacity:.6; font-size:13px;}
-@media (min-width:640px){
-  .sim-input::placeholder{font-size:13px;}
-}
 
 /* ---------- BOUTONS ---------- */
 .sim-controls{
@@ -1012,12 +1003,6 @@ table.cheat tr:last-child td{border-bottom:none;}
 }
 .sim-body.flash-ok{animation:successFlash .65s ease;}
 
-@keyframes progressPulse{
-  0%,100%{box-shadow:0 0 10px rgba(95,217,164,.55);}
-  50%{box-shadow:0 0 18px rgba(95,217,164,.85);}
-}
-.term-progress-fill.pulse{animation:progressPulse .65s ease;}
-
 /* ---------- FOOTER ---------- */
 footer{
   padding:36px 0 60px;
@@ -1039,3 +1024,32 @@ footer .note{
   footer .note{font-size:12.5px; padding:16px 18px;}
 }
 footer .note .ok{color:var(--ok);}
+
+/* ---------- SCROLLBARS DISCRÈTES ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar{
+  width:6px;
+  height:6px;
+}
+*::-webkit-scrollbar-track{
+  background:transparent;
+}
+*::-webkit-scrollbar-thumb{
+  background:var(--border);
+  border-radius:3px;
+}
+*::-webkit-scrollbar-thumb:hover{
+  background:var(--muted);
+}
+.sim-body::-webkit-scrollbar,
+.term-fullscreen .sim-body::-webkit-scrollbar,
+.notebook-panel::-webkit-scrollbar{
+  width:5px;
+}
+.term pre::-webkit-scrollbar,
+.term-bar::-webkit-scrollbar{
+  height:4px;
+}
