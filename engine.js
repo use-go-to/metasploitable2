@@ -126,6 +126,8 @@
     termFullscreen.classList.remove("open");
     document.documentElement.style.overflow = "";
     blurInputOnMobile();
+    // Réinitialise le padding (au cas où le clavier l'avait augmenté)
+    if(body) body.style.paddingBottom = "";
     setTimeout(()=>{
       if(!termFullscreen.classList.contains("open")) termFullscreen.style.display = "none";
     }, 240);
@@ -463,9 +465,46 @@
     }
   });
 
+  // ---------- GESTION DU CLAVIER MOBILE (padding dynamique, sans toucher à la hauteur) ----------
+  // Quand le clavier Android/iOS s'ouvre, visualViewport.height diminue. On ajoute cette
+  // différence en padding-bottom à la zone de contenu, ce qui pousse la ligne de saisie
+  // au-dessus du clavier — SANS jamais modifier la hauteur du terminal (pas d'écran noir).
+  // Cette approche fonctionne sur Android (où 100dvh ne se réduit pas) et reste neutre
+  // sur desktop (où visualViewport.height == window.innerHeight → padding inchangé).
+  function setupKeyboardPadding(){
+    if(!window.visualViewport) return;
+    const vv = window.visualViewport;
+    const BASE_PADDING = 14; // correspond au padding normal de .sim-body sur mobile
+
+    function updatePadding(){
+      if(!termFullscreen || !termFullscreen.classList.contains("open")) return;
+      const terminalRect = termFullscreen.getBoundingClientRect();
+      const visibleBottom = vv.offsetTop + vv.height;
+      const terminalBottom = terminalRect.top + terminalRect.height;
+      const hiddenBottom = Math.max(0, terminalBottom - visibleBottom);
+      if(body){
+        // On ne réduit jamais en dessous de la base, on ne fait qu'ajouter.
+        body.style.paddingBottom = (BASE_PADDING + hiddenBottom) + "px";
+      }
+      // Et on scrolle tout en bas pour que la ligne de saisie soit visible.
+      requestAnimationFrame(()=>{
+        if(body) body.scrollTop = body.scrollHeight;
+      });
+    }
+
+    vv.addEventListener("resize", updatePadding);
+    vv.addEventListener("scroll", updatePadding);
+
+    // Quand on ferme le terminal, on remet le padding d'origine.
+    document.addEventListener("visibilitychange", ()=>{
+      if(document.hidden && body){ body.style.paddingBottom = ""; }
+    });
+  }
+
   // ---------- INITIALISATION ----------
   function init(){
     injectFsToggle();
+    setupKeyboardPadding();
     renderPhaseTrackSkeleton();
     updateUI();
   }
