@@ -4,6 +4,7 @@
   // ---------- ÉTAT ----------
   let stepIndex = 0;
   const initialFreeContext = freeContext; // capturé avant toute mutation, pour un reset fidèle au cours
+  let userHasInteracted = false;          // évite l'ouverture du clavier mobile tant que l'utilisateur n'a pas touché l'input
 
   const body = document.getElementById("sim-body");
   const input = document.getElementById("sim-input");
@@ -40,12 +41,26 @@
     return steps[stepIndex].kind;
   }
 
+  // ---------- FOCUS CONDITIONNEL (anti-clavier-mobile) ----------
+  function isMobileViewport(){
+    return window.matchMedia("(max-width: 639px)").matches;
+  }
+  function maybeFocus(){
+    // Sur mobile : on ne vole le focus que si l'utilisateur a déjà touché le champ.
+    // Sur desktop : focus auto pour le confort de frappe.
+    if(isMobileViewport() && !userHasInteracted) return;
+    try{ input.focus({ preventScroll:true }); }catch(e){ input.focus(); }
+  }
+
   // ---------- OUVERTURE / FERMETURE PLEIN ÉCRAN ----------
   function openTerminal(){
     termFullscreen.style.display = "flex";
     requestAnimationFrame(()=> termFullscreen.classList.add("open"));
     document.documentElement.style.overflow = "hidden";
-    setTimeout(()=> input.focus(), 200);
+    // Sur desktop uniquement : focus auto. Sur mobile, l'utilisateur touchera le champ lui-même.
+    if(!isMobileViewport()){
+      setTimeout(()=> input.focus({ preventScroll:true }), 200);
+    }
   }
   function closeTerminal(){
     termFullscreen.classList.remove("open");
@@ -71,9 +86,6 @@
   }
 
   // ---------- FIL D'ARIANE DE MÉTHODE ----------
-  // squelette fixe, affiché à l'identique sur chaque cours (même quand une
-  // phase donnée n'est pas utilisée) pour que la méthode générale reste
-  // reconnaissable d'un cours à l'autre, même quand la technique change.
   const PHASES = [
     {key:"recon", label:"recon"},
     {key:"recherche", label:"recherche exploit"},
@@ -86,7 +98,7 @@
     if(mode() === "free") return "post-exploitation";
     const s = steps[stepIndex];
     if(s && s.phase) return s.phase;
-    return "recon"; // étape "connect" ou toute étape sans phase déclarée
+    return "recon";
   }
 
   function renderPhaseTrackSkeleton(){
@@ -123,7 +135,7 @@
   function addToNotebook(note, cmdLabel){
     if(!note || !notebookList) return;
     const list = loadNotebook();
-    if(list.some(item => item.note === note)) { renderNotebook(); return; } // déjà noté (déduplication globale)
+    if(list.some(item => item.note === note)) { renderNotebook(); return; }
     list.push({ cmd: cmdLabel || "", note: note });
     saveNotebook(list);
     renderNotebook();
@@ -157,17 +169,14 @@
 
   function normalize(s){ return s.trim().toLowerCase().replace(/\s+/g," "); }
 
-  // symbole de prompt en mode libre : ">" pour meterpreter, "#" pour un shell
-  // root (contexte "root@..."), "$" sinon (utilisateur non-root, ex. msfadmin).
-  // Convention basée sur le nommage déjà utilisé pour les contextes du lab.
+  // symbole de prompt en mode libre
   function freeSymbolFor(ctx){
     if(ctx === "meterpreter") return ">";
     if(ctx.indexOf("root@") === 0) return "#";
     return "$";
   }
 
-  // rendu réaliste du prompt selon la machine/console — purement visuel,
-  // ne change jamais la valeur logique de contextLabel utilisée ailleurs.
+  // rendu réaliste du prompt selon la machine/console
   function promptHtml(ctx, sym){
     if(ctx === "kali@kali"){
       return `<span class="p-kali">`
@@ -181,8 +190,7 @@
     return `${ctx} <span class="p-dollar">${sym}</span>`;
   }
 
-  // insère un nœud juste avant la ligne de saisie, qui reste ainsi toujours
-  // la toute dernière ligne du terminal — comme un vrai prompt shell.
+  // insère un nœud juste avant la ligne de saisie (toujours la dernière ligne)
   function pushLine(node){
     body.insertBefore(node, inputline);
   }
@@ -248,7 +256,7 @@
       hintBtn.disabled = false;
       solutionBtn.disabled = false;
       input.disabled = false;
-      input.focus();
+      maybeFocus();
       body.scrollTop = body.scrollHeight;
     } else {
       contextEl.textContent = freeContext;
@@ -262,7 +270,7 @@
       hintBtn.disabled = true;
       solutionBtn.disabled = true;
       input.disabled = false;
-      input.focus();
+      maybeFocus();
       body.scrollTop = body.scrollHeight;
     }
   }
@@ -279,8 +287,6 @@
     printLine(s.prompt, s.context, cmdShown, s.output);
     if(s.note) addToNotebook(s.note, s.accepted[0]);
     stepIndex++;
-    // l'annotation/le surlignage (anciens moments "analyze") s'affichent
-    // maintenant comme un simple commentaire dans le flux, juste après la sortie.
     highlightAndAnnotate(s);
     afterAdvance();
   }
@@ -317,16 +323,12 @@
     const cmd = normalize(raw);
     const table = freeCommands[freeContext] || {};
     if(cmd === "exit"){
-      // priorité absolue à la table du cours : si le cours définit explicitement
-      // "exit" pour ce contexte, on l'utilise tel quel et on ne bricole rien.
       if(table["exit"] !== undefined){
         printLine(freeSymbolFor(freeContext), freeContext, raw, table["exit"]);
         input.disabled = true;
         progressEl.textContent = "terminé";
         return;
       }
-      // sinon, comportement historique (scénario meterpreter → shell → exit),
-      // pour les cours qui ne définissent pas "exit" eux-mêmes.
       if(freeContext !== "meterpreter"){
         freeContext = "meterpreter";
         printLine("#", "root@metasploitable", raw, [{t:"exit", c:"o"}]);
@@ -389,6 +391,11 @@
     }
   });
 
+  // ---------- TRACKING INTERACTION (anti-clavier mobile) ----------
+  input.addEventListener("touchstart", ()=>{ userHasInteracted = true; }, { passive:true });
+  input.addEventListener("click",     ()=>{ userHasInteracted = true; });
+  input.addEventListener("focus",     ()=>{ userHasInteracted = true; });
+
   function toggleHintBox(boxEl, hintText){
     const isShown = boxEl.classList.contains("show");
     if(isShown){
@@ -413,15 +420,17 @@
   connectBtn.addEventListener("click", ()=> advanceConnectStep());
 
   resetBtn.addEventListener("click", ()=>{
-    stepIndex = 0; freeContext = initialFreeContext;
-    cmdHistory = []; historyPos = 0;
-    // on retire tout SAUF la ligne de saisie (qu'on garde en mémoire), puis
-    // on la replace pour qu'elle redevienne la seule ligne du terminal.
+    stepIndex = 0;
+    freeContext = initialFreeContext;
+    cmdHistory = [];
+    historyPos = 0;
+    userHasInteracted = false;
     Array.from(body.children).forEach(child=>{
       if(child !== inputline) child.remove();
     });
     body.appendChild(inputline);
-    input.disabled = false; input.value = "";
+    input.disabled = false;
+    input.value = "";
     updateUI();
   });
 
@@ -431,32 +440,32 @@
 })();
 
 // ---------- BOUTONS "COPIER" DES COMMANDES DU COURS ----------
-  document.addEventListener("click", function(e){
-    const btn = e.target.closest(".copy-btn");
-    if(!btn) return;
-    const text = btn.getAttribute("data-copy") || "";
-    const done = ()=>{
-      const original = btn.textContent;
-      btn.textContent = "✓";
-      btn.classList.add("copied");
-      setTimeout(()=>{ btn.textContent = original; btn.classList.remove("copied"); }, 1200);
-    };
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(done).catch(()=>{
-        fallbackCopy(text); done();
-      });
-    } else {
+document.addEventListener("click", function(e){
+  const btn = e.target.closest(".copy-btn");
+  if(!btn) return;
+  const text = btn.getAttribute("data-copy") || "";
+  const done = ()=>{
+    const original = btn.textContent;
+    btn.textContent = "✓";
+    btn.classList.add("copied");
+    setTimeout(()=>{ btn.textContent = original; btn.classList.remove("copied"); }, 1200);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>{
       fallbackCopy(text); done();
-    }
-  });
-
-  function fallbackCopy(text){
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    try{ document.execCommand("copy"); }catch(err){}
-    document.body.removeChild(ta);
+    });
+  } else {
+    fallbackCopy(text); done();
   }
+});
+
+function fallbackCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try{ document.execCommand("copy"); }catch(err){}
+  document.body.removeChild(ta);
+}
